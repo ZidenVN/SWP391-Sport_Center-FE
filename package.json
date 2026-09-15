@@ -1,0 +1,1 @@
+{"name":"sports-center-fe","version":"1.0.0","description":"Sports Center Management System Frontend - SWP391 FA26 Topic 4","main":"index.html","scripts":{"dev":"vite --host --port 5173","build":"vite build","preview":"vite preview"},"devDependencies":{"vite":"^5.4.0"}}
