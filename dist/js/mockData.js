@@ -1,32 +1,27 @@
 /**
  * Mock Data for Sports Center Management System (SWP391 - FA26 Topic 4)
- * Focus: 3 MUST-HAVE FLOWS
- * 1. User & Membership Management
- * 2. Class Booking & Schedule Management
- * 3. Payment & Financial Report Management
+ * Synchronized for all 4 roles: Member, Receptionist, Coach, Manager
  */
 
 const INITIAL_DATA = {
   demoAccounts: [
     {
       role: 'MANAGER',
-      roleLabel: 'Center Manager (Quản lý / Admin)',
+      roleLabel: 'Center Manager (Quản lý Admin)',
       email: 'manager@sportscenter.vn',
       password: '123',
       name: 'Nguyễn Văn Quản Lý',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      badgeColor: 'bg-purple-100 text-purple-700 border-purple-200',
-      desc: 'Toàn quyền quản trị nhân sự, gói tập, lớp học và báo cáo tài chính'
+      desc: 'Quản trị nhân sự, gói tập & doanh thu'
     },
     {
       role: 'RECEPTIONIST',
-      roleLabel: 'Receptionist (Nhân viên Lễ tân)',
+      roleLabel: 'Receptionist (Lễ tân Quầy POS & Cổng)',
       email: 'letan@sportscenter.vn',
       password: '123',
       name: 'Lê Ngọc Lễ Tân',
       avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-      badgeColor: 'bg-blue-100 text-blue-700 border-blue-200',
-      desc: 'Tiếp đón khách, check-in, đăng ký hội viên, bán gói tập & xuất hóa đơn tại quầy'
+      desc: 'Quét thẻ check-in cổng & Bán gói POS'
     },
     {
       role: 'COACH',
@@ -35,300 +30,271 @@ const INITIAL_DATA = {
       password: '123',
       name: 'Trần Hoàng Nam',
       avatar: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80',
-      badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-      desc: 'Quản lý lịch dạy lớp học và danh sách học viên đăng ký'
+      desc: 'Lịch dạy hôm nay & Điểm danh lớp'
     },
     {
       role: 'MEMBER',
-      roleLabel: 'Member (Học viên / Khách hàng)',
+      roleLabel: 'Member (Hội viên Khách hàng)',
       email: 'trang.pham@gmail.com',
       password: '123',
       name: 'Phạm Thu Trang',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      badgeColor: 'bg-amber-100 text-amber-700 border-amber-200',
-      desc: 'Mua gói tập, đặt chỗ lớp học trực tuyến và xem lịch cá nhân'
+      desc: 'Khám phá lớp, đặt chỗ & Mua gói tập'
     }
   ],
-
   packages: [
     {
+      packageId: 'PKG01',
       id: 'PKG01',
+      packageName: 'Standard Gym & Cardio',
       name: 'Standard Gym & Cardio',
+      type: 'GYM',
       durationDays: 30,
       price: 650000,
-      description: 'Truy cập không giới hạn khu vực Gym & Cardio từ 6h00 đến 22h00 hàng ngày.',
-      features: ['Tập luyện tự do toàn bộ máy Gym', 'Miễn phí tủ đồ & phòng tắm nóng lạnh', 'Đo chỉ số InBody miễn phí 1 lần/tháng', 'Nước uống lọc miễn phí'],
-      popular: false,
-      color: 'blue'
+      description: 'Tập luyện tự do tại khu vực Gym máy tạ & Cardio không giới hạn giờ tập.'
     },
     {
+      packageId: 'PKG02',
       id: 'PKG02',
+      packageName: 'VIP All-Access Pass',
       name: 'VIP All-Access Pass',
+      type: 'VIP',
       durationDays: 90,
       price: 2450000,
-      description: 'Gói toàn diện tập luyện Gym + tất cả lớp Yoga, Zumba, Boxing và dịch vụ xông hơi Sauna.',
-      features: ['Không giới hạn Gym + Yoga + Boxing + Zumba', 'Miễn phí phòng xông hơi khô & ướt (Sauna)', 'Khăn tập & tủ đồ VIP riêng', 'Tặng 2 buổi kèm 1-1 cùng Huấn luyện viên'],
-      popular: true,
-      color: 'amber'
+      description: 'Toàn quyền sử dụng Gym, lớp Yoga, Boxing, phòng xông hơi Sauna & tủ đồ cá nhân.'
     },
     {
+      packageId: 'PKG03',
       id: 'PKG03',
+      packageName: 'Yoga & Pilates Master',
       name: 'Yoga & Pilates Master',
-      durationDays: 30,
-      price: 1200000,
-      description: 'Dành riêng cho tín đồ Yoga, Thiền định và Pilates với giảng viên quốc tế.',
-      features: ['Tham gia tối đa 20 lớp Yoga & Pilates/tháng', 'Thảm tập cao cấp được khử trùng sẵn', 'Trà thảo mộc thanh lọc cơ thể sau mỗi buổi', 'Ưu tiên đặt chỗ lớp sớm'],
-      popular: false,
-      color: 'emerald'
+      type: 'YOGA',
+      durationDays: 60,
+      price: 1800000,
+      description: 'Chuyên sâu các lớp Vinyasa Yoga, Hatha Yoga và Pilates Reformer cùng HLV.'
     },
     {
+      packageId: 'PKG04',
       id: 'PKG04',
+      packageName: 'Personal Training (PT 1-1) 12 Buổi',
       name: 'Personal Training (PT 1-1) 12 Buổi',
+      type: 'PT',
       durationDays: 45,
       price: 4800000,
-      description: 'Kèm riêng 1-1 cùng HLV chuyên nghiệp, thiết kế thực đơn và giáo án riêng biệt.',
-      features: ['12 buổi kèm 1-1 (60 phút/buổi)', 'Lên giáo án dinh dưỡng & bài tập chi tiết', 'Đo InBody và theo dõi chỉ số hàng tuần', 'Cam kết đạt mục tiêu thể hình'],
-      popular: false,
-      color: 'rose'
+      description: 'HLV cá nhân thiết kế giáo án riêng, đo InBody theo dõi chỉ số dinh dưỡng.'
     }
   ],
-
-  sports: [
-    { id: 'SP01', name: 'Fitness & Gym', icon: 'dumbbell' },
-    { id: 'SP02', name: 'Yoga & Meditation', icon: 'flower-2' },
-    { id: 'SP03', name: 'Boxing & Muay Thai', icon: 'swords' },
-    { id: 'SP04', name: 'Zumba & Dance Fit', icon: 'music' },
-    { id: 'SP05', name: 'Pilates Reformer', icon: 'activity' }
-  ],
-
-  rooms: [
-    { id: 'RM01', name: 'Studio A (Yoga & Pilates)', capacity: 20, location: 'Tầng 2' },
-    { id: 'RM02', name: 'Studio B (Boxing & Combat)', capacity: 16, location: 'Tầng 2' },
-    { id: 'RM03', name: 'Main Gym Floor', capacity: 60, location: 'Tầng 1' },
-    { id: 'RM04', name: 'Dance & GroupX Room', capacity: 25, location: 'Tầng 3' }
-  ],
-
-  coaches: [
-    {
-      id: 'COA01',
-      name: 'Trần Hoàng Nam',
-      email: 'coach.nam@sportscenter.vn',
-      phone: '0988776655',
-      specialty: 'Fitness & Boxing',
-      rating: 4.9,
-      experience: '6 năm kinh nghiệm',
-      avatar: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'COA02',
-      name: 'Lê Thu Hà',
-      email: 'ha.le@sportscenter.vn',
-      phone: '0912334455',
-      specialty: 'Yoga Master & Meditation',
-      rating: 5.0,
-      experience: '8 năm kinh nghiệm quốc tế',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'COA03',
-      name: 'Đặng Minh Đức',
-      email: 'duc.dang@sportscenter.vn',
-      phone: '0933445566',
-      specialty: 'Pilates & Body Recomposition',
-      rating: 4.8,
-      experience: '5 năm kinh nghiệm',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'
-    }
-  ],
-
-  classes: [
-    {
-      id: 'CLS01',
-      name: 'Vinyasa Flow Yoga',
-      sportId: 'SP02',
-      sportName: 'Yoga & Meditation',
-      coachId: 'COA02',
-      coachName: 'Lê Thu Hà',
-      roomId: 'RM01',
-      roomName: 'Studio A (Yoga & Pilates)',
-      time: '07:00 - 08:15',
-      days: 'Thứ 2, 4, 6',
-      maxCapacity: 20,
-      bookedCount: 14,
-      level: 'Mọi trình độ',
-      image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&auto=format&fit=crop&q=80',
-      description: 'Chuỗi động tác kết hợp nhịp thở giúp giải tỏa căng thẳng và tăng cường độ dẻo dai toàn diện.'
-    },
-    {
-      id: 'CLS02',
-      name: 'Muay Thai & Kick Boxing',
-      sportId: 'SP03',
-      sportName: 'Boxing & Muay Thai',
-      coachId: 'COA01',
-      coachName: 'Trần Hoàng Nam',
-      roomId: 'RM02',
-      roomName: 'Studio B (Boxing & Combat)',
-      time: '18:00 - 19:15',
-      days: 'Thứ 3, 5, 7',
-      maxCapacity: 16,
-      bookedCount: 15,
-      level: 'Trung bình - Nâng cao',
-      image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&auto=format&fit=crop&q=80',
-      description: 'Đốt cháy 700+ calo với những đòn đấm, đá, gối chuẩn kỹ thuật Muay Thái.'
-    },
-    {
-      id: 'CLS03',
-      name: 'HIIT Fat Burn & Strength',
-      sportId: 'SP01',
-      sportName: 'Fitness & Gym',
-      coachId: 'COA01',
-      coachName: 'Trần Hoàng Nam',
-      roomId: 'RM03',
-      roomName: 'Main Gym Floor',
-      time: '19:30 - 20:30',
-      days: 'Thứ 2, 4, 6',
-      maxCapacity: 25,
-      bookedCount: 18,
-      level: 'Mọi trình độ',
-      image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80',
-      description: 'Tập luyện cường độ cao ngắt quãng giúp tăng nhịp tim, đốt mỡ tối đa sau buổi tập.'
-    },
-    {
-      id: 'CLS04',
-      name: 'Pilates Core Alignment',
-      sportId: 'SP05',
-      sportName: 'Pilates Reformer',
-      coachId: 'COA03',
-      coachName: 'Đặng Minh Đức',
-      roomId: 'RM01',
-      roomName: 'Studio A (Yoga & Pilates)',
-      time: '17:30 - 18:30',
-      days: 'Thứ 3, 5, CN',
-      maxCapacity: 12,
-      bookedCount: 10,
-      level: 'Cơ bản - Phục hồi',
-      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&auto=format&fit=crop&q=80',
-      description: 'Tăng cường sức mạnh nhóm cơ lõi (Core), chỉnh dáng thẳng lưng và giảm đau mỏi vai gáy.'
-    }
-  ],
-
   members: [
     {
+      memberId: 'MEM101',
       id: 'MEM101',
+      firstName: 'Thu Trang',
+      lastName: 'Phạm',
       name: 'Phạm Thu Trang',
       email: 'trang.pham@gmail.com',
-      phone: '0977112233',
-      activePackage: 'VIP All-Access Pass',
+      trainingGoal: 'Giảm mỡ, tăng cơ săn chắc',
+      status: 'ACTIVE'
+    },
+    {
+      memberId: 'MEM102',
+      id: 'MEM102',
+      firstName: 'Tiến Dũng',
+      lastName: 'Nguyễn',
+      name: 'Nguyễn Tiến Dũng',
+      email: 'dung.nguyen@gmail.com',
+      trainingGoal: 'Tăng cường sức mạnh cơ bắp & boxing',
+      status: 'ACTIVE'
+    },
+    {
+      memberId: 'MEM103',
+      id: 'MEM103',
+      firstName: 'Minh Châu',
+      lastName: 'Hoàng',
+      name: 'Hoàng Minh Châu',
+      email: 'chau.hoang@gmail.com',
+      trainingGoal: 'Tập Yoga dẻo dai & giải tỏa stress',
+      status: 'EXPIRED'
+    },
+    {
+      memberId: 'MEM104',
+      id: 'MEM104',
+      firstName: 'Quốc Bảo',
+      lastName: 'Vũ',
+      name: 'Vũ Quốc Bảo',
+      email: 'bao.vu@gmail.com',
+      trainingGoal: 'Rèn luyện sức bền & tim mạch',
+      status: 'ACTIVE'
+    }
+  ],
+  subjects: [
+    { subjectId: 'SUB01', subjectName: 'Yoga', description: 'Rèn luyện sự dẻo dai, nhịp thở và cân bằng thân tâm' },
+    { subjectId: 'SUB02', subjectName: 'Boxing', description: 'Đốt mỡ cường độ cao, phản xạ tự vệ và rèn luyện thể lực' },
+    { subjectId: 'SUB03', subjectName: 'Zumba', description: 'Vũ đạo sôi động trên nền nhạc Latin, giải tỏa căng thẳng' },
+    { subjectId: 'SUB04', subjectName: 'Pilates', description: 'Tăng cường sức mạnh cơ trọng tâm, điều chỉnh tư thế cột sống' }
+  ],
+  rooms: [
+    { roomId: 'RM01', roomName: 'Studio A (Yoga & Pilates)', capacity: 20, status: 'AVAILABLE' },
+    { roomId: 'RM02', roomName: 'Ring Room B (Boxing & Combat)', capacity: 15, status: 'AVAILABLE' },
+    { roomId: 'RM03', roomName: 'Main Gym Floor (Cardio & Tạ)', capacity: 40, status: 'AVAILABLE' },
+    { roomId: 'RM04', roomName: 'Studio C (Pilates Reformer)', capacity: 12, status: 'AVAILABLE' }
+  ],
+  // STRICT ERD: Only ClassID, SubjectID, RoomID, CoachID, ScheduleTime, MaxCapacity, Status
+  classes: [
+    {
+      classId: 'CLS01',
+      id: 'CLS01',
+      subjectId: 'SUB01',
+      roomId: 'RM01',
+      coachId: 'COACH',
+      scheduleTime: 'Thứ 2, 4, 6 | 07:00 - 08:15',
+      maxCapacity: 20,
+      status: 'ACTIVE'
+    },
+    {
+      classId: 'CLS02',
+      id: 'CLS02',
+      subjectId: 'SUB02',
+      roomId: 'RM02',
+      coachId: 'COACH',
+      scheduleTime: 'Thứ 3, 5, 7 | 18:00 - 19:15',
+      maxCapacity: 15,
+      status: 'ACTIVE'
+    },
+    {
+      classId: 'CLS03',
+      id: 'CLS03',
+      subjectId: 'SUB03',
+      roomId: 'RM01',
+      coachId: 'COACH_02',
+      scheduleTime: 'Thứ 2, 4, 6 | 19:30 - 20:30',
+      maxCapacity: 25,
+      status: 'ACTIVE'
+    },
+    {
+      classId: 'CLS04',
+      id: 'CLS04',
+      subjectId: 'SUB04',
+      roomId: 'RM04',
+      coachId: 'COACH_03',
+      scheduleTime: 'Thứ 3, 5, Chủ Nhật | 09:00 - 10:00',
+      maxCapacity: 12,
+      status: 'ACTIVE'
+    }
+  ],
+  classPlans: [
+    { classPlanId: 'CP01', classId: 'CLS01', content: 'Khởi động kéo giãn (10p) - Chuỗi Vinyasa Flow (45p) - Thư giãn Savasana (15p)', createDate: '2026-08-01' },
+    { classPlanId: 'CP02', classId: 'CLS02', content: 'Nhảy dây & gập bụng (10p) - Tổ hợp đấm Pad Work & né đòn (45p) - Cooldown (15p)', createDate: '2026-08-01' },
+    { classPlanId: 'CP03', classId: 'CLS03', content: 'Warmup nhịp điệu Salsa (10p) - Vũ đạo Merengue & Reggaeton (45p) - Giãn cơ (15p)', createDate: '2026-08-01' },
+    { classPlanId: 'CP04', classId: 'CLS04', content: 'Tư thế nằm cân chỉnh xương chậu (10p) - Bài tập lò xo máy Reformer (45p) - Thả lỏng (15p)', createDate: '2026-08-01' }
+  ],
+  classEnrollments: [
+    { classEnrollmentId: 'ENR01', classId: 'CLS01', memberId: 'MEM101', enrollDate: '2026-08-01', status: 'CONFIRMED' },
+    { classEnrollmentId: 'ENR02', classId: 'CLS01', memberId: 'MEM103', enrollDate: '2026-08-05', status: 'CONFIRMED' },
+    { classEnrollmentId: 'ENR03', classId: 'CLS01', memberId: 'MEM104', enrollDate: '2026-08-10', status: 'CONFIRMED' },
+    { classEnrollmentId: 'ENR04', classId: 'CLS02', memberId: 'MEM102', enrollDate: '2026-08-02', status: 'CONFIRMED' },
+    { classEnrollmentId: 'ENR05', classId: 'CLS02', memberId: 'MEM104', enrollDate: '2026-08-03', status: 'CONFIRMED' },
+    { classEnrollmentId: 'ENR06', classId: 'CLS03', memberId: 'MEM101', enrollDate: '2026-08-04', status: 'CONFIRMED' }
+  ],
+  classAttendances: [
+    { attendanceId: 'ATT01', classEnrollmentId: 'ENR01', classId: 'CLS01', memberId: 'MEM101', attendedDate: '2026-09-18', status: 'PRESENT' },
+    { attendanceId: 'ATT02', classEnrollmentId: 'ENR02', classId: 'CLS01', memberId: 'MEM103', attendedDate: '2026-09-18', status: 'ABSENT' },
+    { attendanceId: 'ATT03', classEnrollmentId: 'ENR03', classId: 'CLS01', memberId: 'MEM104', attendedDate: '2026-09-18', status: 'PRESENT' },
+    { attendanceId: 'ATT04', classEnrollmentId: 'ENR04', classId: 'CLS02', memberId: 'MEM102', attendedDate: '2026-09-19', status: 'PRESENT' },
+    { attendanceId: 'ATT05', classEnrollmentId: 'ENR05', classId: 'CLS02', memberId: 'MEM104', attendedDate: '2026-09-19', status: 'PRESENT' }
+  ],
+  workoutResults: [
+    { resultId: 'RES01', memberId: 'MEM101', classId: 'CLS01', activityDetails: 'Vinyasa Flow 60 phút', coachFeedback: 'Tập dẻo dai, giữ nhịp thở đều', loggedDate: '2026-09-18' },
+    { resultId: 'RES02', memberId: 'MEM104', classId: 'CLS01', activityDetails: 'Vinyasa Flow 60 phút', coachFeedback: 'Thể lực cải thiện đáng kể', loggedDate: '2026-09-18' },
+    { resultId: 'RES03', memberId: 'MEM102', classId: 'CLS02', activityDetails: 'Boxing Combat 60 phút', coachFeedback: 'Đấm lực tốt, phản xạ nhanh', loggedDate: '2026-09-19' }
+  ],
+  subscriptions: [
+    {
+      subscriptionId: 'SUB101',
+      id: 'SUB101',
+      memberId: 'MEM101',
       packageId: 'PKG02',
       startDate: '2026-08-01',
       endDate: '2026-11-01',
-      status: 'ACTIVE',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      gender: 'Nữ',
-      dob: '2002-05-14',
-      address: 'Quận Cầu Giấy, Hà Nội'
+      status: 'ACTIVE'
     },
     {
-      id: 'MEM102',
-      name: 'Nguyễn Tiến Dũng',
-      email: 'tiendung@gmail.com',
-      phone: '0908889999',
-      activePackage: 'Standard Gym & Cardio',
+      subscriptionId: 'SUB102',
+      id: 'SUB102',
+      memberId: 'MEM102',
       packageId: 'PKG01',
       startDate: '2026-08-15',
       endDate: '2026-09-15',
-      status: 'ACTIVE',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      gender: 'Nam',
-      dob: '1998-11-20',
-      address: 'Quận Nam Từ Liêm, Hà Nội'
+      status: 'ACTIVE'
     },
     {
-      id: 'MEM103',
-      name: 'Hoàng Bích Ngọc',
-      email: 'ngoc.hoang@yahoo.com',
-      phone: '0912445566',
-      activePackage: 'Yoga & Pilates Master',
+      subscriptionId: 'SUB103',
+      id: 'SUB103',
+      memberId: 'MEM103',
       packageId: 'PKG03',
-      startDate: '2026-07-10',
-      endDate: '2026-08-10',
-      status: 'EXPIRED',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-      gender: 'Nữ',
-      dob: '2001-08-09',
-      address: 'Quận Ba Đình, Hà Nội'
+      startDate: '2026-07-01',
+      endDate: '2026-07-31',
+      status: 'EXPIRED'
     },
     {
-      id: 'MEM104',
-      name: 'Vũ Quốc Bảo',
-      email: 'bao.vu@fpt.edu.vn',
-      phone: '0945678910',
-      activePackage: 'Personal Training (PT 1-1) 12 Buổi',
+      subscriptionId: 'SUB104',
+      id: 'SUB104',
+      memberId: 'MEM104',
       packageId: 'PKG04',
       startDate: '2026-08-20',
       endDate: '2026-10-05',
-      status: 'ACTIVE',
-      avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-      gender: 'Nam',
-      dob: '1999-03-25',
-      address: 'Quận Đống Đa, Hà Nội'
+      status: 'ACTIVE'
     }
   ],
-
-  myBookings: [
+  payments: [
     {
-      id: 'BKG01',
-      classId: 'CLS01',
-      className: 'Vinyasa Flow Yoga',
-      coachName: 'Lê Thu Hà',
-      roomName: 'Studio A (Yoga & Pilates)',
-      date: 'Thứ 4, 07:00 - 08:15',
-      status: 'CONFIRMED'
-    },
-    {
-      id: 'BKG02',
-      classId: 'CLS03',
-      className: 'HIIT Fat Burn & Strength',
-      coachName: 'Trần Hoàng Nam',
-      roomName: 'Main Gym Floor',
-      date: 'Thứ 6, 19:30 - 20:30',
-      status: 'CONFIRMED'
-    }
-  ],
-
-  recentInvoices: [
-    {
-      id: 'INV-2026-089',
-      memberName: 'Phạm Thu Trang',
-      memberId: 'MEM101',
-      packageName: 'VIP All-Access Pass (3 Tháng)',
+      paymentId: 'PMT1001',
+      id: 'INV1001',
+      subscriptionId: 'SUB101',
       amount: 2450000,
-      method: 'Chuyển khoản QR (PayOS/VNPay)',
-      date: '01/08/2026 10:15',
-      createdBy: 'Online Banking',
+      paymentMethod: 'VNPAY_QR',
+      paymentDate: '2026-08-01',
       status: 'PAID'
     },
     {
-      id: 'INV-2026-090',
-      memberName: 'Nguyễn Tiến Dũng',
-      memberId: 'MEM102',
-      packageName: 'Standard Gym & Cardio (1 Tháng)',
+      paymentId: 'PMT1002',
+      id: 'INV1002',
+      subscriptionId: 'SUB102',
       amount: 650000,
-      method: 'Tiền mặt tại quầy',
-      date: '15/08/2026 14:30',
-      createdBy: 'Lê Ngọc Lễ Tân',
+      paymentMethod: 'CASH',
+      paymentDate: '2026-08-15',
       status: 'PAID'
     },
     {
-      id: 'INV-2026-091',
-      memberName: 'Vũ Quốc Bảo',
-      memberId: 'MEM104',
-      packageName: 'Personal Training (PT 1-1) 12 Buổi',
+      paymentId: 'PMT1003',
+      id: 'INV1003',
+      subscriptionId: 'SUB104',
       amount: 4800000,
-      method: 'Thẻ tín dụng / POS',
-      date: '20/08/2026 09:00',
-      createdBy: 'Lê Ngọc Lễ Tân',
+      paymentMethod: 'CREDIT_CARD',
+      paymentDate: '2026-08-20',
       status: 'PAID'
+    }
+  ],
+  centerCheckIns: [
+    {
+      checkInId: 'CHK501',
+      id: 'LOG501',
+      memberId: 'MEM101',
+      receptionistId: 'REC01',
+      checkInTime: '2026-09-19 06:45'
+    },
+    {
+      checkInId: 'CHK502',
+      id: 'LOG502',
+      memberId: 'MEM102',
+      receptionistId: 'REC01',
+      checkInTime: '2026-09-19 07:10'
+    },
+    {
+      checkInId: 'CHK503',
+      id: 'LOG503',
+      memberId: 'MEM103',
+      receptionistId: 'REC01',
+      checkInTime: '2026-09-19 08:30'
     }
   ]
 };
