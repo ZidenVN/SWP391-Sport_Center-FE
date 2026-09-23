@@ -1033,6 +1033,155 @@ const DEFAULT_DATA = {
       paymentDate: '2026-08-20',
       status: 'PAID'
     }
+  ],
+  // STRICT ERD: WorkoutPlans
+  workoutPlans: [
+    {
+      planId: 'WP01',
+      id: 'WP01',
+      planName: 'Lộ Trình Giảm Mỡ & Săn Chắc 30 Ngày',
+      duration: '4 Tuần (3 buổi/tuần)',
+      exercises: 'Khởi động dynamic stretch (10p) - High Knees, Jump Squat & Burpees (20p) - Plank & Mountain Climber (15p) - Cooldown thả lỏng (15p)',
+      dueDate: '2026-10-20',
+      createDate: '2026-09-18',
+      coachId: 'COACH'
+    },
+    {
+      planId: 'WP02',
+      id: 'WP02',
+      planName: 'Tăng Cơ Trọng Tâm & Sức Bền Boxing',
+      duration: '6 Tuần (4 buổi/tuần)',
+      exercises: 'Nhảy dây tốc độ cao (15p) - Đấm bao cát Heavy Bag & Shadow Boxing (30p) - Hít đất tạ & gập bụng (15p)',
+      dueDate: '2026-10-31',
+      createDate: '2026-09-15',
+      coachId: 'COACH'
+    }
+  ],
+  // STRICT ERD: MemberPlan associative entity
+  memberPlans: [
+    {
+      memberPlanId: 'MP01',
+      id: 'MP01',
+      memberId: 'MEM101',
+      planId: 'WP01',
+      assignedDate: '2026-09-18',
+      status: 'IN_PROGRESS'
+    },
+    {
+      memberPlanId: 'MP02',
+      id: 'MP02',
+      memberId: 'MEM102',
+      planId: 'WP02',
+      assignedDate: '2026-09-15',
+      status: 'IN_PROGRESS'
+    }
+  ],
+  // STRICT ERD: SupportTickets
+  supportTickets: [
+    {
+      ticketId: 'TCK101',
+      id: 'TCK101',
+      memberId: 'MEM101',
+      memberName: 'Phạm Thu Trang',
+      receptionistId: 'REC01',
+      content: 'Em để quên bình nước giữ nhiệt màu hồng tại Studio A ca sáng hôm nay, nhờ quầy kiểm tra giúp em ạ.',
+      createdDate: '2026-09-20 08:30',
+      status: 'PENDING',
+      response: ''
+    },
+    {
+      ticketId: 'TCK102',
+      id: 'TCK102',
+      memberId: 'MEM103',
+      memberName: 'Hoàng Minh Châu',
+      receptionistId: 'REC01',
+      content: 'Thẻ của tôi báo hết hạn nhưng tôi nhớ còn thời hạn đến cuối tháng, nhờ lễ tân tra cứu lại giúp.',
+      createdDate: '2026-09-19 14:15',
+      status: 'RESOLVED',
+      response: 'Đã kiểm tra lại thông tin trên hệ thống, thẻ gói cũ của chị đã hết hạn ngày 31/07. Quầy đã hỗ trợ tư vấn gia hạn gói mới thành công.'
+    }
+  ],
+  // STRICT ERD: Notifications
+  notifications: [
+    {
+      notificationId: 'NOTIF01',
+      id: 'NOTIF01',
+      title: 'Nhắc Lịch Tập Sắp Tới',
+      content: 'Buổi học Vinyasa Yoga của bạn sẽ bắt đầu lúc 07:00 ngày mai tại Studio A.',
+      sentDate: '2026-09-21 06:30',
+      targetType: 'ACCOUNT',
+      targetId: 'MEM101',
+      isRead: false
+    },
+    {
+      notificationId: 'NOTIF02',
+      id: 'NOTIF02',
+      title: 'Gia Hạn Thẻ Thành Công',
+      content: 'Thẻ VIP All-Access Pass của bạn đã được kích hoạt thành công, thời hạn sử dụng đến 01/11/2026.',
+      sentDate: '2026-09-19 09:00',
+      targetType: 'ACCOUNT',
+      targetId: 'MEM101',
+      isRead: true
+    },
+    {
+      notificationId: 'NOTIF03',
+      id: 'NOTIF03',
+      title: 'Cập Nhật Giáo Án Lớp Boxing CLS02',
+      content: 'HLV Trần Hoàng Nam đã cập nhật giáo án Pad Work nâng cao cho ca tập chiều nay.',
+      sentDate: '2026-09-20 16:00',
+      targetType: 'CLASS',
+      targetId: 'CLS02',
+      isRead: false
+    },
+    {
+      notificationId: 'NOTIF04',
+      id: 'NOTIF04',
+      title: 'Yêu Cầu Hỗ Trợ Mới',
+      content: 'Hội viên Phạm Thu Trang (MEM101) vừa gửi yêu cầu hỗ trợ tìm đồ để quên tại Studio A.',
+      sentDate: '2026-09-20 08:31',
+      targetType: 'ACCOUNT',
+      targetId: 'REC01',
+      isRead: false
+    }
+  ],
+  // STRICT ERD: AuditLogs
+  auditLogs: [
+    {
+      logId: 'AUD01',
+      id: 'AUD01',
+      actionType: 'CREATE_PACKAGE',
+      targetTable: 'Packages',
+      timestamp: '2026-09-20 10:15',
+      details: 'Quản lý tạo mới gói tập Super VIP Pilates & Sauna (3.500.000 VND)',
+      accountId: 'manager@sportscenter.vn'
+    },
+    {
+      logId: 'AUD02',
+      id: 'AUD02',
+      actionType: 'RENEW_MEMBERSHIP',
+      targetTable: 'Subscriptions',
+      timestamp: '2026-09-19 15:30',
+      details: 'Lễ tân gia hạn thẻ +30 ngày cho hội viên Phạm Thu Trang (MEM101)',
+      accountId: 'letan@sportscenter.vn'
+    },
+    {
+      logId: 'AUD03',
+      id: 'AUD03',
+      actionType: 'CREATE_CLASS',
+      targetTable: 'Classes',
+      timestamp: '2026-09-18 11:00',
+      details: 'Phân công ca dạy lớp CLS04 (Pilates Reformer) cho HLV Lý Kim Ngân tại RM04',
+      accountId: 'manager@sportscenter.vn'
+    },
+    {
+      logId: 'AUD04',
+      id: 'AUD04',
+      actionType: 'ASSIGN_WORKOUT_PLAN',
+      targetTable: 'WorkoutPlans',
+      timestamp: '2026-09-18 09:30',
+      details: 'HLV Trần Hoàng Nam gán lộ trình "Giảm Mỡ & Săn Chắc 30 Ngày" cho hội viên MEM101',
+      accountId: 'coach.nam@sportscenter.vn'
+    }
   ]
 };
 
@@ -1051,6 +1200,11 @@ function getDataSource() {
     rooms: (initial.rooms && initial.rooms.length) ? initial.rooms : base.rooms,
     subscriptions: (initial.subscriptions && initial.subscriptions.length) ? initial.subscriptions : (base.subscriptions || []),
     payments: (initial.payments && initial.payments.length) ? initial.payments : (base.payments || []),
+    workoutPlans: (initial.workoutPlans && initial.workoutPlans.length) ? initial.workoutPlans : (base.workoutPlans || []),
+    memberPlans: (initial.memberPlans && initial.memberPlans.length) ? initial.memberPlans : (base.memberPlans || []),
+    supportTickets: (initial.supportTickets && initial.supportTickets.length) ? initial.supportTickets : (base.supportTickets || []),
+    notifications: (initial.notifications && initial.notifications.length) ? initial.notifications : (base.notifications || []),
+    auditLogs: (initial.auditLogs && initial.auditLogs.length) ? initial.auditLogs : (base.auditLogs || []),
     // Strictly ERD fields: ClassID, SubjectID, RoomID, CoachID, ScheduleTime, MaxCapacity, Status
     classes: (initial.classes && initial.classes.length) ? initial.classes.map((c, i) => {
       const baseClass = base.classes[i % base.classes.length];
@@ -1086,10 +1240,21 @@ let appState = {
   memberSearchKeyword: '',
   selectedClassForBooking: null,
   selectedPackageForCheckout: null,
-  receptionMode: 'GATE', // 'GATE' | 'POS' | 'LOOKUP' | 'SHIFT'
+  receptionMode: 'GATE', // 'GATE' | 'POS' | 'LOOKUP' | 'SHIFT' | 'TICKETS'
   receptionSearchQuery: '',
   receptionLastScan: null,
   receptionCartPackage: null,
+  posPaymentMethod: 'CASH', // 'CASH' | 'VNPAY_QR' | 'CARD'
+  posCashReceived: 0,
+  posCardLast4: '9812',
+  posVnpayPaid: false,
+  posCustInfo: {
+    name: '',
+    phone: '',
+    gender: 'Nam'
+  },
+  posReceiptModal: null,
+  receptionTicketFilter: 'ALL', // 'ALL' | 'PENDING' | 'RESOLVED'
   coachActiveTab: 'TODAY', // 'TODAY' | 'WEEK' | 'STUDENTS'
   calendarYear: 2026,
   calendarMonth: 8, // September 2026 (0-indexed)
@@ -1098,6 +1263,34 @@ let appState = {
   managerActiveModal: null, // null | 'CREATE_PACKAGE' | 'CREATE_CLASS' | 'RENEW_MEMBER'
   managerSelectedMemberForRenew: null,
   managerMemberSearch: '',
+  managerAuditSearch: '',
+  showNotificationDropdown: false,
+  supportTicketModalOpen: false,
+  coachSelectedMemberForWorkoutPlan: null,
+  coachWorkoutPlanModalOpen: false,
+  userProfileModalOpen: false,
+  userProfileActiveTab: 'INFO', // 'INFO' | 'SECURITY' | 'MEMBERSHIP'
+  userProfileDraftAvatar: null,
+  checkoutFlow: {
+    isOpen: false,
+    step: 'FORM', // 'FORM' | 'VNPAY' | 'CARD_PROCESSING' | 'RESULT'
+    package: null,
+    buyerInfo: {
+      lastName: 'Phạm',
+      firstName: 'Thu Trang',
+      phone: '0912345678'
+    },
+    paymentMethod: 'VNPAY', // 'VNPAY' | 'CARD'
+    cardInfo: {
+      number: '9704 1988 5678 9012',
+      holder: 'PHAM THU TRANG',
+      expiry: '10/29',
+      cvv: '888'
+    },
+    resultStatus: 'SUCCESS', // 'SUCCESS' | 'FAILED'
+    failureReason: '',
+    invoiceData: null
+  },
   data: getDataSource()
 };
 
@@ -1196,26 +1389,31 @@ function renderApp() {
     return;
   }
 
+  // Common modals
+  const modalSuffix = (appState.selectedSessionDetail ? renderSessionDetailModal() : '') +
+                      (appState.userProfileModalOpen ? renderUserProfileModal() : '') +
+                      (appState.posReceiptModal ? renderPOSReceiptModal() : '');
+
   // 1. MEMBER: Consumer Web App Portal
   if (appState.currentRole === 'MEMBER') {
-    root.innerHTML = renderMemberWebApp() + (appState.selectedSessionDetail ? renderSessionDetailModal() : '');
+    root.innerHTML = renderMemberWebApp() + modalSuffix;
     return;
   }
 
   // 2. RECEPTIONIST: Front-Desk Kiosk / POS Console
   if (appState.currentRole === 'RECEPTIONIST') {
-    root.innerHTML = renderReceptionistWebApp() + (appState.selectedSessionDetail ? renderSessionDetailModal() : '');
+    root.innerHTML = renderReceptionistWebApp() + modalSuffix;
     return;
   }
 
   // 3. COACH: Trainer Daily Hub
   if (appState.currentRole === 'COACH') {
-    root.innerHTML = renderCoachWebApp() + (appState.selectedSessionDetail ? renderSessionDetailModal() : '');
+    root.innerHTML = renderCoachWebApp() + modalSuffix;
     return;
   }
 
   // 4. MANAGER: Back-Office Admin Dashboard
-  root.innerHTML = renderManagerWebApp() + (appState.selectedSessionDetail ? renderSessionDetailModal() : '');
+  root.innerHTML = renderManagerWebApp() + modalSuffix;
   initChartsIfNeeded();
 }
 
@@ -1411,6 +1609,600 @@ function renderForgotPasswordForm() {
 }
 
 // =========================================================================
+// ERD ENTITIES HELPERS: AUDIT LOGS, NOTIFICATIONS, TICKETS, WORKOUT PLANS
+// =========================================================================
+
+function recordAuditLog(actionType, targetTable, details, accountId) {
+  if (!appState.data.auditLogs) appState.data.auditLogs = [];
+  const now = new Date();
+  const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const logId = 'AUD' + String(appState.data.auditLogs.length + 1).padStart(2, '0');
+  const newLog = {
+    logId: logId,
+    id: logId,
+    actionType: actionType,
+    targetTable: targetTable,
+    timestamp: timestamp,
+    details: details,
+    accountId: accountId || (appState.currentUser?.email || (appState.currentRole === 'MANAGER' ? 'manager@sportscenter.vn' : (appState.currentRole === 'COACH' ? 'coach.nam@sportscenter.vn' : (appState.currentRole === 'RECEPTIONIST' ? 'letan@sportscenter.vn' : 'member@sportscenter.vn'))))
+  };
+  appState.data.auditLogs.unshift(newLog);
+  return newLog;
+}
+
+function addNotification(title, content, targetType, targetId) {
+  if (!appState.data.notifications) appState.data.notifications = [];
+  const now = new Date();
+  const sentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const notifId = 'NOTIF' + String(appState.data.notifications.length + 1).padStart(2, '0');
+  const newNotif = {
+    notificationId: notifId,
+    id: notifId,
+    title: title,
+    content: content,
+    sentDate: sentDate,
+    targetType: targetType || 'ACCOUNT',
+    targetId: targetId || 'MEM101',
+    isRead: false
+  };
+  appState.data.notifications.unshift(newNotif);
+  return newNotif;
+}
+
+function toggleNotificationDropdown() {
+  appState.showNotificationDropdown = !appState.showNotificationDropdown;
+  renderApp();
+}
+
+function markAllNotificationsAsRead(role) {
+  const notifs = appState.data?.notifications || [];
+  notifs.forEach(n => {
+    n.isRead = true;
+  });
+  showToast('Thông Báo', 'Đã đánh dấu tất cả thông báo là đã đọc', 'success');
+  renderApp();
+}
+
+function markSingleNotificationAsRead(notifId) {
+  const notifs = appState.data?.notifications || [];
+  const target = notifs.find(n => (n.notificationId || n.id) === notifId);
+  if (target) {
+    target.isRead = true;
+    renderApp();
+  }
+}
+
+function renderNotificationBell(role) {
+  const allNotifs = appState.data?.notifications || [];
+  let userNotifs = [];
+  if (role === 'MEMBER') {
+    userNotifs = allNotifs.filter(n => n.targetId === 'MEM101' || n.targetType === 'CLASS');
+  } else if (role === 'RECEPTIONIST') {
+    userNotifs = allNotifs.filter(n => n.targetId === 'REC01' || n.targetType === 'ACCOUNT');
+  } else if (role === 'COACH') {
+    userNotifs = allNotifs.filter(n => n.targetId === 'COACH' || n.targetId === 'COA01' || n.targetType === 'CLASS');
+  } else {
+    userNotifs = allNotifs;
+  }
+  const unreadCount = userNotifs.filter(n => !n.isRead).length;
+  const isOpen = appState.showNotificationDropdown;
+
+  return `
+    <div class="relative inline-block text-left">
+      <button type="button" onclick="toggleNotificationDropdown()" class="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition focus:outline-none" title="Thông Báo Hệ Thống">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+        ${unreadCount > 0 ? `
+          <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
+            ${unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        ` : ''}
+      </button>
+
+      ${isOpen ? `
+        <div class="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white shadow-2xl border border-slate-200 py-3 z-50 animate-in fade-in zoom-in-95 duration-100">
+          <div class="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-xs text-slate-900 uppercase tracking-wider">Thông Báo (${unreadCount} mới)</span>
+            </div>
+            ${unreadCount > 0 ? `
+              <button type="button" onclick="markAllNotificationsAsRead('${role}')" class="text-[11px] font-semibold text-indigo-600 hover:underline">
+                Đánh dấu đã đọc
+              </button>
+            ` : ''}
+          </div>
+
+          <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+            ${userNotifs.length === 0 ? `
+              <div class="py-8 text-center text-xs text-slate-400">Không có thông báo nào.</div>
+            ` : userNotifs.map(n => `
+              <div onclick="markSingleNotificationAsRead('${n.notificationId || n.id}')" class="p-3.5 hover:bg-slate-50 transition cursor-pointer flex items-start space-x-3 ${!n.isRead ? 'bg-indigo-50/40' : ''}">
+                <div class="mt-0.5 w-2 h-2 rounded-full ${!n.isRead ? 'bg-indigo-600' : 'bg-transparent'} flex-shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold ${!n.isRead ? 'text-indigo-950 font-extrabold' : 'text-slate-800'} truncate">${n.title}</span>
+                    <span class="text-[10px] text-slate-400 ml-2 whitespace-nowrap">${n.sentDate}</span>
+                  </div>
+                  <p class="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">${n.content}</p>
+                  <div class="mt-1 flex items-center space-x-2">
+                    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${n.targetType === 'CLASS' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-600'}">
+                      ${n.targetType === 'CLASS' ? 'Lớp học' : 'Cá nhân'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+// Support Tickets: Member functions
+function openSupportTicketModal() {
+  appState.supportTicketModalOpen = true;
+  renderApp();
+}
+
+function closeSupportTicketModal() {
+  appState.supportTicketModalOpen = false;
+  renderApp();
+}
+
+function handleCreateSupportTicket(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const form = document.getElementById('support-ticket-form');
+  if (!form) return false;
+  const content = (form.querySelector('[name="ticket_content"]')?.value || '').trim();
+  if (!content) {
+    showToast('Lỗi Nhập Liệu', 'Vui lòng điền nội dung yêu cầu hỗ trợ hoặc phản ánh', 'error');
+    return false;
+  }
+
+  const tickets = appState.data?.supportTickets || [];
+  const newTicketId = 'TCK' + (tickets.length + 101);
+  const now = new Date();
+  const createdDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const newTicket = {
+    ticketId: newTicketId,
+    id: newTicketId,
+    memberId: 'MEM101',
+    memberName: 'Phạm Thu Trang',
+    receptionistId: 'REC01',
+    content: content,
+    createdDate: createdDate,
+    status: 'PENDING',
+    response: ''
+  };
+
+  tickets.unshift(newTicket);
+  
+  // Create notification for Receptionist
+  addNotification('Yêu Cầu Hỗ Trợ Mới Từ Hội Viên', `Hội viên Phạm Thu Trang (MEM101) vừa gửi yêu cầu: "${content.substring(0, 40)}..."`, 'ACCOUNT', 'REC01');
+
+  // Record audit log
+  recordAuditLog('CREATE_TICKET', 'SupportTickets', `Hội viên MEM101 gửi phiếu hỗ trợ ${newTicketId}`, 'MEM101');
+
+  closeSupportTicketModal();
+  showToast('Gửi Thành Công', 'Phiếu yêu cầu hỗ trợ đã được chuyển tới quầy lễ tân xử lý!', 'success');
+  return false;
+}
+
+function renderSupportTicketModal() {
+  return `
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+      <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="font-black text-lg text-slate-900">Gửi Yêu Cầu Hỗ Trợ & Phản Ánh</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Tiếp nhận khiếu nại, tìm đồ thất lạc, hoặc thắc mắc gói tập.</p>
+          </div>
+          <button type="button" onclick="closeSupportTicketModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold">&times;</button>
+        </div>
+
+        <form id="support-ticket-form" onsubmit="return handleCreateSupportTicket(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Hội viên gửi</label>
+            <input type="text" value="Phạm Thu Trang (Mã: MEM101)" disabled class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 cursor-not-allowed" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nội dung chi tiết yêu cầu <span class="text-rose-500">*</span></label>
+            <textarea name="ticket_content" rows="4" required placeholder="Mô tả cụ thể vấn đề (quên đồ tại phòng nào, thắc mắc số buổi, yêu cầu tư vấn...)" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
+          </div>
+
+          <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 flex items-start space-x-2">
+            <span class="font-bold">&bull;</span>
+            <span>Bộ phận Lễ tân quầy dịch vụ sẽ tiếp nhận và phản hồi phiếu của bạn trong vòng 15-30 phút làm việc.</span>
+          </div>
+
+          <div class="flex items-center justify-end space-x-3 pt-2">
+            <button type="button" onclick="closeSupportTicketModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Hủy</button>
+            <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">Gửi Yêu Cầu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+// Receptionist Support Ticket Management
+function setReceptionTicketFilter(filter) {
+  appState.receptionTicketFilter = filter;
+  renderApp();
+}
+
+function handleResolveSupportTicket(ticketId) {
+  const textarea = document.getElementById(`ticket-reply-${ticketId}`);
+  const responseText = textarea ? textarea.value.trim() : '';
+  if (!responseText) {
+    showToast('Thiếu Thông Tin', 'Vui lòng nhập nội dung giải quyết hoặc phản hồi cho hội viên', 'error');
+    return;
+  }
+
+  const tickets = appState.data?.supportTickets || [];
+  const ticket = tickets.find(t => (t.ticketId || t.id) === ticketId);
+  if (ticket) {
+    ticket.status = 'RESOLVED';
+    ticket.response = responseText;
+    ticket.receptionistId = 'REC01';
+
+    // Send notification to the member
+    addNotification('Phản Hồi Yêu Cầu Hỗ Trợ', `Quầy lễ tân đã chấp thuận & giải quyết phiếu #${ticketId}: "${responseText}"`, 'ACCOUNT', ticket.memberId);
+
+    // Record audit log
+    recordAuditLog('RESOLVE_TICKET', 'SupportTickets', `Lễ tân giải quyết phiếu ${ticketId} cho hội viên ${ticket.memberId}`, 'letan@sportscenter.vn');
+
+    showToast('Thành Công', `Đã giải quyết và gửi phản hồi phiếu #${ticketId} tới hội viên!`, 'success');
+    renderApp();
+  }
+}
+
+function handleRejectSupportTicket(ticketId) {
+  const textarea = document.getElementById(`ticket-reply-${ticketId}`);
+  const responseText = textarea ? textarea.value.trim() : '';
+  if (!responseText) {
+    showToast('Thiếu Lý Do', 'Vui lòng nhập lý do từ chối yêu cầu (do chính sách, quy chế...) để thông báo cho hội viên', 'error');
+    return;
+  }
+
+  const tickets = appState.data?.supportTickets || [];
+  const ticket = tickets.find(t => (t.ticketId || t.id) === ticketId);
+  if (ticket) {
+    ticket.status = 'REJECTED';
+    ticket.response = 'Từ chối: ' + responseText;
+    ticket.receptionistId = 'REC01';
+
+    // Send notification to the member
+    addNotification('Từ Chối Yêu Cầu Hỗ Trợ', `Quầy lễ tân đã phản hồi từ chối phiếu #${ticketId}: "${responseText}"`, 'ACCOUNT', ticket.memberId);
+
+    // Record audit log
+    recordAuditLog('REJECT_TICKET', 'SupportTickets', `Lễ tân từ chối phiếu ${ticketId} cho hội viên ${ticket.memberId} (Lý do: ${responseText})`, 'letan@sportscenter.vn');
+
+    showToast('Đã Từ Chối', `Đã từ chối phiếu #${ticketId} và gửi phản hồi cho hội viên!`, 'error');
+    renderApp();
+  }
+}
+
+function renderReceptionTicketsMode() {
+  const tickets = appState.data?.supportTickets || [];
+  const filter = appState.receptionTicketFilter || 'ALL';
+  const filteredTickets = tickets.filter(t => {
+    if (filter === 'PENDING') return t.status === 'PENDING';
+    if (filter === 'RESOLVED') return t.status === 'RESOLVED';
+    if (filter === 'REJECTED') return t.status === 'REJECTED';
+    return true;
+  });
+
+  const pendingCount = tickets.filter(t => t.status === 'PENDING').length;
+  const resolvedCount = tickets.filter(t => t.status === 'RESOLVED').length;
+  const rejectedCount = tickets.filter(t => t.status === 'REJECTED').length;
+
+  return `
+    <div class="space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+        <div>
+          <h2 class="text-xl font-black text-slate-900 tracking-tight">Tiếp Nhận & Xử Lý Yêu Cầu Hỗ Trợ (Support Tickets)</h2>
+          <p class="text-xs text-slate-500 mt-1">Xử lý các khiếu nại, hỗ trợ đồ thất lạc, giải quyết hoặc từ chối theo chính sách.</p>
+        </div>
+
+        <!-- Filter Pill -->
+        <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs flex-wrap gap-y-1">
+          <button type="button" onclick="setReceptionTicketFilter('ALL')" class="px-3 py-1.5 rounded-lg font-bold transition ${filter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
+            Tất Cả (${tickets.length})
+          </button>
+          <button type="button" onclick="setReceptionTicketFilter('PENDING')" class="px-3 py-1.5 rounded-lg font-bold transition ${filter === 'PENDING' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
+            Chờ Xử Lý (${pendingCount})
+          </button>
+          <button type="button" onclick="setReceptionTicketFilter('RESOLVED')" class="px-3 py-1.5 rounded-lg font-bold transition ${filter === 'RESOLVED' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
+            Đã Xong (${resolvedCount})
+          </button>
+          <button type="button" onclick="setReceptionTicketFilter('REJECTED')" class="px-3 py-1.5 rounded-lg font-bold transition ${filter === 'REJECTED' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
+            Từ Chối (${rejectedCount})
+          </button>
+        </div>
+      </div>
+
+      ${filteredTickets.length === 0 ? `
+        <div class="bg-white rounded-3xl p-12 text-center border border-slate-200">
+          <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center font-bold text-lg mb-3">✓</div>
+          <h3 class="font-bold text-slate-800 text-sm">Không có phiếu hỗ trợ nào trong danh mục này</h3>
+          <p class="text-xs text-slate-400 mt-1">Tất cả yêu cầu đã được giải quyết hoặc chưa có phát sinh mới.</p>
+        </div>
+      ` : `
+        <div class="grid grid-cols-1 gap-4">
+          ${filteredTickets.map(t => `
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-3">
+                  <span class="font-black text-sm text-slate-900">#${t.ticketId || t.id}</span>
+                  <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                    Hội viên: ${t.memberName || t.memberId} (${t.memberId})
+                  </span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <span class="text-[11px] text-slate-400">${t.createdDate}</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                    t.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                    t.status === 'REJECTED' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                    'bg-amber-50 text-amber-700 border border-amber-200'
+                  }">
+                    ${
+                      t.status === 'RESOLVED' ? 'Đã Giải Quyết' :
+                      t.status === 'REJECTED' ? 'Đã Từ Chối' :
+                      'Đang Chờ Xử Lý'
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Nội Dung Yêu Cầu:</div>
+                <div class="text-xs text-slate-800 mt-1 p-3.5 bg-slate-50 rounded-2xl border border-slate-100 leading-relaxed font-medium">
+                  "${t.content}"
+                </div>
+              </div>
+
+              ${t.status === 'RESOLVED' ? `
+                <div>
+                  <div class="text-[11px] font-bold uppercase text-emerald-700 tracking-wider">Phản Hồi Từ Lễ Tân (${t.receptionistId}):</div>
+                  <div class="text-xs text-emerald-900 mt-1 p-3.5 bg-emerald-50/50 rounded-2xl border border-emerald-100 leading-relaxed">
+                    ${t.response}
+                  </div>
+                </div>
+              ` : t.status === 'REJECTED' ? `
+                <div>
+                  <div class="text-[11px] font-bold uppercase text-rose-700 tracking-wider">Lý Do Từ Chối Từ Lễ Tân (${t.receptionistId}):</div>
+                  <div class="text-xs text-rose-900 mt-1 p-3.5 bg-rose-50/50 rounded-2xl border border-rose-100 leading-relaxed">
+                    ${t.response}
+                  </div>
+                </div>
+              ` : `
+                <div class="space-y-2 pt-2">
+                  <label class="block text-[11px] font-bold uppercase text-slate-600 tracking-wider">Nhập Câu Trả Lời Hoặc Lý Do Xử Lý:</label>
+                  <textarea id="ticket-reply-${t.ticketId || t.id}" rows="2" placeholder="Nhập kết quả xử lý hoặc lý do từ chối (ví dụ: Đã tìm thấy kính... hoặc: Gói tập đã quá thời hạn bảo lưu theo quy chế...)" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                  <div class="flex justify-end items-center space-x-3 pt-1">
+                    <button type="button" onclick="handleRejectSupportTicket('${t.ticketId || t.id}')" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition">
+                      Từ Chối Yêu Cầu
+                    </button>
+                    <button type="button" onclick="handleResolveSupportTicket('${t.ticketId || t.id}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
+                      Xác Nhận Giải Quyết & Gửi Thông Báo
+                    </button>
+                  </div>
+                </div>
+              `}
+            </div>
+          `).join('')}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+// Coach Workout Plan Assignment
+function openAssignWorkoutPlanModal(memberId) {
+  appState.coachSelectedMemberForWorkoutPlan = memberId;
+  appState.coachWorkoutPlanModalOpen = true;
+  renderApp();
+}
+
+function closeAssignWorkoutPlanModal() {
+  appState.coachWorkoutPlanModalOpen = false;
+  appState.coachSelectedMemberForWorkoutPlan = null;
+  renderApp();
+}
+
+function handleAssignWorkoutPlan(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const form = document.getElementById('assign-workout-plan-form');
+  if (!form) return false;
+  const memberId = appState.coachSelectedMemberForWorkoutPlan;
+  const planName = (form.querySelector('[name="plan_name"]')?.value || '').trim();
+  const duration = (form.querySelector('[name="plan_duration"]')?.value || '').trim();
+  const dueDate = form.querySelector('[name="due_date"]')?.value || '2026-10-31';
+  const exercises = (form.querySelector('[name="exercises"]')?.value || '').trim();
+
+  if (!planName || !exercises) {
+    showToast('Lỗi Nhập Liệu', 'Vui lòng điền đầy đủ tên giáo án và nội dung bài tập', 'error');
+    return false;
+  }
+
+  const workoutPlans = appState.data?.workoutPlans || [];
+  const memberPlans = appState.data?.memberPlans || [];
+
+  const newPlanId = 'WP' + String(workoutPlans.length + 1).padStart(2, '0');
+  const newMemberPlanId = 'MP' + String(memberPlans.length + 1).padStart(2, '0');
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const newPlan = {
+    planId: newPlanId,
+    id: newPlanId,
+    planName: planName,
+    duration: duration || '4 Tuần (3 buổi/tuần)',
+    exercises: exercises,
+    dueDate: dueDate,
+    createDate: todayStr,
+    coachId: 'COACH'
+  };
+  workoutPlans.push(newPlan);
+
+  const newMemberPlan = {
+    memberPlanId: newMemberPlanId,
+    id: newMemberPlanId,
+    memberId: memberId,
+    planId: newPlanId,
+    assignedDate: todayStr,
+    status: 'IN_PROGRESS'
+  };
+  memberPlans.push(newMemberPlan);
+
+  // Send notification to member
+  addNotification('HLV Giao Giáo Án Luyện Tập Riêng', `HLV Trần Hoàng Nam vừa thiết lập lộ trình "${planName}" cho bạn. Hãy kiểm tra mục Thể Trạng!`, 'ACCOUNT', memberId);
+
+  // Record audit log
+  recordAuditLog('ASSIGN_WORKOUT_PLAN', 'WorkoutPlans', `HLV gán giáo án ${planName} (${newPlanId}) cho học viên ${memberId}`, 'coach.nam@sportscenter.vn');
+
+  closeAssignWorkoutPlanModal();
+  showToast('Thành Công', `Đã giao giáo án "${planName}" cho học viên thành công!`, 'success');
+  return false;
+}
+
+function renderAssignWorkoutPlanModal() {
+  const memberId = appState.coachSelectedMemberForWorkoutPlan;
+  const rawMembers = appState.data?.members || [];
+  const member = resolveMember(rawMembers.find(m => m.id === memberId || m.memberId === memberId)) || { name: memberId, id: memberId };
+
+  return `
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+      <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="font-black text-lg text-slate-900">Thiết Kế & Giao Giáo Án Riêng (Workout Plan)</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Xây dựng lộ trình tập luyện cá nhân hóa theo chỉ số InBody.</p>
+          </div>
+          <button type="button" onclick="closeAssignWorkoutPlanModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold">&times;</button>
+        </div>
+
+        <form id="assign-workout-plan-form" onsubmit="return handleAssignWorkoutPlan(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Học viên nhận giáo án</label>
+            <input type="text" value="${member.name} (${member.id}) &bull; Mục tiêu: ${member.trainingGoal || 'Thể lực'}" disabled class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 cursor-not-allowed" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Tên Lộ Trình / Giáo Án <span class="text-rose-500">*</span></label>
+            <input type="text" name="plan_name" required placeholder="Ví dụ: Giảm Mỡ Siết Bụng & Nâng Cao Sức Bền 30 Ngày" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Thời Lượng (Duration)</label>
+              <input type="text" name="plan_duration" value="4 Tuần (3 buổi/tuần)" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Hạn Hoàn Thành (DueDate)</label>
+              <input type="date" name="due_date" value="2026-10-31" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nội dung các bài tập (Exercises) <span class="text-rose-500">*</span></label>
+            <textarea name="exercises" rows="3" required placeholder="Mô tả chuỗi bài tập cụ thể: Cardio khởi động (10p) - Squat/Plank 4 sets x 15 reps - Giãn cơ..." class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div class="flex items-center justify-end space-x-3 pt-2">
+            <button type="button" onclick="closeAssignWorkoutPlanModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Hủy</button>
+            <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">Lưu & Gán Cho Học Viên</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+// Manager Audit Logs
+function setManagerAuditSearch(keyword) {
+  appState.managerAuditSearch = keyword;
+  renderApp();
+}
+
+function renderManagerAuditLogs() {
+  const auditLogs = appState.data?.auditLogs || [];
+  const keyword = (appState.managerAuditSearch || '').toLowerCase().trim();
+  const filteredLogs = auditLogs.filter(log => {
+    if (!keyword) return true;
+    return (
+      (log.actionType || '').toLowerCase().includes(keyword) ||
+      (log.targetTable || '').toLowerCase().includes(keyword) ||
+      (log.details || '').toLowerCase().includes(keyword) ||
+      (log.accountId || '').toLowerCase().includes(keyword) ||
+      (log.logId || '').toLowerCase().includes(keyword)
+    );
+  });
+
+  return `
+    <div class="space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+        <div>
+          <h2 class="text-xl font-black text-slate-900 tracking-tight">Nhật Ký Kiểm Toán & Vết Thao Tác Hệ Thống (Audit Logs)</h2>
+          <p class="text-xs text-slate-500 mt-1">Truy vết toàn bộ các hành động thêm mới gói, phân công lớp, gia hạn thẻ và thao tác dữ liệu.</p>
+        </div>
+
+        <div class="w-full sm:w-72">
+          <input type="text" value="${appState.managerAuditSearch || ''}" oninput="setManagerAuditSearch(this.value)" placeholder="Tìm kiếm theo hành động, bảng, chi tiết..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3.5 px-4">Mã Log</th>
+                <th class="py-3.5 px-4">Loại Hành Động (ActionType)</th>
+                <th class="py-3.5 px-4">Bảng Dữ Liệu (TargetTable)</th>
+                <th class="py-3.5 px-4">Chi Tiết Thao Tác</th>
+                <th class="py-3.5 px-4">Tài Khoản Thực Hiện</th>
+                <th class="py-3.5 px-4">Thời Gian</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              ${filteredLogs.length === 0 ? `
+                <tr>
+                  <td colspan="6" class="py-8 text-center text-slate-400">Không tìm thấy bản ghi kiểm toán phù hợp.</td>
+                </tr>
+              ` : filteredLogs.map(log => `
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="py-3.5 px-4 font-mono font-bold text-slate-700">${log.logId || log.id}</td>
+                  <td class="py-3.5 px-4">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                      (log.actionType || '').includes('CREATE') ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
+                      (log.actionType || '').includes('RENEW') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                      (log.actionType || '').includes('RESOLVE') ? 'bg-teal-50 text-teal-700 border border-teal-200' :
+                      'bg-slate-100 text-slate-700 border border-slate-200'
+                    }">
+                      ${log.actionType}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-4 font-semibold text-slate-800">${log.targetTable}</td>
+                  <td class="py-3.5 px-4 text-slate-700 max-w-md">${log.details}</td>
+                  <td class="py-3.5 px-4 text-slate-500 font-mono text-[11px]">${log.accountId}</td>
+                  <td class="py-3.5 px-4 text-slate-400 whitespace-nowrap">${log.timestamp}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// =========================================================================
 // 2. MEMBER WEB APP: FULL CONSUMER PORTAL (TOP NAVBAR, 5 OPERATIONAL PAGES)
 // =========================================================================
 function renderMemberWebApp() {
@@ -1462,15 +2254,23 @@ function renderMemberWebApp() {
               <button type="button" onclick="switchTab('member-pass')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-pass' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Thẻ Điện Tử & Hóa Đơn
               </button>
+              <button type="button" onclick="switchTab('member-profile')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-profile' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+                Hồ Sơ Cá Nhân
+              </button>
             </nav>
           </div>
 
           <!-- User Info & Logout -->
           <div class="flex items-center space-x-4">
-            <div class="flex items-center space-x-3">
-              <img src="${member.avatar}" class="w-8 h-8 rounded-full border border-slate-200 object-cover" />
+            ${renderNotificationBell('MEMBER')}
+
+            <div class="flex items-center space-x-3 cursor-pointer hover:bg-slate-100/80 p-1.5 rounded-xl transition group" onclick="openUserProfileModal()" title="Xem & Chỉnh sửa hồ sơ cá nhân">
+              <img src="${member.avatar}" class="w-8 h-8 rounded-full border border-slate-200 object-cover group-hover:ring-2 group-hover:ring-indigo-500 transition" />
               <div class="hidden sm:block text-left">
-                <div class="text-xs font-bold text-slate-900">${member.name}</div>
+                <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition flex items-center space-x-1">
+                  <span>${member.name}</span>
+                  <span class="text-[10px] text-slate-400">⚙</span>
+                </div>
                 <div class="text-[11px] text-emerald-600 font-semibold">${member.status === 'ACTIVE' ? 'Thẻ Active' : 'Hết hạn'} &bull; ${member.activePackage}</div>
               </div>
             </div>
@@ -1488,6 +2288,7 @@ function renderMemberWebApp() {
           <button type="button" onclick="switchTab('member-schedule')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-schedule' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Lịch (${myBookedCount})</button>
           <button type="button" onclick="switchTab('member-fitness')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-fitness' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">InBody</button>
           <button type="button" onclick="switchTab('member-pass')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-pass' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Thẻ QR</button>
+          <button type="button" onclick="switchTab('member-profile')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-profile' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Hồ sơ</button>
         </div>
       </header>
 
@@ -1498,13 +2299,17 @@ function renderMemberWebApp() {
         ${currentTab === 'member-schedule' ? renderMemberMySchedule() : ''}
         ${currentTab === 'member-fitness' ? renderMemberFitnessStats() : ''}
         ${currentTab === 'member-pass' ? renderMemberDigitalPass() : ''}
+        ${currentTab === 'member-profile' ? renderMemberProfilePage() : ''}
       </main>
 
       <!-- Member Booking Modal (If Open) -->
       ${appState.selectedClassForBooking ? renderMemberBookingModal() : ''}
 
       <!-- Member Package Checkout Modal (If Open) -->
-      ${appState.selectedPackageForCheckout ? renderMemberCheckoutModal() : ''}
+      ${(appState.checkoutFlow?.isOpen || appState.selectedPackageForCheckout) ? renderMemberCheckoutModal() : ''}
+
+      <!-- Member Support Ticket Modal (If Open) -->
+      ${appState.supportTicketModalOpen ? renderSupportTicketModal() : ''}
 
       <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
         Sports Center Management Portal &bull; SWP391 FA26 Topic 04 &bull; FPT University
@@ -1822,6 +2627,70 @@ function renderMemberFitnessStats() {
         </p>
       </div>
 
+      <!-- Personal Workout Plans Card (Strict ERD: WorkoutPlans & MemberPlan) -->
+      ${(() => {
+        const myMemberPlans = (appState.data?.memberPlans || []).filter(mp => mp.memberId === member.id);
+        const workoutPlans = appState.data?.workoutPlans || [];
+        const assignedPlans = myMemberPlans.map(mp => {
+          const plan = workoutPlans.find(wp => (wp.planId || wp.id) === mp.planId);
+          return {
+            ...mp,
+            plan: plan || { planName: 'Giáo án cá nhân', duration: '4 tuần', exercises: 'Đang cập nhật', dueDate: '2026-10-31' }
+          };
+        });
+
+        return `
+          <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                  Lộ Trình Giáo Án Riêng Do HLV Phụ Trách (Workout Plans)
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Giáo án luyện tập chuyên biệt thiết kế riêng cho mục tiêu và thể trạng của bạn.</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                ${assignedPlans.length} lộ trình đã giao
+              </span>
+            </div>
+
+            ${assignedPlans.length === 0 ? `
+              <div class="p-6 text-center bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-400">
+                Bạn chưa có giáo án riêng nào được giao. HLV sẽ thiết kế lộ trình sau khi hoàn thành buổi kiểm tra InBody đầu tiên!
+              </div>
+            ` : `
+              <div class="space-y-3">
+                ${assignedPlans.map(item => `
+                  <div class="p-4 rounded-xl border border-slate-200 hover:border-indigo-200 bg-slate-50/50 hover:bg-indigo-50/20 transition space-y-2">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+                      <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span class="font-bold text-xs text-slate-900">${item.plan.planName}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">(${item.planId})</span>
+                      </div>
+                      <div class="flex items-center space-x-2">
+                        <span class="text-[11px] text-slate-500 font-medium">Thời lượng: <b>${item.plan.duration}</b></span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${item.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'}">
+                          ${item.status === 'COMPLETED' ? 'Đã hoàn thành' : 'Đang thực hiện'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-lg border border-slate-200 text-xs text-slate-700 font-medium leading-relaxed">
+                      <span class="font-bold text-indigo-700">Chi tiết bài tập:</span> ${item.plan.exercises}
+                    </div>
+
+                    <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+                      <span>Ngày bắt đầu: <b>${item.assignedDate}</b></span>
+                      <span>Hạn hoàn thành: <b class="text-rose-600">${item.plan.dueDate}</b></span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+        `;
+      })()}
+
       <!-- Coach Feedbacks History -->
       <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4">
         <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
@@ -1943,6 +2812,73 @@ function renderMemberDigitalPass() {
           </table>
         </div>
       </div>
+
+      <!-- Support Tickets & Inquiries (Strict ERD: SupportTickets) -->
+      ${(() => {
+        const myTickets = (appState.data?.supportTickets || []).filter(t => t.memberId === member.id);
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">Phiếu Yêu Cầu Hỗ Trợ & Khiếu Nại (Support Tickets)</h3>
+                <div class="text-xs text-slate-400">Gửi phản hồi trực tiếp tới quầy lễ tân khi gặp sự cố, quên đồ hoặc cần trợ giúp</div>
+              </div>
+              <button type="button" onclick="openSupportTicketModal()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
+                + Gửi Yêu Cầu Hỗ Trợ Mới
+              </button>
+            </div>
+
+            ${myTickets.length === 0 ? `
+              <div class="py-6 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-100">
+                Bạn chưa gửi yêu cầu hỗ trợ nào. Khi cần hỗ trợ hãy bấm vào nút phía trên!
+              </div>
+            ` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-y border-slate-200">
+                    <tr>
+                      <th class="py-3 px-4">Mã Phiếu</th>
+                      <th class="py-3 px-4">Nội Dung Yêu Cầu</th>
+                      <th class="py-3 px-4">Thời Gian Gửi</th>
+                      <th class="py-3 px-4">Trạng Thái</th>
+                      <th class="py-3 px-4">Phản Hồi Lễ Tân</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${myTickets.map(t => `
+                      <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3.5 px-4 font-mono font-bold text-slate-900">${t.ticketId || t.id}</td>
+                        <td class="py-3.5 px-4 text-slate-800 font-medium max-w-xs">${t.content}</td>
+                        <td class="py-3.5 px-4 text-slate-400 whitespace-nowrap">${t.createdDate}</td>
+                        <td class="py-3.5 px-4">
+                          <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            t.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            t.status === 'REJECTED' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                            'bg-amber-50 text-amber-700 border border-amber-200'
+                          }">
+                            ${
+                              t.status === 'RESOLVED' ? 'Đã Giải Quyết' :
+                              t.status === 'REJECTED' ? 'Từ Chối' :
+                              'Đang Chờ'
+                            }
+                          </span>
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-600 max-w-xs">
+                          ${
+                            t.status === 'REJECTED' ? `<span class="text-rose-700 font-medium">${t.response}</span>` :
+                            t.status === 'RESOLVED' ? `<span class="text-emerald-800 font-medium">${t.response}</span>` :
+                            '<span class="italic text-slate-400">Lễ tân đang kiểm tra...</span>'
+                          }
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        `;
+      })()}
     </div>
   `;
 }
@@ -1999,64 +2935,976 @@ function renderMemberBookingModal() {
   `;
 }
 
+// =========================================================================
+// MEMBER CHECKOUT: 2-COLUMN SHOPEE-STYLE CHECKOUT, VNPAY-QR & RESULT CARD
+// =========================================================================
+
 function renderMemberCheckoutModal() {
-  const pkg = appState.selectedPackageForCheckout;
-  if (!pkg) return '';
+  const flow = appState.checkoutFlow;
+  const pkg = (flow && flow.package) ? flow.package : appState.selectedPackageForCheckout;
+  if (!pkg || (flow && !flow.isOpen && !appState.selectedPackageForCheckout)) return '';
+
+  const step = flow ? flow.step : 'FORM';
 
   return `
-    <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fade-in">
-        <div class="flex justify-between items-start">
+    <div class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex justify-center items-start overflow-y-auto p-2 sm:p-5 animate-fade-in">
+      ${step === 'FORM' ? renderShopeeCheckoutForm(pkg, flow) : ''}
+      ${step === 'VNPAY' ? renderShopeeCheckoutVnpayGateway(pkg, flow) : ''}
+      ${step === 'CARD_PROCESSING' ? renderShopeeCheckoutCardGateway(pkg, flow) : ''}
+      ${step === 'RESULT' ? renderShopeeCheckoutResultCard(pkg, flow) : ''}
+    </div>
+  `;
+}
+
+function renderShopeeCheckoutForm(pkg, flow) {
+  const buyer = flow?.buyerInfo || { lastName: 'Phạm', firstName: 'Thu Trang', phone: '0912345678' };
+  const card = flow?.cardInfo || { number: '9704 1988 5678 9012', holder: 'PHAM THU TRANG', expiry: '10/29', cvv: '888' };
+  const method = flow?.paymentMethod || 'VNPAY';
+
+  return `
+    <div class="bg-white rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-3.5 my-auto animate-in fade-in zoom-in-95 duration-150">
+      <!-- Checkout Header -->
+      <div class="flex justify-between items-start pb-3 border-b border-slate-100">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wider">
+              Sports Center Checkout
+            </span>
+            <span class="text-xs text-slate-400 font-semibold">&bull; Bảo mật PCI-DSS</span>
+          </div>
+          <h2 class="text-lg sm:text-xl font-black text-slate-900 mt-1 tracking-tight">Thanh Toán Gói Tập Hội Viên</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Xác nhận thông tin đăng ký và kích hoạt thẻ tự động sau khi thanh toán.</p>
+        </div>
+        <button type="button" onclick="closeCheckoutModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-bold text-lg transition">
+          &times;
+        </button>
+      </div>
+
+      <!-- 2-Column Shopee Layout: Left Details, Right Payment Form -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        
+        <!-- LEFT COLUMN: Chi Tiết Gói Tập (5 Cols) -->
+        <div class="lg:col-span-5 bg-gradient-to-br from-slate-50 via-indigo-50/20 to-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-3.5">
           <div>
-            <div class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Thanh Toán Trực Tuyến</div>
-            <h3 class="text-lg font-black text-slate-900 mt-0.5">Xác Nhận Đăng Ký Gói Tập</h3>
+            <div class="flex items-center justify-between">
+              <span class="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white shadow-xs">
+                ${pkg.type || 'ALL-ACCESS'}
+              </span>
+              <span class="text-xs font-bold text-slate-500">${pkg.durationDays} Ngày Sử Dụng</span>
+            </div>
+            <h3 class="text-base sm:text-lg font-black text-slate-900 mt-2 leading-snug">${pkg.name || pkg.packageName}</h3>
+            <p class="text-xs text-slate-600 mt-1 leading-relaxed">${pkg.description || 'Gói tập chất lượng cao với quyền lợi đầy đủ tại Sports Center.'}</p>
           </div>
-          <button type="button" onclick="closeCheckoutModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+
+          <!-- Price Box -->
+          <div class="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs space-y-1.5">
+            <div class="flex justify-between items-center text-xs text-slate-500">
+              <span>Đơn giá niêm yết:</span>
+              <span class="line-through text-slate-400">${((pkg.price || 0) * 1.2).toLocaleString()} đ</span>
+            </div>
+            <div class="flex justify-between items-center text-xs text-emerald-600 font-bold">
+              <span>Ưu đãi thành viên mới:</span>
+              <span>-20% Ưu Đãi</span>
+            </div>
+            <div class="pt-1.5 border-t border-slate-100 flex justify-between items-baseline">
+              <span class="text-xs font-bold text-slate-900">Tổng thanh toán:</span>
+              <span class="text-lg sm:text-xl font-black text-indigo-700">${(pkg.price || 0).toLocaleString()} <span class="text-xs font-bold">VND</span></span>
+            </div>
+          </div>
+
+          <!-- Perks Checklist -->
+          <div class="space-y-2 pt-0.5">
+            <div class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Đặc quyền hội viên đi kèm:</div>
+            <div class="space-y-1.5 text-xs text-slate-700">
+              <div class="flex items-center space-x-2">
+                <span class="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold">✓</span>
+                <span>Check-in tự động cổng Turnstile không giới hạn</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold">✓</span>
+                <span>Miễn phí tủ đồ Locker thông minh và phòng tắm nóng lạnh</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold">✓</span>
+                <span>Đo InBody định kỳ & nhận giáo án tập luyện từ HLV</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold">✓</span>
+                <span>Quyền đặt trước lịch học Yoga, Boxing, Zumba, Pilates</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
-          <div class="flex justify-between">
+        <!-- RIGHT COLUMN: Form Thông Tin & Thanh Toán (7 Cols) -->
+        <div class="lg:col-span-7 space-y-3.5">
+          <!-- Step 1: Buyer Information -->
+          <div class="space-y-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[11px] font-bold">1</span>
+              <h4 class="text-xs font-black uppercase text-slate-800 tracking-wider">Thông Tin Khách Hàng (Họ, Tên, Số Điện Thoại)</h4>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Họ Đệm <span class="text-rose-500">*</span></label>
+                <input type="text" id="checkout-buyer-lastname" value="${buyer.lastName}" oninput="updateCheckoutBuyerInfo('lastName', this.value)" placeholder="Ví dụ: Phạm" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Tên <span class="text-rose-500">*</span></label>
+                <input type="text" id="checkout-buyer-firstname" value="${buyer.firstName}" oninput="updateCheckoutBuyerInfo('firstName', this.value)" placeholder="Ví dụ: Thu Trang" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Số Điện Thoại Nhận Thông Báo <span class="text-rose-500">*</span></label>
+              <input type="tel" id="checkout-buyer-phone" value="${buyer.phone}" oninput="updateCheckoutBuyerInfo('phone', this.value)" placeholder="0912345678" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+          </div>
+
+          <!-- Step 2: Payment Method Selection -->
+          <div class="space-y-2.5 pt-1">
+            <div class="flex items-center space-x-2">
+              <span class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[11px] font-bold">2</span>
+              <h4 class="text-xs font-black uppercase text-slate-800 tracking-wider">Phương Thức Thanh Toán Trực Tuyến</h4>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <!-- VNPAY-QR Card -->
+              <div onclick="setCheckoutPaymentMethod('VNPAY')" class="p-3 rounded-xl border cursor-pointer transition flex items-start space-x-2.5 ${method === 'VNPAY' ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs' : 'bg-white border-slate-200 hover:border-slate-300'}">
+                <input type="radio" name="checkout_method_radio" value="VNPAY" ${method === 'VNPAY' ? 'checked' : ''} class="mt-1 text-indigo-600 focus:ring-indigo-500" />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-1.5">
+                    <span class="font-black text-xs text-slate-900">Cổng VNPAY-QR</span>
+                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-200">Phổ biến</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">Quét mã QR từ 40+ app ngân hàng & Ví VNPAY.</p>
+                </div>
+              </div>
+
+              <!-- Credit/Debit Card -->
+              <div onclick="setCheckoutPaymentMethod('CARD')" class="p-3 rounded-xl border cursor-pointer transition flex items-start space-x-2.5 ${method === 'CARD' ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs' : 'bg-white border-slate-200 hover:border-slate-300'}">
+                <input type="radio" name="checkout_method_radio" value="CARD" ${method === 'CARD' ? 'checked' : ''} class="mt-1 text-indigo-600 focus:ring-indigo-500" />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-1.5">
+                    <span class="font-black text-xs text-slate-900">Thẻ Quốc Tế / ATM</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">Thanh toán bằng thẻ Visa, Mastercard hoặc Napas.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Conditional Details: If Card is selected -->
+            ${method === 'CARD' ? `
+              <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5 animate-in fade-in duration-100">
+                <div class="flex items-center justify-between pb-1 border-b border-slate-200">
+                  <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Thông Tin Thẻ Thanh Toán</span>
+                  <div class="flex items-center space-x-1.5">
+                    <!-- Visa SVG Logo -->
+                    <div class="h-6 px-1.5 py-0.5 bg-white border border-slate-200 rounded flex items-center justify-center shadow-2xs" title="Visa">
+                      <svg class="h-3 w-auto" viewBox="0 0 36 12" fill="none">
+                        <path d="M14.5 0.5L9.6 11.5H6.4L3.9 2.5C3.8 2 3.6 1.7 3.1 1.4C2.3 1 1.1 0.7 0 0.5L0.1 0.2H5.3C6 0.2 6.6 0.7 6.8 1.4L8 8.2L11.3 0.2H14.5V0.5ZM27.3 7.8C27.3 4.8 23.1 4.6 23.2 3.3C23.3 2.9 23.7 2.4 24.5 2.3C25 2.2 26.2 2.2 27.4 2.7L27.9 0.4C27.3 0.2 26.4 0 25.3 0C22.2 0 20 1.6 20 4C19.9 5.8 21.6 6.7 22.8 7.3C24 7.9 24.5 8.3 24.5 8.8C24.4 9.6 23.4 10 22.6 10C21 10 20.1 9.5 19.3 9.1L18.8 11.5C19.6 11.9 21.1 12.2 22.5 12.2C25.7 12.2 27.9 10.6 27.9 8.2L27.3 7.8ZM35.7 11.5H38.5L36 0.2H33.4C32.8 0.2 32.3 0.6 32.1 1.1L27.4 11.5H30.6L31.2 9.8H35.2L35.7 11.5ZM32.1 7.4L33.7 3.1L34.7 7.4H32.1ZM18.8 0.2L16.3 11.5H13.2L15.7 0.2H18.8Z" fill="#1434CB"/>
+                      </svg>
+                    </div>
+                    <!-- Mastercard SVG Logo -->
+                    <div class="h-6 px-1.5 py-0.5 bg-white border border-slate-200 rounded flex items-center justify-center shadow-2xs" title="Mastercard">
+                      <svg class="h-3.5 w-auto" viewBox="0 0 28 18" fill="none">
+                        <circle cx="10" cy="9" r="6.5" fill="#EB001B"/>
+                        <circle cx="18" cy="9" r="6.5" fill="#F79E1B"/>
+                        <path d="M14 4.13A6.47 6.47 0 0 0 11.6 9 6.47 6.47 0 0 0 14 13.87 6.47 6.47 0 0 0 16.4 9 6.47 6.47 0 0 0 14 4.13Z" fill="#FF5F00"/>
+                      </svg>
+                    </div>
+                    <!-- Napas SVG Logo -->
+                    <div class="h-6 px-1.5 py-0.5 bg-white border border-slate-200 rounded flex items-center justify-center shadow-2xs" title="Napas">
+                      <svg class="h-3 w-auto" viewBox="0 0 54 16" fill="none">
+                        <path d="M2 13V3h3.5l4 6.5V3H13v10H9.5L5.5 6.5V13H2z" fill="#005BAA"/>
+                        <path d="M18 13l-1-2.5h-4L12 13h-2.5l4.5-10h2.5l4.5 10H18zm-3-8l-1.5 4h3L15 5z" fill="#005BAA"/>
+                        <path d="M22 13V3h4c2.5 0 4 1.2 4 3.5s-1.5 3.5-4 3.5h-2v3H22zm2-5h2c1.2 0 2-.5 2-1.5s-.8-1.5-2-1.5h-2v3z" fill="#005BAA"/>
+                        <path d="M33 13l-1-2.5h-4L27 13h-2.5l4.5-10h2.5l4.5 10H33zm-3-8l-1.5 4h3L30 5z" fill="#005BAA"/>
+                        <path d="M38 13.2c-2.5 0-4.2-1.2-4.2-3.2h2.5c0 1 .8 1.5 1.7 1.5 1 0 1.6-.4 1.6-1 0-.7-.5-1-1.7-1.3l-1.2-.3c-2-.5-2.8-1.4-2.8-2.7 0-1.8 1.6-3.2 3.8-3.2 2.2 0 3.7 1.2 3.8 2.8H41c0-.8-.7-1.3-1.5-1.3-.9 0-1.4.4-1.4.9 0 .6.5.9 1.5 1.1l1.1.3c2.2.5 3 1.4 3 2.8 0 2-1.7 3.3-4.2 3.3z" fill="#005BAA"/>
+                        <circle cx="48" cy="8" r="3" fill="#EE2E24"/>
+                        <circle cx="50.5" cy="5" r="2" fill="#F7941D"/>
+                        <circle cx="50.5" cy="11" r="2" fill="#00A850"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">Số Thẻ (16 chữ số) <span class="text-rose-500">*</span></label>
+                  <input type="text" id="checkout-card-number" maxlength="19" value="${card.number}" oninput="updateCheckoutCardInfo('number', this.value)" placeholder="9704 1988 5678 9012" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">Tên In Trên Thẻ (Không dấu) <span class="text-rose-500">*</span></label>
+                  <input type="text" id="checkout-card-holder" value="${card.holder}" oninput="updateCheckoutCardInfo('holder', this.value)" placeholder="PHAM THU TRANG" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs uppercase font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Ngày Hết Hạn <span class="text-rose-500">*</span></label>
+                    <input type="text" id="checkout-card-expiry" maxlength="5" value="${card.expiry}" oninput="updateCheckoutCardInfo('expiry', this.value)" placeholder="MM/YY (10/29)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Mã Bảo Mật CVV <span class="text-rose-500">*</span></label>
+                    <input type="password" id="checkout-card-cvv" maxlength="4" value="${card.cvv}" oninput="updateCheckoutCardInfo('cvv', this.value)" placeholder="•••" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <div class="p-3 bg-indigo-50/40 rounded-xl border border-indigo-100 text-xs text-indigo-950 flex items-start space-x-2.5">
+                <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex-shrink-0 flex items-center justify-center font-bold text-xs">QR</div>
+                <div class="space-y-0.5">
+                  <div class="font-bold text-xs">Mã QR Thanh Toán Tức Thì VNPAY</div>
+                  <div class="text-[11px] text-slate-600 leading-relaxed">
+                    Sau khi bấm tiếp tục, hệ thống sẽ mở mã QR VNPAY chính hãng. Bạn chỉ cần mở app ngân hàng quét mã và xác nhận chuyển tiền.
+                  </div>
+                </div>
+              </div>
+            `}
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2.5">
+            <button type="button" onclick="closeCheckoutModal()" class="w-full sm:w-auto px-5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition">
+              Hủy Bỏ
+            </button>
+            <button type="button" onclick="handleProceedToPayment()" class="w-full sm:flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition flex items-center justify-center space-x-2">
+              <span>${method === 'VNPAY' ? 'Tiếp Tục Với Cổng VNPAY-QR' : 'Thanh Toán ' + (pkg.price || 0).toLocaleString() + ' VND Ngay'}</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderShopeeCheckoutVnpayGateway(pkg, flow) {
+  const orderId = flow?.orderId || ('VNP' + Math.floor(100000 + Math.random() * 900000));
+  const buyer = flow?.buyerInfo || { lastName: 'Phạm', firstName: 'Thu Trang', phone: '0912345678' };
+
+  return `
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 my-auto animate-in fade-in zoom-in-95 duration-150 text-center">
+      <!-- VNPAY Brand Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2 text-left">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-rose-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
+            VNP
+          </div>
+          <div>
+            <div class="font-black text-xs sm:text-sm tracking-tight text-slate-900 leading-tight">CỔNG THANH TOÁN VNPAY-QR</div>
+            <div class="text-[10px] text-slate-400 font-semibold">Giao dịch thanh toán trực tuyến an toàn</div>
+          </div>
+        </div>
+        <button type="button" onclick="closeCheckoutModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold">&times;</button>
+      </div>
+
+      <!-- Order Summary Card -->
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-1.5 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-500">Đơn vị thụ hưởng:</span>
+          <span class="font-bold text-slate-900">SPORTS CENTER VIETNAM</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">Gói đăng ký:</span>
+          <span class="font-bold text-indigo-700">${pkg.name || pkg.packageName} (${pkg.durationDays} Ngày)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">Mã giao dịch (Order ID):</span>
+          <span class="font-mono font-bold text-slate-800">${orderId}</span>
+        </div>
+        <div class="flex justify-between pt-1.5 border-t border-slate-200 text-sm">
+          <span class="font-bold text-slate-900">Số tiền cần thanh toán:</span>
+          <span class="font-black text-rose-600 text-base">${(pkg.price || 0).toLocaleString()} VND</span>
+        </div>
+      </div>
+
+      <!-- QR Code Display Container -->
+      <div class="space-y-2.5">
+        <div class="relative mx-auto w-48 h-48 p-2.5 bg-white rounded-2xl border-2 border-indigo-500 shadow-md flex flex-col items-center justify-center">
+          <!-- Stylized QR Code SVG -->
+          <svg class="w-full h-full text-slate-900" viewBox="0 0 200 200" fill="currentColor">
+            <!-- Position Marks -->
+            <rect x="10" y="10" width="50" height="50" rx="6" fill="#1e1b4b" />
+            <rect x="20" y="20" width="30" height="30" rx="3" fill="#ffffff" />
+            <rect x="27" y="27" width="16" height="16" rx="2" fill="#4338ca" />
+
+            <rect x="140" y="10" width="50" height="50" rx="6" fill="#1e1b4b" />
+            <rect x="150" y="20" width="30" height="30" rx="3" fill="#ffffff" />
+            <rect x="157" y="27" width="16" height="16" rx="2" fill="#4338ca" />
+
+            <rect x="10" y="140" width="50" height="50" rx="6" fill="#1e1b4b" />
+            <rect x="20" y="150" width="30" height="30" rx="3" fill="#ffffff" />
+            <rect x="27" y="157" width="16" height="16" rx="2" fill="#4338ca" />
+
+            <!-- Random simulated QR data grid -->
+            <rect x="70" y="20" width="12" height="12" rx="2" fill="#1e1b4b" />
+            <rect x="90" y="15" width="12" height="12" rx="2" fill="#1e1b4b" />
+            <rect x="115" y="25" width="12" height="12" rx="2" fill="#1e1b4b" />
+            <rect x="75" y="45" width="14" height="14" rx="2" fill="#1e1b4b" />
+            <rect x="105" y="45" width="16" height="16" rx="2" fill="#4338ca" />
+
+            <rect x="25" y="75" width="14" height="14" rx="2" fill="#1e1b4b" />
+            <rect x="45" y="85" width="14" height="14" rx="2" fill="#4338ca" />
+            <rect x="75" y="75" width="14" height="14" rx="2" fill="#1e1b4b" />
+            <rect x="100" y="80" width="12" height="12" rx="2" fill="#1e1b4b" />
+            <rect x="125" y="75" width="14" height="14" rx="2" fill="#1e1b4b" />
+            <rect x="150" y="85" width="14" height="14" rx="2" fill="#4338ca" />
+
+            <rect x="75" y="115" width="14" height="14" rx="2" fill="#1e1b4b" />
+            <rect x="100" y="110" width="18" height="18" rx="2" fill="#4338ca" />
+            <rect x="130" y="115" width="14" height="14" rx="2" fill="#1e1b4b" />
+
+            <rect x="70" y="150" width="14" height="14" rx="2" fill="#1e1b4b" />
+            <rect x="95" y="160" width="16" height="16" rx="2" fill="#1e1b4b" />
+            <rect x="125" y="150" width="14" height="14" rx="2" fill="#4338ca" />
+            <rect x="150" y="160" width="14" height="14" rx="2" fill="#1e1b4b" />
+            <rect x="170" y="145" width="14" height="14" rx="2" fill="#1e1b4b" />
+
+            <!-- Center Logo Badge -->
+            <rect x="78" y="78" width="44" height="44" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" />
+            <text x="100" y="104" font-size="11" font-weight="900" fill="#4338ca" text-anchor="middle" font-family="sans-serif">VNPAY</text>
+          </svg>
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="flex items-center justify-center space-x-1.5 text-xs text-slate-500">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Mã QR sẽ hết hiệu lực sau: <b class="font-mono text-indigo-700">14:52</b></span>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-left text-[11px] text-slate-600 space-y-1">
+        <div class="font-bold text-slate-800">Hướng dẫn quét mã thanh toán:</div>
+        <div>1. Mở ứng dụng Ngân hàng (Vietcombank, MB, Techcombank...) hoặc Ví VNPAY.</div>
+        <div>2. Chọn tính năng <b>Quét QR (QR Pay)</b> và hướng camera về mã trên.</div>
+        <div>3. Kiểm tra số tiền <b>${(pkg.price || 0).toLocaleString()} VND</b> và bấm <b>Xác nhận chuyển tiền</b>.</div>
+      </div>
+
+      <!-- Simulation Action Buttons -->
+      <div class="space-y-2 pt-1">
+        <button type="button" onclick="handleSimulatePaymentSuccess()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center space-x-2">
+          <span>✔ [Mô Phỏng] Ngân Hàng Xác Nhận Đã Nhận Tiền Thành Công</span>
+        </button>
+        <button type="button" onclick="handleSimulatePaymentFailure('Giao dịch bị từ chối hoặc người dùng hủy thao tác quét mã VNPAY.')" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl transition">
+          ✕ [Mô Phỏng] Giả Lập Thanh Toán Thất Bại / Hủy Bỏ
+        </button>
+        <button type="button" onclick="handleBackToCheckoutForm()" class="text-xs text-slate-500 hover:text-slate-800 hover:underline font-semibold pt-0.5">
+          &larr; Quay lại form chọn phương thức khác
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderShopeeCheckoutCardGateway(pkg, flow) {
+  const card = flow?.cardInfo || { number: '9704 1988 5678 9012' };
+  const last4 = (card.number || '9012').replace(/\s/g, '').slice(-4);
+
+  return `
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 my-auto animate-in fade-in zoom-in-95 duration-150 text-center">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2 text-left">
+          <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs">
+            3DS
+          </div>
+          <div>
+            <div class="font-bold text-xs text-slate-900 uppercase">Xác Thực Thẻ 3D-Secure</div>
+            <div class="text-[10px] text-slate-400">Bảo mật giao dịch trực tuyến</div>
+          </div>
+        </div>
+        <button type="button" onclick="closeCheckoutModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold">&times;</button>
+      </div>
+
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-1.5 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-500">Thẻ thanh toán:</span>
+          <span class="font-mono font-bold text-slate-900">•••• •••• •••• ${last4}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">Số tiền giao dịch:</span>
+          <span class="font-black text-indigo-700 text-sm">${(pkg.price || 0).toLocaleString()} VND</span>
+        </div>
+      </div>
+
+      <div class="space-y-2.5">
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Mã xác thực giao dịch một lần (OTP) đã được gửi đến số điện thoại đăng ký thẻ của bạn.
+        </p>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Nhập mã xác thực OTP (6 chữ số)</label>
+          <input type="text" id="card-otp-input" value="888888" maxlength="6" class="w-44 mx-auto px-3 py-2.5 bg-white border-2 border-indigo-500 rounded-xl text-center font-mono font-black text-lg tracking-widest text-slate-900 shadow-inner focus:outline-none" />
+        </div>
+        <div class="text-[10px] text-slate-400">Mã có hiệu lực trong 02:00 phút. Điền sẵn mã mẫu: <b>888888</b></div>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <button type="button" onclick="handleSimulatePaymentSuccess()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition">
+          Xác Nhận Mã OTP & Hoàn Tất Trừ Tiền
+        </button>
+        <button type="button" onclick="handleSimulatePaymentFailure('Mã OTP không chính xác hoặc ngân hàng từ chối trừ tiền.')" class="w-full py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold text-xs rounded-xl transition">
+          Hủy Bỏ Giao Dịch
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderShopeeCheckoutResultCard(pkg, flow) {
+  const isSuccess = flow?.resultStatus === 'SUCCESS';
+  const invoice = flow?.invoiceData || { id: 'INV1001', date: '2026-09-23 12:55', paymentMethod: 'Cổng VNPAY-QR' };
+  const buyer = flow?.buyerInfo || { lastName: 'Phạm', firstName: 'Thu Trang', phone: '0912345678' };
+
+  return `
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 my-auto animate-in fade-in zoom-in-95 duration-150 text-center">
+      ${isSuccess ? `
+        <!-- SUCCESS STATE: TICK XANH LÁ LỚN -->
+        <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-inner ring-8 ring-emerald-50">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+            Giao Dịch Thành Công
+          </span>
+          <h3 class="text-lg sm:text-xl font-black text-slate-900 mt-1 tracking-tight">THANH TOÁN THÀNH CÔNG!</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Chúc mừng bạn! Thẻ hội viên của bạn đã được kích hoạt trực tiếp trên hệ thống.</p>
+        </div>
+
+        <!-- Bảng chi tiết hóa đơn (Receipt Details) -->
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-xs">
+          <div class="flex justify-between items-center pb-1.5 border-b border-slate-200">
+            <span class="text-slate-500">Mã hóa đơn:</span>
+            <span class="font-mono font-bold text-slate-900">${invoice.id}</span>
+          </div>
+          <div class="flex justify-between items-center">
             <span class="text-slate-500">Gói đăng ký:</span>
-            <span class="font-bold text-slate-900">${pkg.name}</span>
+            <span class="font-bold text-indigo-700">${pkg.name || pkg.packageName}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between items-center">
             <span class="text-slate-500">Thời hạn sử dụng:</span>
-            <span class="font-bold text-slate-900">${pkg.durationDays} Ngày</span>
+            <span class="font-bold text-slate-900">${pkg.durationDays} Ngày (Hạn đến: 23/11/2026)</span>
           </div>
-          <div class="flex justify-between pt-2 border-t border-slate-200 text-sm">
-            <span class="font-bold text-slate-900">Tổng thanh toán:</span>
-            <span class="font-black text-indigo-600">${(pkg.price).toLocaleString()} VND</span>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">Số tiền đã thanh toán:</span>
+            <span class="font-black text-slate-900 text-sm">${(pkg.price || 0).toLocaleString()} VND</span>
           </div>
-        </div>
-
-        <div class="mt-4">
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Chọn phương thức thanh toán</label>
-          <div class="space-y-2">
-            <label class="flex items-center p-3 rounded-xl border border-indigo-200 bg-indigo-50/40 cursor-pointer">
-              <input type="radio" name="member_payment_method" value="VNPAY_QR" checked class="text-indigo-600" />
-              <div class="ml-3">
-                <div class="text-xs font-bold text-slate-900">Quét mã QR PayOS / Chuyển khoản tức thì</div>
-                <div class="text-[11px] text-slate-500">Kích hoạt thẻ ngay lập tức khi chuyển thành công</div>
-              </div>
-            </label>
-            <label class="flex items-center p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer">
-              <input type="radio" name="member_payment_method" value="CASH_FRONTDESK" class="text-indigo-600" />
-              <div class="ml-3">
-                <div class="text-xs font-bold text-slate-900">Giữ chỗ & Thanh toán tại Quầy Lễ Tân (POS)</div>
-                <div class="text-[11px] text-slate-500">Thanh toán tiền mặt hoặc thẻ tại quầy khi đến tập</div>
-              </div>
-            </label>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">Phương thức:</span>
+            <span class="font-semibold text-slate-800">${invoice.paymentMethod}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">Hội viên:</span>
+            <span class="font-bold text-slate-900">${buyer.lastName} ${buyer.firstName} (${buyer.phone})</span>
+          </div>
+          <div class="flex justify-between items-center pt-1.5 border-t border-slate-200 text-[11px] text-slate-400">
+            <span>Thời gian giao dịch:</span>
+            <span>${invoice.date}</span>
           </div>
         </div>
 
-        <div class="mt-6 flex space-x-3">
-          <button type="button" onclick="closeCheckoutModal()" class="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
-            Hủy Bỏ
+        <!-- Action Buttons -->
+        <div class="space-y-2 pt-0.5">
+          <button type="button" onclick="handleFinishCheckout()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center justify-center space-x-2">
+            <span>Xem Thẻ Hội Viên Điện Tử Ngay</span>
+            <span>&rarr;</span>
           </button>
-          <button type="button" onclick="confirmMemberCheckout('${pkg.id}')" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
-            Xác Nhận Mua Gói
+          <button type="button" onclick="closeCheckoutModal()" class="w-full py-2 text-xs text-slate-500 hover:text-slate-800 font-bold transition">
+            Quay Về Trang Chủ
           </button>
         </div>
+      ` : `
+        <!-- FAILED STATE: DẤU X ĐỎ LỚN -->
+        <div class="w-14 h-14 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center shadow-inner ring-8 ring-rose-50">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 uppercase tracking-wider">
+            Giao Dịch Không Thành Công
+          </span>
+          <h3 class="text-lg sm:text-xl font-black text-slate-900 mt-1 tracking-tight">THANH TOÁN THẤT BẠI</h3>
+          <p class="text-xs text-rose-600 font-medium mt-1 leading-relaxed">
+            ${flow?.failureReason || 'Giao dịch chưa được hoàn tất do lỗi từ ngân hàng hoặc người dùng hủy thao tác.'}
+          </p>
+        </div>
+
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 text-left">
+          <div class="font-bold text-slate-800 mb-1">Gợi ý khắc phục:</div>
+          <div>&bull; Kiểm tra lại hạn mức hoặc số dư khả dụng trong tài khoản/thẻ.</div>
+          <div>&bull; Đảm bảo ứng dụng ngân hàng đã bật tính năng thanh toán trực tuyến.</div>
+          <div>&bull; Bạn cũng có thể chọn phương thức thanh toán khác để tiếp tục.</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2 pt-0.5">
+          <button type="button" onclick="handleBackToCheckoutForm()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
+            Thử Lại Thanh Toán
+          </button>
+          <button type="button" onclick="closeCheckoutModal()" class="w-full py-2 text-xs text-slate-400 hover:text-slate-600 font-bold transition">
+            Đóng Hộp Thoại
+          </button>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+// =========================================================================
+// USER PROFILE: MULTI-ROLE PROFILE MODAL & FULL-PAGE VIEW
+// =========================================================================
+
+const USER_AVATAR_PRESETS = [
+  { id: 'av1', label: 'Nữ Fitness', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av2', label: 'Nam Boxing', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av3', label: 'Nữ Yoga', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av4', label: 'Nam VĐV', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av5', label: 'HLV Trưởng', url: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av6', label: 'Quản Lý / Lễ Tân', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80' }
+];
+
+function getResolvedCurrentUserProfile() {
+  const role = appState.currentRole || 'MEMBER';
+  if (role === 'MEMBER') {
+    const members = (appState.data && appState.data.members) ? appState.data.members : [];
+    const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0] || {};
+    const resolved = resolveMember(rawMember) || {};
+    return {
+      id: resolved.id || 'MEM101',
+      name: resolved.name || 'Phạm Thu Trang',
+      lastName: resolved.lastName || 'Phạm',
+      firstName: resolved.firstName || 'Thu Trang',
+      email: resolved.email || 'trang.pham@gmail.com',
+      phone: resolved.phone || '0912345678',
+      gender: rawMember.gender || 'Nữ',
+      dob: rawMember.dob || '1998-05-18',
+      address: rawMember.address || 'Khu Công Nghệ Cao Hòa Lạc, Hà Nội',
+      trainingGoal: resolved.trainingGoal || 'Giảm mỡ, tăng cơ săn chắc & dẻo dai',
+      emergencyContact: rawMember.emergencyContact || 'Nguyễn Văn A (Người thân) - 0988112233',
+      avatar: appState.userProfileDraftAvatar || resolved.avatar || USER_AVATAR_PRESETS[0].url,
+      role: 'MEMBER',
+      roleLabel: 'Hội Viên Chính Thức',
+      status: resolved.status || 'ACTIVE',
+      activePackage: resolved.activePackage || 'Standard Gym & Cardio',
+      startDate: resolved.startDate || '2026-08-01',
+      endDate: resolved.endDate || '2026-11-01',
+      inbody: resolved.inbody || { weight: 52, height: 162, bmi: 19.8, bodyFat: 21.5 }
+    };
+  } else if (role === 'COACH') {
+    return {
+      id: 'COACH01',
+      name: 'Trần Hoàng Nam',
+      lastName: 'Trần',
+      firstName: 'Hoàng Nam',
+      email: 'coach.nam@sportscenter.vn',
+      phone: '0918765432',
+      gender: 'Nam',
+      dob: '1992-08-20',
+      address: 'Quận Cầu Giấy, Hà Nội',
+      trainingGoal: 'Chuyên gia huấn luyện Boxing, Thể lực & Yoga phục hồi',
+      emergencyContact: 'Trần Thị B - 0977223344',
+      avatar: appState.userProfileDraftAvatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80',
+      role: 'COACH',
+      roleLabel: 'Huấn Luyện Viên Trưởng (Head Coach)',
+      status: 'ACTIVE',
+      activePackage: 'HLV Hợp Đồng Chính Thức',
+      startDate: '2024-01-01',
+      endDate: '2027-12-31'
+    };
+  } else if (role === 'RECEPTIONIST') {
+    return {
+      id: 'REC01',
+      name: 'Lê Ngọc Lễ Tân',
+      lastName: 'Lê',
+      firstName: 'Ngọc',
+      email: 'letan@sportscenter.vn',
+      phone: '0901234567',
+      gender: 'Nữ',
+      dob: '1999-11-05',
+      address: 'Quận Nam Từ Liêm, Hà Nội',
+      trainingGoal: 'Điều phối vận hành quầy dịch vụ, cổng Turnstile & hỗ trợ hội viên',
+      emergencyContact: 'Lê Văn C - 0966334455',
+      avatar: appState.userProfileDraftAvatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+      role: 'RECEPTIONIST',
+      roleLabel: 'Chuyên Viên Lễ Tân & Điều Phối Kiosk',
+      status: 'ACTIVE',
+      activePackage: 'Nhân Sự Ca Sáng (06:00 - 14:00)',
+      startDate: '2025-06-01',
+      endDate: '2026-12-31'
+    };
+  } else {
+    return {
+      id: 'MGR01',
+      name: 'Nguyễn Văn Quản Lý',
+      lastName: 'Nguyễn',
+      firstName: 'Văn Quản Lý',
+      email: 'manager@sportscenter.vn',
+      phone: '0919998888',
+      gender: 'Nam',
+      dob: '1988-03-12',
+      address: 'Tòa nhà FPT, Phố Duy Tân, Hà Nội',
+      trainingGoal: 'Giám đốc Vận hành & Quản trị Hệ thống Trung tâm Thể thao',
+      emergencyContact: 'Nguyễn Thị D - 0911223344',
+      avatar: appState.userProfileDraftAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      role: 'MANAGER',
+      roleLabel: 'Tổng Quản Lý Trung Tâm (Center Director)',
+      status: 'ACTIVE',
+      activePackage: 'Toàn Quyền Quản Trị Hệ Thống (SuperAdmin)',
+      startDate: '2023-01-01',
+      endDate: '2030-12-31'
+    };
+  }
+}
+
+function renderProfileTabsContent(user, isModal) {
+  const activeTab = appState.userProfileActiveTab || 'INFO';
+  const role = user.role;
+
+  return `
+    <div class="space-y-4">
+      <!-- User Hero Header Card -->
+      <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl text-white shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 text-center sm:text-left">
+          <div class="relative group">
+            <img src="${user.avatar}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-indigo-400 shadow-md" />
+            <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-xs">✓</span>
+          </div>
+          <div>
+            <div class="flex items-center justify-center sm:justify-start space-x-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500 text-white tracking-wider">
+                ${user.roleLabel}
+              </span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                ${user.status === 'ACTIVE' ? 'Đang Hoạt Động' : user.status}
+              </span>
+            </div>
+            <h3 class="text-lg sm:text-xl font-black text-white mt-1">${user.name}</h3>
+            <div class="text-xs text-indigo-200 mt-0.5 space-x-2">
+              <span>Mã ID: <b class="font-mono font-bold text-white">${user.id}</b></span>
+              <span>&bull;</span>
+              <span>${user.email}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Info Pill -->
+        <div class="text-center sm:text-right p-3 bg-white/10 backdrop-blur-xs rounded-xl border border-white/10 text-xs w-full sm:w-auto">
+          <div class="text-indigo-200 text-[11px] font-semibold">${role === 'MEMBER' ? 'Gói thẻ hiện tại:' : 'Chức vụ vận hành:'}</div>
+          <div class="font-extrabold text-white mt-0.5">${user.activePackage}</div>
+          <div class="text-[10px] text-slate-300 mt-1">${role === 'MEMBER' ? 'Hạn thẻ: ' + user.endDate : 'Hợp đồng: ' + user.endDate}</div>
+        </div>
+      </div>
+
+      <!-- Quick Avatar Preset Selector -->
+      <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <span class="text-slate-600 font-bold text-[11px] uppercase tracking-wider">Chọn nhanh ảnh đại diện mẫu:</span>
+        <div class="flex items-center space-x-2 overflow-x-auto py-1">
+          ${USER_AVATAR_PRESETS.map(av => `
+            <button type="button" onclick="selectUserProfileAvatar('${av.url}')" class="relative group focus:outline-none" title="${av.label}">
+              <img src="${av.url}" class="w-8 h-8 rounded-full object-cover border-2 transition ${user.avatar === av.url ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-110' : 'border-slate-300 hover:border-slate-500'}" />
+              ${user.avatar === av.url ? '<span class="absolute -top-1 -right-1 w-3 h-3 bg-indigo-600 rounded-full text-white text-[8px] flex items-center justify-center font-bold">✓</span>' : ''}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Profile Sub-Tab Bar -->
+      <div class="flex items-center space-x-1.5 border-b border-slate-200 pb-2">
+        <button type="button" onclick="setUserProfileTab('INFO')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${activeTab === 'INFO' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+          👤 Thông Tin Cá Nhân
+        </button>
+        <button type="button" onclick="setUserProfileTab('SECURITY')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${activeTab === 'SECURITY' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+          🔒 Bảo Mật & Mật Khẩu
+        </button>
+        <button type="button" onclick="setUserProfileTab('MEMBERSHIP')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${activeTab === 'MEMBERSHIP' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+          ${role === 'MEMBER' ? '💳 Thẻ & Thể Trạng' : '📊 Quyền Hạn & Ca Làm'}
+        </button>
+      </div>
+
+      <!-- Tab 1: Personal Info -->
+      ${activeTab === 'INFO' ? `
+        <form onsubmit="return handleSaveUserProfile(event)" class="space-y-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Họ Đệm <span class="text-rose-500">*</span></label>
+              <input type="text" id="profile-form-lastname" value="${user.lastName}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Tên <span class="text-rose-500">*</span></label>
+              <input type="text" id="profile-form-firstname" value="${user.firstName}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Số Điện Thoại <span class="text-rose-500">*</span></label>
+              <input type="tel" id="profile-form-phone" value="${user.phone}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Email Tài Khoản</label>
+              <input type="email" id="profile-form-email" value="${user.email}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Giới Tính</label>
+              <select id="profile-form-gender" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
+                <option value="Nữ" ${user.gender === 'Nữ' ? 'selected' : ''}>Nữ</option>
+                <option value="Nam" ${user.gender === 'Nam' ? 'selected' : ''}>Nam</option>
+                <option value="Khác" ${user.gender === 'Khác' ? 'selected' : ''}>Khác</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Ngày Sinh (DOB)</label>
+              <input type="date" id="profile-form-dob" value="${user.dob}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Địa Chỉ Thường Trú</label>
+            <input type="text" id="profile-form-address" value="${user.address}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">${role === 'MEMBER' ? 'Mục Tiêu Rèn Luyện (Training Goal)' : 'Mô Tả Chuyên Môn / Công Tác'}</label>
+            <input type="text" id="profile-form-goal" value="${user.trainingGoal}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Người Liên Hệ Khẩn Cấp</label>
+              <input type="text" id="profile-form-emergency" value="${user.emergencyContact}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Tùy Chỉnh URL Ảnh Đại Diện</label>
+              <input type="url" id="profile-form-avatar" placeholder="https://..." value="${appState.userProfileDraftAvatar || ''}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+            ${isModal ? `
+              <button type="button" onclick="closeUserProfileModal()" class="px-5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition">
+                Đóng
+              </button>
+            ` : ''}
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition flex items-center space-x-2">
+              <span>Lưu Cập Nhật Hồ Sơ</span>
+              <span>✓</span>
+            </button>
+          </div>
+        </form>
+      ` : ''}
+
+      <!-- Tab 2: Security & Password -->
+      ${activeTab === 'SECURITY' ? `
+        <form onsubmit="return handleChangeUserPassword(event)" class="space-y-4">
+          <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+            <div class="font-bold flex items-center space-x-1.5">
+              <span>🛡️</span>
+              <span>Tiêu Chuẩn Bảo Mật Tài Khoản Sports Center</span>
+            </div>
+            <p class="text-[11px] leading-relaxed">
+              Mật khẩu demo mặc định là <b class="font-mono text-amber-950 font-black">123</b>. Bạn có thể đổi sang mật khẩu mới để bảo vệ thông tin cá nhân và lượt check-in.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Mật Khẩu Hiện Tại <span class="text-rose-500">*</span></label>
+              <input type="password" id="profile-sec-current-pass" value="123" placeholder="Nhập mật khẩu hiện tại..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Mật Khẩu Mới (Tối thiểu 6 ký tự) <span class="text-rose-500">*</span></label>
+                <input type="password" id="profile-sec-new-pass" placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Xác Nhận Mật Khẩu Mới <span class="text-rose-500">*</span></label>
+                <input type="password" id="profile-sec-confirm-pass" placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 space-y-1">
+            <div class="font-bold text-slate-700">Yêu cầu bảo mật:</div>
+            <div>&bull; Mật khẩu nên chứa cả chữ hoa, chữ thường và chữ số.</div>
+            <div>&bull; Mọi thay đổi mật khẩu sẽ được ghi nhận vào nhật ký kiểm toán hệ thống.</div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+            ${isModal ? `
+              <button type="button" onclick="closeUserProfileModal()" class="px-5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition">
+                Đóng
+              </button>
+            ` : ''}
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition">
+              Cập Nhật Mật Khẩu Mới
+            </button>
+          </div>
+        </form>
+      ` : ''}
+
+      <!-- Tab 3: Membership & Stats -->
+      ${activeTab === 'MEMBERSHIP' ? `
+        <div class="space-y-4">
+          ${role === 'MEMBER' ? `
+            <!-- Digital Member Card View -->
+            <div class="p-5 bg-gradient-to-tr from-indigo-700 via-indigo-600 to-blue-600 rounded-2xl text-white shadow-md space-y-4">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-white/20 text-white">SPORTS CENTER PASS</span>
+                  <h4 class="text-base font-black mt-1 tracking-tight">${user.activePackage}</h4>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-400 text-slate-950">
+                  ${user.status}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-white/20">
+                <div>
+                  <div class="text-[10px] text-indigo-200 uppercase">Chủ Thẻ</div>
+                  <div class="font-bold">${user.name}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-indigo-200 uppercase">Mã Hội Viên</div>
+                  <div class="font-mono font-bold">${user.id}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-indigo-200 uppercase">Ngày Kích Hoạt</div>
+                  <div class="font-semibold">${user.startDate}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-indigo-200 uppercase">Ngày Hết Hạn</div>
+                  <div class="font-bold text-amber-300">${user.endDate}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- InBody Quick Glance -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">Cân Nặng</div>
+                <div class="text-lg font-black text-slate-900 mt-0.5">${user.inbody?.weight || 52} <span class="text-xs font-normal">kg</span></div>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">Chiều Cao</div>
+                <div class="text-lg font-black text-slate-900 mt-0.5">${user.inbody?.height || 162} <span class="text-xs font-normal">cm</span></div>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">Chỉ Số BMI</div>
+                <div class="text-lg font-black text-indigo-600 mt-0.5">${user.inbody?.bmi || 19.8}</div>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">Tỷ Lệ Mỡ</div>
+                <div class="text-lg font-black text-emerald-600 mt-0.5">${user.inbody?.bodyFat || 21.5}%</div>
+              </div>
+            </div>
+
+            <!-- Activity Stats -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+              <div class="font-bold text-slate-800">Thống Kê Hoạt Động Luyện Tập:</div>
+              <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                <span class="text-slate-500">Lượt check-in qua cổng Turnstile tự động:</span>
+                <span class="font-bold text-slate-900">18 Buổi</span>
+              </div>
+              <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                <span class="text-slate-500">Số lớp học thể thao (Yoga, Boxing, Zumba) đã giữ chỗ:</span>
+                <span class="font-bold text-slate-900">${(appState.data?.classEnrollments || []).filter(e => e.memberId === user.id).length || 5} Lớp</span>
+              </div>
+              <div class="flex justify-between items-center py-1">
+                <span class="text-slate-500">Số hóa đơn thanh toán gói tập trực tuyến:</span>
+                <span class="font-bold text-indigo-700">${(appState.data?.invoices || []).filter(i => i.memberId === user.id).length || 3} Hóa đơn</span>
+              </div>
+            </div>
+          ` : `
+            <!-- Staff Role Permissions Glance -->
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
+              <div class="font-bold text-slate-800 text-sm">Thông Tin Nhiệm Vụ Vận Hành:</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div class="p-3 bg-white rounded-xl border border-slate-200">
+                  <div class="text-[10px] text-slate-400 font-bold uppercase">Mã Nhân Sự</div>
+                  <div class="text-sm font-black text-slate-900 mt-0.5">${user.id}</div>
+                </div>
+                <div class="p-3 bg-white rounded-xl border border-slate-200">
+                  <div class="text-[10px] text-slate-400 font-bold uppercase">Bộ Phận / Ban</div>
+                  <div class="text-sm font-black text-slate-900 mt-0.5">${role === 'COACH' ? 'HLV Thể Thao' : (role === 'RECEPTIONIST' ? 'Lễ Tân & Kiosk' : 'Ban Giám Đốc')}</div>
+                </div>
+              </div>
+              <div class="p-3 bg-white rounded-xl border border-slate-200 text-slate-600">
+                <b>Phân quyền hệ thống:</b> Cho phép xem, điểm danh, check-in, xử lý ticket và theo dõi nhật ký kiểm toán theo tiêu chuẩn vai trò ${user.roleLabel}.
+              </div>
+            </div>
+          `}
+
+          <div class="pt-2 flex items-center justify-end">
+            ${isModal ? `
+              <button type="button" onclick="closeUserProfileModal()" class="px-5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition">
+                Đóng Hộp Thoại
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderUserProfileModal() {
+  const user = getResolvedCurrentUserProfile();
+
+  return `
+    <div class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex justify-center items-start overflow-y-auto p-2 sm:p-5 animate-fade-in">
+      <div class="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-slate-100 space-y-4 my-auto animate-in fade-in zoom-in-95 duration-150">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-start pb-3 border-b border-slate-100">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wider">
+                Hồ Sơ Tài Khoản
+              </span>
+              <span class="text-xs text-slate-400 font-semibold">&bull; Sports Center Identity</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 mt-1 tracking-tight">Hồ Sơ & Cài Đặt Cá Nhân</h2>
+          </div>
+          <button type="button" onclick="closeUserProfileModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-bold text-lg transition">
+            &times;
+          </button>
+        </div>
+
+        ${renderProfileTabsContent(user, true)}
+      </div>
+    </div>
+  `;
+}
+
+function renderMemberProfilePage() {
+  const user = getResolvedCurrentUserProfile();
+
+  return `
+    <div class="max-w-4xl mx-auto space-y-6">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+        <div>
+          <h2 class="text-2xl font-black text-slate-900 tracking-tight">Hồ Sơ Cá Nhân & Cài Đặt</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Quản lý thông tin hội viên, đổi mật khẩu và xem các quyền lợi gói thẻ của bạn.</p>
+        </div>
+        <button type="button" onclick="switchTab('member-pass')" class="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs rounded-xl transition flex items-center space-x-1.5">
+          <span>Xem Thẻ QR Check-in</span>
+          <span>&rarr;</span>
+        </button>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200">
+        ${renderProfileTabsContent(user, false)}
       </div>
     </div>
   `;
@@ -2080,7 +3928,7 @@ function renderReceptionistWebApp() {
           </div>
         </div>
 
-        <!-- 4-Mode Switcher Tabs -->
+        <!-- 5-Mode Switcher Tabs -->
         <div class="hidden sm:flex bg-slate-800 p-1 rounded-xl border border-slate-700 space-x-1">
           <button type="button" onclick="setReceptionMode('GATE')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'GATE' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
             CỔNG TURNSTILE
@@ -2094,13 +3942,24 @@ function renderReceptionistWebApp() {
           <button type="button" onclick="setReceptionMode('SHIFT')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'SHIFT' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
             SỔ QUỸ CA TRỰC
           </button>
+          <button type="button" onclick="setReceptionMode('TICKETS')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'TICKETS' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
+            XỬ LÝ TICKET
+          </button>
         </div>
 
         <!-- Operator & Logout -->
         <div class="flex items-center space-x-4">
-          <div class="text-right hidden sm:block">
-            <div class="text-xs font-bold text-white">Lê Ngọc Lễ Tân</div>
-            <div class="text-[10px] text-emerald-400">Ca Sáng (06:00 - 14:00)</div>
+          ${renderNotificationBell('RECEPTIONIST')}
+
+          <div class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition" onclick="openUserProfileModal()" title="Xem & chỉnh sửa hồ sơ">
+            <div class="text-right hidden sm:block">
+              <div class="text-xs font-bold text-white flex items-center justify-end space-x-1">
+                <span>Lê Ngọc Lễ Tân</span>
+                <span class="text-[10px] text-slate-400">⚙</span>
+              </div>
+              <div class="text-[10px] text-emerald-400">Ca Sáng (06:00 - 14:00) &bull; Hồ Sơ</div>
+            </div>
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full border border-slate-700 object-cover" />
           </div>
           <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-rose-400 hover:bg-slate-800 border border-slate-700 rounded-lg transition">
             Đăng Xuất
@@ -2114,6 +3973,7 @@ function renderReceptionistWebApp() {
         <button type="button" onclick="setReceptionMode('POS')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'POS' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Bán POS</button>
         <button type="button" onclick="setReceptionMode('LOOKUP')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'LOOKUP' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Tra Cứu</button>
         <button type="button" onclick="setReceptionMode('SHIFT')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'SHIFT' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Sổ Quỹ</button>
+        <button type="button" onclick="setReceptionMode('TICKETS')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'TICKETS' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Ticket</button>
       </div>
 
       <!-- Main Kiosk Body -->
@@ -2122,6 +3982,7 @@ function renderReceptionistWebApp() {
         ${mode === 'POS' ? renderReceptionPOSMode() : ''}
         ${mode === 'LOOKUP' ? renderReceptionLookupMode() : ''}
         ${mode === 'SHIFT' ? renderReceptionShiftMode() : ''}
+        ${mode === 'TICKETS' ? renderReceptionTicketsMode() : ''}
       </main>
     </div>
   `;
@@ -2233,18 +4094,29 @@ function renderReceptionGateMode() {
 function renderReceptionPOSMode() {
   const cart = appState.receptionCartPackage;
   const packages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const method = appState.posPaymentMethod || 'CASH';
+  const custInfo = appState.posCustInfo || { name: '', phone: '', gender: 'Nam' };
+  const price = cart ? cart.price : 0;
+  const cashReceived = (appState.posCashReceived !== undefined && appState.posCashReceived !== null && appState.posCashReceived > 0) ? appState.posCashReceived : price;
+  const cashDiff = cashReceived - price;
 
   return `
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div class="lg:col-span-7 space-y-4">
+      <!-- Left Column: Package Catalogue -->
+      <div class="lg:col-span-6 space-y-4">
         <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-          <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider mb-4">
-            Danh Mục Gói Dịch Vụ (Chọn Để Lên Đơn)
-          </h3>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+              Danh Mục Gói Dịch Vụ (Chọn Để Lên Đơn)
+            </h3>
+            <span class="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg">
+              ${packages.length} Gói Tập
+            </span>
+          </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             ${packages.map(p => `
-              <button type="button" onclick="selectPOSPackage('${p.id}')" class="p-4 rounded-2xl border text-left transition ${cart?.id === p.id ? 'border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-600/20' : 'border-slate-200 bg-slate-50 hover:bg-white'}">
+              <button type="button" onclick="selectPOSPackage('${p.id}')" class="p-4 rounded-2xl border text-left transition ${cart?.id === p.id ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-600/20 shadow-xs' : 'border-slate-200 bg-slate-50 hover:bg-white'}">
                 <div class="flex justify-between items-start">
                   <span class="text-[10px] font-bold uppercase text-slate-400">${p.durationDays} Ngày</span>
                   <span class="font-black text-indigo-700 text-sm">${(p.price).toLocaleString()} đ</span>
@@ -2257,63 +4129,377 @@ function renderReceptionPOSMode() {
         </div>
       </div>
 
-      <div class="lg:col-span-5">
+      <!-- Right Column: Customer Info & Cashier Checkout -->
+      <div class="lg:col-span-6">
         <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-          <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-100">
-            Thông Tin Khách Hàng & Thu Ngân
-          </h3>
-
-          <form onsubmit="return handlePOSCheckout(event)" class="space-y-3.5">
+          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
             <div>
-              <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Họ Tên Khách Hàng</label>
-              <input type="text" id="pos-cust-name" required placeholder="Nguyễn Văn A" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600 shadow-inner" />
+              <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+                Thông Tin Khách Hàng & Thu Ngân
+              </h3>
+              <div class="text-[11px] text-slate-400">Trạm POS #01 &bull; Thu ngân: Lê Ngọc Lễ Tân</div>
+            </div>
+            <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+              POS
+            </div>
+          </div>
+
+          <form onsubmit="return handlePOSCheckout(event)" class="space-y-4">
+            <!-- Customer Inputs -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                Họ Tên Khách Hàng <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" id="pos-cust-name" required placeholder="Nguyễn Văn A" value="${custInfo.name || ''}" oninput="updatePOSCustInfo('name', this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white shadow-inner" />
             </div>
 
             <div class="grid grid-cols-2 gap-2.5">
               <div>
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Số Điện Thoại</label>
-                <input type="tel" id="pos-cust-phone" required placeholder="09xxxxxxxx" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600 shadow-inner" />
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                  Số Điện Thoại <span class="text-rose-500">*</span>
+                </label>
+                <input type="tel" id="pos-cust-phone" required placeholder="09xxxxxxxx" value="${custInfo.phone || ''}" oninput="updatePOSCustInfo('phone', this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white shadow-inner" />
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Giới Tính</label>
-                <select id="pos-cust-gender" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600">
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
+                <select id="pos-cust-gender" onchange="updatePOSCustInfo('gender', this.value)" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600">
+                  <option value="Nam" ${custInfo.gender === 'Nam' ? 'selected' : ''}>Nam</option>
+                  <option value="Nữ" ${custInfo.gender === 'Nữ' ? 'selected' : ''}>Nữ</option>
+                  <option value="Khác" ${custInfo.gender === 'Khác' ? 'selected' : ''}>Khác</option>
                 </select>
               </div>
             </div>
 
-            <div class="p-3.5 rounded-2xl bg-slate-100 border border-slate-200">
+            <!-- Selected Package Badge -->
+            <div class="p-3.5 rounded-2xl ${cart ? 'bg-indigo-50/70 border border-indigo-200' : 'bg-slate-100 border border-slate-200'}">
               <div class="text-[10px] font-bold uppercase text-slate-400">Gói được chọn:</div>
               ${cart ? `
                 <div class="flex justify-between items-center mt-1">
-                  <span class="text-xs font-bold text-slate-900">${cart.name}</span>
-                  <span class="text-xs font-black text-indigo-600">${(cart.price).toLocaleString()} đ</span>
+                  <div>
+                    <span class="text-xs font-bold text-slate-900">${cart.name}</span>
+                    <span class="text-[10px] text-slate-500 ml-1">(${cart.durationDays} ngày)</span>
+                  </div>
+                  <span class="text-sm font-black text-indigo-700">${(cart.price).toLocaleString()} đ</span>
                 </div>
               ` : `
                 <div class="text-xs text-rose-500 font-semibold mt-1">Vui lòng bấm chọn một gói bên trái</div>
               `}
             </div>
 
+            <!-- Payment Method Selection (3 Options) -->
             <div>
-              <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Hình Thức Thu Tiền</label>
-              <div class="grid grid-cols-3 gap-2">
-                <label class="p-2 border rounded-xl text-center text-xs font-bold cursor-pointer hover:bg-slate-50">
-                  <input type="radio" name="pos_method" value="CASH" checked class="mr-1" /> Tiền mặt
-                </label>
-                <label class="p-2 border rounded-xl text-center text-xs font-bold cursor-pointer hover:bg-slate-50">
-                  <input type="radio" name="pos_method" value="VNPAY_QR" class="mr-1" /> Mã QR
-                </label>
-                <label class="p-2 border rounded-xl text-center text-xs font-bold cursor-pointer hover:bg-slate-50">
-                  <input type="radio" name="pos_method" value="CARD" class="mr-1" /> Quẹt thẻ
-                </label>
+              <div class="flex justify-between items-center mb-1.5">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase">Hình Thức Thu Tiền</label>
+                <span class="text-[10px] text-slate-400">Chọn 1 trong 3 phương thức</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <!-- 1. Tiền mặt -->
+                <button type="button" onclick="setPOSPaymentMethod('CASH')" class="p-2.5 rounded-xl border text-left transition flex items-center justify-between ${method === 'CASH' ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-600/20 text-emerald-950 font-bold shadow-xs' : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'}">
+                  <div class="flex items-center space-x-1.5 min-w-0">
+                    <span class="text-base">💵</span>
+                    <span class="text-xs font-bold truncate">Tiền mặt</span>
+                  </div>
+                  <input type="radio" name="pos_method_radio" value="CASH" ${method === 'CASH' ? 'checked' : ''} class="text-emerald-600 focus:ring-emerald-500 pointer-events-none" />
+                </button>
+
+                <!-- 2. VNPAY QR -->
+                <button type="button" onclick="setPOSPaymentMethod('VNPAY_QR')" class="p-2.5 rounded-xl border text-left transition flex items-center justify-between ${method === 'VNPAY_QR' ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-600/20 text-indigo-950 font-bold shadow-xs' : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'}">
+                  <div class="flex items-center space-x-1.5 min-w-0">
+                    <div class="w-5 h-5 rounded bg-gradient-to-tr from-blue-700 via-indigo-600 to-rose-500 text-white flex items-center justify-center font-black text-[9px] shadow-2xs flex-shrink-0">VNP</div>
+                    <span class="text-xs font-bold truncate">VNPAY-QR</span>
+                  </div>
+                  <input type="radio" name="pos_method_radio" value="VNPAY_QR" ${method === 'VNPAY_QR' ? 'checked' : ''} class="text-indigo-600 focus:ring-indigo-500 pointer-events-none" />
+                </button>
+
+                <!-- 3. Quẹt thẻ with 3 logos (Visa, MC, Napas) -->
+                <button type="button" onclick="setPOSPaymentMethod('CARD')" class="p-2.5 rounded-xl border text-left transition flex items-center justify-between ${method === 'CARD' ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-600/20 text-indigo-950 font-bold shadow-xs' : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'}">
+                  <div class="flex items-center space-x-1 min-w-0 overflow-hidden">
+                    <span class="text-xs font-bold mr-0.5 truncate">Thẻ</span>
+                    <div class="flex items-center space-x-0.5">
+                      <span class="px-1 py-0.2 bg-white border border-slate-200 rounded text-[8px] font-black text-blue-700 leading-none">VISA</span>
+                      <span class="px-1 py-0.2 bg-white border border-slate-200 rounded text-[8px] font-black text-orange-600 leading-none">MC</span>
+                      <span class="px-1 py-0.2 bg-white border border-slate-200 rounded text-[8px] font-black text-blue-600 leading-none">NAPAS</span>
+                    </div>
+                  </div>
+                  <input type="radio" name="pos_method_radio" value="CARD" ${method === 'CARD' ? 'checked' : ''} class="text-indigo-600 focus:ring-indigo-500 pointer-events-none ml-1" />
+                </button>
               </div>
             </div>
 
-            <button type="submit" ${!cart ? 'disabled' : ''} class="w-full py-3 mt-2 ${!cart ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'} rounded-2xl font-black text-xs transition uppercase tracking-wider">
-              Xác Nhận Thu Tiền & In Hóa Đơn POS
+            <!-- Dynamic Sub-Content Based on Selected Method -->
+            ${method === 'VNPAY_QR' ? `
+              <!-- Dynamic VNPAY QR Container -->
+              <div class="p-4 bg-slate-50 rounded-2xl border border-indigo-200 space-y-3 animate-fade-in text-center">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200 text-left">
+                  <div class="flex items-center space-x-2">
+                    <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-rose-500 text-white flex items-center justify-center font-black text-[10px] shadow-2xs">
+                      VNP
+                    </div>
+                    <div>
+                      <div class="font-extrabold text-xs text-slate-900 leading-tight">MÃ QR ĐỘNG VNPAY-QR</div>
+                      <div class="text-[10px] text-slate-500">Khách quét mã bằng App Ngân hàng hoặc Ví VNPAY</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-[10px] text-slate-400 font-bold uppercase">Cần thanh toán</div>
+                    <div class="font-black text-rose-600 text-xs sm:text-sm">${price > 0 ? (price).toLocaleString() + ' đ' : '0 đ'}</div>
+                  </div>
+                </div>
+
+                ${!cart ? `
+                  <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-semibold text-center">
+                    ⚠️ Vui lòng bấm chọn một gói dịch vụ ở danh mục bên trái để sinh mã QR VNPAY chính xác.
+                  </div>
+                ` : `
+                  <div class="relative mx-auto w-44 h-44 p-2 bg-white rounded-2xl border-2 border-indigo-500 shadow-sm flex flex-col items-center justify-center">
+                    <!-- Stylized Official VNPAY QR SVG -->
+                    <svg class="w-full h-full text-slate-900" viewBox="0 0 200 200" fill="currentColor">
+                      <rect x="10" y="10" width="50" height="50" rx="6" fill="#1e1b4b" />
+                      <rect x="20" y="20" width="30" height="30" rx="3" fill="#ffffff" />
+                      <rect x="27" y="27" width="16" height="16" rx="2" fill="#4338ca" />
+
+                      <rect x="140" y="10" width="50" height="50" rx="6" fill="#1e1b4b" />
+                      <rect x="150" y="20" width="30" height="30" rx="3" fill="#ffffff" />
+                      <rect x="157" y="27" width="16" height="16" rx="2" fill="#4338ca" />
+
+                      <rect x="10" y="140" width="50" height="50" rx="6" fill="#1e1b4b" />
+                      <rect x="20" y="150" width="30" height="30" rx="3" fill="#ffffff" />
+                      <rect x="27" y="157" width="16" height="16" rx="2" fill="#4338ca" />
+
+                      <rect x="70" y="20" width="12" height="12" rx="2" fill="#1e1b4b" />
+                      <rect x="90" y="15" width="12" height="12" rx="2" fill="#1e1b4b" />
+                      <rect x="115" y="25" width="12" height="12" rx="2" fill="#1e1b4b" />
+                      <rect x="75" y="45" width="14" height="14" rx="2" fill="#1e1b4b" />
+                      <rect x="105" y="45" width="16" height="16" rx="2" fill="#4338ca" />
+
+                      <rect x="25" y="75" width="14" height="14" rx="2" fill="#1e1b4b" />
+                      <rect x="45" y="85" width="14" height="14" rx="2" fill="#4338ca" />
+                      <rect x="75" y="75" width="14" height="14" rx="2" fill="#1e1b4b" />
+                      <rect x="100" y="80" width="12" height="12" rx="2" fill="#1e1b4b" />
+                      <rect x="125" y="75" width="14" height="14" rx="2" fill="#1e1b4b" />
+                      <rect x="150" y="85" width="14" height="14" rx="2" fill="#4338ca" />
+
+                      <rect x="75" y="115" width="14" height="14" rx="2" fill="#1e1b4b" />
+                      <rect x="100" y="110" width="18" height="18" rx="2" fill="#4338ca" />
+                      <rect x="130" y="115" width="14" height="14" rx="2" fill="#1e1b4b" />
+
+                      <rect x="70" y="150" width="14" height="14" rx="2" fill="#1e1b4b" />
+                      <rect x="95" y="160" width="16" height="16" rx="2" fill="#1e1b4b" />
+                      <rect x="125" y="150" width="14" height="14" rx="2" fill="#4338ca" />
+                      <rect x="150" y="160" width="14" height="14" rx="2" fill="#1e1b4b" />
+                      <rect x="170" y="145" width="14" height="14" rx="2" fill="#1e1b4b" />
+
+                      <rect x="78" y="78" width="44" height="44" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" />
+                      <text x="100" y="104" font-size="11" font-weight="900" fill="#4338ca" text-anchor="middle" font-family="sans-serif">VNPAY</text>
+                    </svg>
+                  </div>
+
+                  <div class="flex items-center justify-center space-x-2 text-[11px] text-slate-500">
+                    <span class="w-2 h-2 rounded-full ${appState.posVnpayPaid ? 'bg-emerald-500' : 'bg-emerald-500 animate-pulse'}"></span>
+                    <span>${appState.posVnpayPaid ? '<b class="text-emerald-700">ĐÃ NHẬN TIỀN VNPAY THÀNH CÔNG!</b>' : 'Mã hết hạn sau: <b class="font-mono text-indigo-700">14:52</b> &bull; Hướng dẫn khách quét QR'}</span>
+                  </div>
+
+                  <div class="pt-1 flex items-center justify-center gap-2">
+                    ${!appState.posVnpayPaid ? `
+                      <button type="button" onclick="handleSimulatePOSVnpayPaid(true)" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center space-x-1.5">
+                        <span>✔ [Mô phỏng] Khách Đã Quét & Báo Có</span>
+                      </button>
+                    ` : `
+                      <div class="flex items-center space-x-2">
+                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">Đã khớp lệnh thanh toán</span>
+                        <button type="button" onclick="handleSimulatePOSVnpayPaid(false)" class="text-xs text-slate-400 hover:text-slate-600 underline">Quét lại</button>
+                      </div>
+                    `}
+                  </div>
+                `}
+              </div>
+            ` : method === 'CARD' ? `
+              <!-- Dynamic Card Swipe Container with 3 Logos (Visa, MC, Napas) -->
+              <div class="p-4 bg-slate-50 rounded-2xl border border-indigo-200 space-y-3 animate-fade-in">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div>
+                    <div class="text-xs font-extrabold text-slate-900 uppercase">Quẹt Thẻ Qua Máy POS</div>
+                    <div class="text-[10px] text-slate-500">Chạm Contactless / Chip EMV / Thẻ từ nội địa & quốc tế</div>
+                  </div>
+                  <!-- The 3 Logos -->
+                  <div class="flex items-center space-x-1.5">
+                    <!-- Visa SVG -->
+                    <div class="h-6 px-1.5 py-0.5 bg-white border border-slate-200 rounded flex items-center justify-center shadow-2xs" title="Visa">
+                      <svg class="h-3 w-auto" viewBox="0 0 36 12" fill="none">
+                        <path d="M14.5 0.5L9.6 11.5H6.4L3.9 2.5C3.8 2 3.6 1.7 3.1 1.4C2.3 1 1.1 0.7 0 0.5L0.1 0.2H5.3C6 0.2 6.6 0.7 6.8 1.4L8 8.2L11.3 0.2H14.5V0.5ZM27.3 7.8C27.3 4.8 23.1 4.6 23.2 3.3C23.3 2.9 23.7 2.4 24.5 2.3C25 2.2 26.2 2.2 27.4 2.7L27.9 0.4C27.3 0.2 26.4 0 25.3 0C22.2 0 20 1.6 20 4C19.9 5.8 21.6 6.7 22.8 7.3C24 7.9 24.5 8.3 24.5 8.8C24.4 9.6 23.4 10 22.6 10C21 10 20.1 9.5 19.3 9.1L18.8 11.5C19.6 11.9 21.1 12.2 22.5 12.2C25.7 12.2 27.9 10.6 27.9 8.2L27.3 7.8ZM35.7 11.5H38.5L36 0.2H33.4C32.8 0.2 32.3 0.6 32.1 1.1L27.4 11.5H30.6L31.2 9.8H35.2L35.7 11.5ZM32.1 7.4L33.7 3.1L34.7 7.4H32.1ZM18.8 0.2L16.3 11.5H13.2L15.7 0.2H18.8Z" fill="#1434CB"/>
+                      </svg>
+                    </div>
+                    <!-- Mastercard SVG -->
+                    <div class="h-6 px-1.5 py-0.5 bg-white border border-slate-200 rounded flex items-center justify-center shadow-2xs" title="Mastercard">
+                      <svg class="h-3.5 w-auto" viewBox="0 0 28 18" fill="none">
+                        <circle cx="10" cy="9" r="6.5" fill="#EB001B"/>
+                        <circle cx="18" cy="9" r="6.5" fill="#F79E1B"/>
+                        <path d="M14 4.13A6.47 6.47 0 0 0 11.6 9 6.47 6.47 0 0 0 14 13.87 6.47 6.47 0 0 0 16.4 9 6.47 6.47 0 0 0 14 4.13Z" fill="#FF5F00"/>
+                      </svg>
+                    </div>
+                    <!-- Napas SVG -->
+                    <div class="h-6 px-1.5 py-0.5 bg-white border border-slate-200 rounded flex items-center justify-center shadow-2xs" title="Napas">
+                      <svg class="h-3 w-auto" viewBox="0 0 54 16" fill="none">
+                        <path d="M2 13V3h3.5l4 6.5V3H13v10H9.5L5.5 6.5V13H2z" fill="#005BAA"/>
+                        <path d="M18 13l-1-2.5h-4L12 13h-2.5l4.5-10h2.5l4.5 10H18zm-3-8l-1.5 4h3L15 5z" fill="#005BAA"/>
+                        <path d="M22 13V3h4c2.5 0 4 1.2 4 3.5s-1.5 3.5-4 3.5h-2v3H22zm2-5h2c1.2 0 2-.5 2-1.5s-.8-1.5-2-1.5h-2v3z" fill="#005BAA"/>
+                        <path d="M33 13l-1-2.5h-4L27 13h-2.5l4.5-10h2.5l4.5 10H33zm-3-8l-1.5 4h3L30 5z" fill="#005BAA"/>
+                        <path d="M38 13.2c-2.5 0-4.2-1.2-4.2-3.2h2.5c0 1 .8 1.5 1.7 1.5 1 0 1.6-.4 1.6-1 0-.7-.5-1-1.7-1.3l-1.2-.3c-2-.5-2.8-1.4-2.8-2.7 0-1.8 1.6-3.2 3.8-3.2 2.2 0 3.7 1.2 3.8 2.8H41c0-.8-.7-1.3-1.5-1.3-.9 0-1.4.4-1.4.9 0 .6.5.9 1.5 1.1l1.1.3c2.2.5 3 1.4 3 2.8 0 2-1.7 3.3-4.2 3.3z" fill="#005BAA"/>
+                        <circle cx="48" cy="8" r="3" fill="#EE2E24"/>
+                        <circle cx="50.5" cy="5" r="2" fill="#F7941D"/>
+                        <circle cx="50.5" cy="11" r="2" fill="#00A850"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mã Chuẩn Chi / 4 Số Cuối Thẻ</label>
+                    <input type="text" id="pos-card-last4" placeholder="VD: 9812 hoặc TRC-0912" value="${appState.posCardLast4 || '9812'}" oninput="appState.posCardLast4 = this.value" class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-600 shadow-inner" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ngân Hàng Phát Hành Thẻ</label>
+                    <select id="pos-card-bank" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600">
+                      <option value="Vietcombank">Vietcombank</option>
+                      <option value="Techcombank">Techcombank</option>
+                      <option value="MB Bank">MB Bank</option>
+                      <option value="BIDV">BIDV</option>
+                      <option value="VPBank">VPBank</option>
+                      <option value="ACB">ACB</option>
+                      <option value="Khác">Ngân hàng khác</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="p-2.5 bg-indigo-50/70 rounded-xl border border-indigo-100 text-[11px] text-indigo-950 flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>Máy POS bàn quầy #01 sẵn sàng. Đưa thiết bị POS cho khách chạm/quẹt và in bill đối soát.</span>
+                </div>
+              </div>
+            ` : `
+              <!-- Dynamic Cash Calculator Container (Tiền mặt thì tiền mặt thôi) -->
+              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5 animate-fade-in">
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-base">💵</span>
+                    <span class="text-xs font-bold text-slate-900 uppercase">Thu Tiền Mặt Trực Tiếp Tại Quầy</span>
+                  </div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">Tiền mặt</span>
+                </div>
+
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500">Giá gói cần thu:</span>
+                    <span class="font-bold text-slate-800 text-sm">${price > 0 ? (price).toLocaleString() + ' đ' : '0 đ'}</span>
+                  </div>
+
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500">Tiền khách đưa:</span>
+                    <div class="w-44">
+                      <input type="number" id="pos-cash-input" value="${cashReceived}" oninput="handlePOSCashInput(this.value)" placeholder="0" class="w-full px-2.5 py-1.5 text-right font-black text-xs text-slate-900 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 shadow-inner" />
+                    </div>
+                  </div>
+
+                  <!-- Quick Cash Buttons -->
+                  ${cart ? `
+                    <div class="flex items-center justify-end space-x-1.5 pt-0.5">
+                      <button type="button" onclick="setPOSQuickCash(${cart.price})" class="px-2 py-1 bg-slate-200 hover:bg-indigo-100 hover:text-indigo-800 text-slate-700 rounded-lg text-[10px] font-bold transition">Đúng số tiền</button>
+                      <button type="button" onclick="setPOSQuickCash(1000000)" class="px-2 py-1 bg-slate-200 hover:bg-indigo-100 hover:text-indigo-800 text-slate-700 rounded-lg text-[10px] font-bold transition">1.000.000 đ</button>
+                      <button type="button" onclick="setPOSQuickCash(2000000)" class="px-2 py-1 bg-slate-200 hover:bg-indigo-100 hover:text-indigo-800 text-slate-700 rounded-lg text-[10px] font-bold transition">2.000.000 đ</button>
+                      <button type="button" onclick="setPOSQuickCash(5000000)" class="px-2 py-1 bg-slate-200 hover:bg-indigo-100 hover:text-indigo-800 text-slate-700 rounded-lg text-[10px] font-bold transition">5.000.000 đ</button>
+                    </div>
+                  ` : ''}
+
+                  <div class="flex justify-between items-center text-xs pt-1.5 border-t border-slate-200">
+                    <span class="text-slate-500">Tiền thối lại cho khách:</span>
+                    <span id="pos-cash-change" class="font-black text-xs ${cashDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                      ${cashDiff >= 0 ? cashDiff.toLocaleString() + ' đ' : 'Còn thiếu ' + Math.abs(cashDiff).toLocaleString() + ' đ'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            `}
+
+            <!-- Submit Button -->
+            <button type="submit" ${!cart ? 'disabled' : ''} class="w-full py-3.5 mt-2 ${!cart ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'} rounded-2xl font-black text-xs transition uppercase tracking-wider flex items-center justify-center space-x-2">
+              <span>Xác Nhận Thu Tiền & In Hóa Đơn POS</span>
+              <span>&rarr;</span>
             </button>
           </form>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPOSReceiptModal() {
+  const r = appState.posReceiptModal;
+  if (!r) return '';
+
+  return `
+    <div class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex justify-center items-start overflow-y-auto p-3 sm:p-6 animate-fade-in">
+      <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 my-auto animate-in zoom-in-95 duration-150">
+        <!-- Top Receipt Brand -->
+        <div class="text-center pb-4 border-b border-dashed border-slate-200 space-y-1">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center font-black text-xl shadow-xs ring-4 ring-emerald-50 mb-2">
+            ✓
+          </div>
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+            Thanh Toán Thành Công
+          </span>
+          <h3 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-1">HÓA ĐƠN BÁN LẺ POS</h3>
+          <div class="text-xs text-slate-500">Trung Tâm Thể Thao Sports Center #01</div>
+          <div class="text-[10px] text-slate-400 font-mono">Mã giao dịch: ${r.receiptId} &bull; ${r.date}</div>
+        </div>
+
+        <!-- Receipt Line Items -->
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between py-1 border-b border-slate-100">
+            <span class="text-slate-500">Khách hàng:</span>
+            <span class="font-bold text-slate-900">${r.memberName}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-100">
+            <span class="text-slate-500">Số điện thoại:</span>
+            <span class="font-mono font-semibold text-slate-800">${r.phone || 'N/A'}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-100">
+            <span class="text-slate-500">Mã thẻ hội viên:</span>
+            <span class="font-mono font-bold text-indigo-700">${r.memberId} (ACTIVE)</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-100">
+            <span class="text-slate-500">Gói dịch vụ:</span>
+            <span class="font-bold text-slate-900">${r.packageName}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-100">
+            <span class="text-slate-500">Thời hạn sử dụng:</span>
+            <span class="font-bold text-emerald-700">${r.durationDays} Ngày</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-100">
+            <span class="text-slate-500">Phương thức:</span>
+            <span class="font-bold text-slate-900">${r.methodLabel}</span>
+          </div>
+          <div class="flex justify-between py-2 border-t-2 border-dashed border-slate-200 text-sm">
+            <span class="font-bold text-slate-900">Tổng tiền đã thanh toán:</span>
+            <span class="font-black text-rose-600 text-base">${(r.amount).toLocaleString()} VND</span>
+          </div>
+        </div>
+
+        <!-- Footer / Cashier Signature Note -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-0.5 text-center">
+          <div>Thu ngân: <b>Lê Ngọc Lễ Tân</b> &bull; Quầy tiếp đón 01</div>
+          <div class="text-[10px] text-slate-400">Hội viên có thể quét mã vạch trên thẻ điện tử để qua cổng Turnstile ngay.</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2 pt-1">
+          <button type="button" onclick="window.print()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center space-x-2">
+            <span>🖨 In Hóa Đơn POS</span>
+          </button>
+          <button type="button" onclick="closePOSReceiptModal()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+            Đóng & Tiếp Tục Thu Ngân
+          </button>
         </div>
       </div>
     </div>
@@ -2512,9 +4698,24 @@ function renderCoachWebApp() {
           </button>
         </div>
 
-        <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition">
-          Đăng Xuất
-        </button>
+        <div class="flex items-center space-x-3">
+          ${renderNotificationBell('COACH')}
+
+          <div class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition" onclick="openUserProfileModal()" title="Xem & chỉnh sửa hồ sơ">
+            <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full border border-slate-200 object-cover" />
+            <div class="hidden sm:block text-left">
+              <div class="text-xs font-bold text-slate-900 flex items-center space-x-1">
+                <span>Trần Hoàng Nam</span>
+                <span class="text-[10px] text-slate-400">⚙</span>
+              </div>
+              <div class="text-[10px] text-indigo-600 font-semibold">HLV Trưởng &bull; Hồ Sơ</div>
+            </div>
+          </div>
+
+          <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition">
+            Đăng Xuất
+          </button>
+        </div>
       </header>
 
       <!-- Main Body Container -->
@@ -2523,6 +4724,9 @@ function renderCoachWebApp() {
         ${mode === 'WEEK' ? renderCoachWeekMode(allClasses) : ''}
         ${mode === 'STUDENTS' ? renderCoachStudentsMode(coachClasses) : ''}
       </main>
+
+      <!-- Coach Workout Plan Assignment Modal -->
+      ${appState.coachWorkoutPlanModalOpen ? renderAssignWorkoutPlanModal() : ''}
     </div>
   `;
 }
@@ -2650,7 +4854,7 @@ function renderCoachStudentsMode(coachClasses) {
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
       <div class="pb-3 border-b border-slate-100">
         <h2 class="text-lg font-black text-slate-900">Danh Sách Học Viên Phụ Trách & Chỉ Số Thể Trạng</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Theo dõi mục tiêu thể hình, cân nặng và chỉ số mỡ của học viên.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Theo dõi mục tiêu thể hình, cân nặng và giao lộ trình giáo án cá nhân hóa.</p>
       </div>
 
       <div class="overflow-x-auto">
@@ -2662,16 +4866,22 @@ function renderCoachStudentsMode(coachClasses) {
               <th class="py-3 px-4">Mục Tiêu Thể Lực (Goal)</th>
               <th class="py-3 px-4">InBody (Cân nặng / Body Fat)</th>
               <th class="py-3 px-4">Gói Tập</th>
+              <th class="py-3 px-4">Lộ Trình Giáo Án (Workout Plan)</th>
+              <th class="py-3 px-4 text-right">Thao Tác</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            ${members.map(m => `
+            ${members.map(m => {
+              const myPlans = (appState.data?.memberPlans || []).filter(mp => mp.memberId === m.id);
+              const wpList = myPlans.map(mp => (appState.data?.workoutPlans || []).find(wp => (wp.planId || wp.id) === mp.planId)).filter(Boolean);
+
+              return `
               <tr class="hover:bg-slate-50/70 transition">
                 <td class="py-3.5 px-4 flex items-center space-x-3">
                   <img src="${m.avatar}" class="w-8 h-8 rounded-full object-cover border border-slate-200" />
                   <div>
                     <div class="font-bold text-slate-900">${m.name}</div>
-                    <div class="text-[10px] text-slate-400">Mã: ${m.id}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">Mã: ${m.id}</div>
                   </div>
                 </td>
                 <td class="py-3.5 px-4 text-slate-700 font-medium">${m.phone}</td>
@@ -2680,8 +4890,22 @@ function renderCoachStudentsMode(coachClasses) {
                   ${m.inbody ? `<span class="font-bold text-indigo-700">${m.inbody.weight} kg</span> &bull; Mỡ: <span class="font-semibold text-slate-600">${m.inbody.bodyFat}%</span>` : '---'}
                 </td>
                 <td class="py-3.5 px-4 text-slate-600">${m.activePackage}</td>
+                <td class="py-3.5 px-4">
+                  ${wpList.length > 0 ? `
+                    <div class="text-xs font-bold text-indigo-700">${wpList[0].planName}</div>
+                    <div class="text-[10px] text-slate-400 font-medium">${wpList[0].duration}</div>
+                  ` : `
+                    <span class="text-xs text-slate-400 italic">Chưa có giáo án riêng</span>
+                  `}
+                </td>
+                <td class="py-3.5 px-4 text-right">
+                  <button type="button" onclick="openAssignWorkoutPlanModal('${m.id}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition">
+                    + Giao Lộ Trình
+                  </button>
+                </td>
               </tr>
-            `).join('')}
+            `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -2730,6 +4954,9 @@ function renderManagerWebApp() {
             <button type="button" onclick="switchTab('manager-finances')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-finances' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
               <span>Sổ Cái Hóa Đơn</span>
             </button>
+            <button type="button" onclick="switchTab('manager-audit')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-audit' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <span>Nhật Ký Kiểm Toán (Audit)</span>
+            </button>
           </nav>
         </div>
 
@@ -2751,9 +4978,17 @@ function renderManagerWebApp() {
           </div>
 
           <div class="flex items-center space-x-4">
-            <div class="text-right hidden sm:block">
-              <div class="text-xs font-bold text-slate-900">Nguyễn Văn Quản Lý</div>
-              <div class="text-[10px] text-slate-500">manager@sportscenter.vn</div>
+            ${renderNotificationBell('MANAGER')}
+
+            <div class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition" onclick="openUserProfileModal()" title="Xem & chỉnh sửa hồ sơ">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full border border-slate-200 object-cover" />
+              <div class="text-right hidden sm:block">
+                <div class="text-xs font-bold text-slate-900 flex items-center justify-end space-x-1">
+                  <span>Nguyễn Văn Quản Lý</span>
+                  <span class="text-[10px] text-slate-400">⚙</span>
+                </div>
+                <div class="text-[10px] text-slate-500">manager@sportscenter.vn &bull; Hồ Sơ</div>
+              </div>
             </div>
             <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition">
               Đăng Xuất
@@ -2769,6 +5004,7 @@ function renderManagerWebApp() {
           ${currentTab === 'manager-classes' ? renderManagerClasses() : ''}
           ${currentTab === 'manager-staff' ? renderManagerStaff() : ''}
           ${currentTab === 'manager-finances' ? renderManagerFinances() : ''}
+          ${currentTab === 'manager-audit' ? renderManagerAuditLogs() : ''}
         </main>
       </div>
 
@@ -2788,6 +5024,7 @@ function getManagerTabTitle(tab) {
     case 'manager-classes': return 'Quản Lý Lớp Học & Phòng Tập';
     case 'manager-staff': return 'Quản Lý Nhân Sự & Huấn Luyện Viên';
     case 'manager-finances': return 'Sổ Cái Lịch Sử Hóa Đơn';
+    case 'manager-audit': return 'Nhật Ký Kiểm Toán & Vết Thao Tác Hệ Thống (Audit Logs)';
     default: return 'Bảng Quản Trị';
   }
 }
@@ -3381,48 +5618,342 @@ function cancelMemberBooking(classId) {
   }
 }
 
-// Member Checkout Interactions
+// Member Shopee-style Checkout Interactions
 function openCheckoutModal(pkgId) {
   const pkg = appState.data.packages.find(p => p.id === pkgId);
   if (!pkg) return;
+  const rawMember = appState.data.members.find(m => m.id === 'MEM101') || appState.data.members[0];
+  const member = resolveMember ? resolveMember(rawMember) : rawMember;
+  const nameParts = (member.name || 'Phạm Thu Trang').split(' ');
+  const lastName = nameParts.length > 1 ? nameParts[0] : 'Phạm';
+  const firstName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : (member.name || 'Thu Trang');
+
+  appState.checkoutFlow = {
+    isOpen: true,
+    step: 'FORM', // 'FORM' | 'VNPAY' | 'CARD_PROCESSING' | 'RESULT'
+    package: pkg,
+    orderId: 'ORD' + Math.floor(100000 + Math.random() * 900000),
+    buyerInfo: {
+      lastName: lastName,
+      firstName: firstName,
+      phone: member.phone || '0912345678'
+    },
+    paymentMethod: 'VNPAY', // 'VNPAY' | 'CARD'
+    cardInfo: {
+      number: '9704 1988 5678 9012',
+      holder: (member.name || 'PHAM THU TRANG').toUpperCase(),
+      expiry: '10/29',
+      cvv: '888'
+    },
+    resultStatus: 'SUCCESS', // 'SUCCESS' | 'FAILED'
+    failureReason: '',
+    invoiceData: null
+  };
   appState.selectedPackageForCheckout = pkg;
   renderApp();
 }
 
 function closeCheckoutModal() {
+  if (appState.checkoutFlow) {
+    appState.checkoutFlow.isOpen = false;
+    appState.checkoutFlow.package = null;
+  }
   appState.selectedPackageForCheckout = null;
   renderApp();
 }
 
-function confirmMemberCheckout(pkgId) {
-  const pkg = appState.data.packages.find(p => p.id === pkgId);
-  const member = appState.data.members.find(m => m.id === 'MEM101') || appState.data.members[0];
+function setCheckoutPaymentMethod(method) {
+  if (!appState.checkoutFlow) return;
+  appState.checkoutFlow.paymentMethod = method;
+  renderApp();
+}
 
-  if (pkg && member) {
-    member.activePackage = pkg.name;
-    member.packageId = pkg.id;
-    member.status = 'ACTIVE';
-    member.startDate = '2026-09-19';
-    member.endDate = '2026-10-19';
+function updateCheckoutBuyerInfo(field, value) {
+  if (!appState.checkoutFlow) return;
+  if (!appState.checkoutFlow.buyerInfo) {
+    appState.checkoutFlow.buyerInfo = { lastName: '', firstName: '', phone: '' };
+  }
+  appState.checkoutFlow.buyerInfo[field] = value;
+}
 
-    const invId = 'INV' + (1000 + appState.data.invoices.length + 1);
-    appState.data.invoices.unshift({
-      id: invId,
-      memberId: member.id,
-      memberName: member.name,
-      packageName: pkg.name,
-      amount: pkg.price,
-      paymentMethod: 'ONLINE_VNPAY_QR',
-      date: '2026-09-19',
-      status: 'PAID'
-    });
+function updateCheckoutCardInfo(field, value) {
+  if (!appState.checkoutFlow) return;
+  if (!appState.checkoutFlow.cardInfo) {
+    appState.checkoutFlow.cardInfo = { number: '', holder: '', expiry: '', cvv: '' };
+  }
+  appState.checkoutFlow.cardInfo[field] = value;
+}
 
-    showToast('Thanh toán thành công', `Gói ${pkg.name} đã được kích hoạt cho thẻ của bạn!`, 'success');
+function handleProceedToPayment() {
+  const flow = appState.checkoutFlow;
+  if (!flow) return;
+  const buyer = flow.buyerInfo || {};
+  if (!buyer.lastName?.trim() || !buyer.firstName?.trim() || !buyer.phone?.trim()) {
+    showToast('Thiếu thông tin', 'Vui lòng nhập đầy đủ Họ đệm, Tên và Số điện thoại nhận thông báo.', 'error');
+    return;
+  }
+  if (flow.paymentMethod === 'CARD') {
+    const card = flow.cardInfo || {};
+    if (!card.number?.trim() || card.number.replace(/\s/g, '').length < 12) {
+      showToast('Thông tin thẻ không hợp lệ', 'Vui lòng nhập đúng số thẻ thanh toán (ít nhất 12 chữ số).', 'error');
+      return;
+    }
+    if (!card.holder?.trim() || !card.expiry?.trim() || !card.cvv?.trim()) {
+      showToast('Thiếu thông tin thẻ', 'Vui lòng nhập Tên chủ thẻ, Ngày hết hạn (MM/YY) và mã CVV.', 'error');
+      return;
+    }
+    flow.step = 'CARD_PROCESSING';
+  } else {
+    flow.step = 'VNPAY';
+  }
+  renderApp();
+}
+
+function handleBackToCheckoutForm() {
+  if (!appState.checkoutFlow) return;
+  appState.checkoutFlow.step = 'FORM';
+  renderApp();
+}
+
+function handleSimulatePaymentSuccess() {
+  const flow = appState.checkoutFlow;
+  const pkg = flow?.package || appState.selectedPackageForCheckout;
+  const rawMember = appState.data.members.find(m => m.id === 'MEM101') || appState.data.members[0];
+  if (!pkg || !rawMember) return;
+
+  const todayStr = '2026-09-23';
+  const duration = Number(pkg.durationDays) || 30;
+  const endD = new Date(2026, 8, 23);
+  endD.setDate(endD.getDate() + duration);
+  const endYear = endD.getFullYear();
+  const endMonth = String(endD.getMonth() + 1).padStart(2, '0');
+  const endDay = String(endD.getDate()).padStart(2, '0');
+  const endDateStr = `${endYear}-${endMonth}-${endDay}`;
+  const endDateFormatted = `${endDay}/${endMonth}/${endYear}`;
+
+  // 1. Update Member Entity
+  rawMember.activePackage = pkg.name;
+  rawMember.packageId = pkg.id;
+  rawMember.status = 'ACTIVE';
+  rawMember.startDate = todayStr;
+  rawMember.endDate = endDateStr;
+
+  // 2. Subscriptions Entity (ERD)
+  if (!appState.data.subscriptions) appState.data.subscriptions = [];
+  const activeExisting = appState.data.subscriptions.find(s => s.memberId === rawMember.id && s.status === 'ACTIVE');
+  if (activeExisting) {
+    activeExisting.status = 'EXPIRED';
+  }
+  const subId = 'SUB' + (1000 + appState.data.subscriptions.length + 1);
+  appState.data.subscriptions.unshift({
+    subscriptionId: subId,
+    memberId: rawMember.id,
+    packageId: pkg.id,
+    startDate: todayStr,
+    endDate: endDateStr,
+    status: 'ACTIVE'
+  });
+
+  // 3. Payments Entity (ERD)
+  if (!appState.data.payments) appState.data.payments = [];
+  const payId = 'PAY' + (2000 + appState.data.payments.length + 1);
+  const payMethod = (flow?.paymentMethod === 'CARD') ? 'CREDIT_CARD' : 'VNPAY_QR';
+  const payMethodLabel = (flow?.paymentMethod === 'CARD') ? 'Thẻ Quốc Tế / ATM (3DSecure)' : 'Cổng VNPAY-QR';
+  appState.data.payments.unshift({
+    paymentId: payId,
+    subscriptionId: subId,
+    amount: pkg.price || 0,
+    paymentMethod: payMethod,
+    paymentDate: todayStr,
+    status: 'PAID'
+  });
+
+  // 4. Invoices Entity
+  if (!appState.data.invoices) appState.data.invoices = [];
+  const invId = 'INV' + (1000 + appState.data.invoices.length + 1);
+  const buyer = flow?.buyerInfo || { lastName: 'Phạm', firstName: 'Thu Trang', phone: '0912345678' };
+  const invoiceRecord = {
+    id: invId,
+    memberId: rawMember.id,
+    memberName: `${buyer.lastName} ${buyer.firstName}`.trim(),
+    packageName: pkg.name,
+    amount: pkg.price || 0,
+    paymentMethod: payMethodLabel,
+    date: `${todayStr} 13:00`,
+    endDate: endDateFormatted,
+    status: 'PAID'
+  };
+  appState.data.invoices.unshift(invoiceRecord);
+
+  // 5. Notifications Entity (ERD)
+  if (typeof addNotification === 'function') {
+    addNotification(
+      'Thanh Toán Gói Tập Thành Công',
+      `Bạn đã thanh toán thành công ${(pkg.price || 0).toLocaleString()} VND cho gói ${pkg.name}. Hạn sử dụng đến ${endDateFormatted}.`,
+      'ACCOUNT',
+      rawMember.id
+    );
   }
 
+  // 6. AuditLog Entity (ERD)
+  if (typeof recordAuditLog === 'function') {
+    recordAuditLog(
+      'ONLINE_CHECKOUT_SUCCESS',
+      'Payments',
+      `Hội viên ${rawMember.name} (${rawMember.id}) thanh toán thành công gói ${pkg.name} (${invId}) qua ${payMethodLabel}.`,
+      rawMember.id
+    );
+  }
+
+  // 7. Transition State to Result SUCCESS
+  if (flow) {
+    flow.step = 'RESULT';
+    flow.resultStatus = 'SUCCESS';
+    flow.invoiceData = invoiceRecord;
+  }
+
+  showToast('Thanh toán thành công', `Gói ${pkg.name} đã được kích hoạt thành công!`, 'success');
+  renderApp();
+}
+
+function handleSimulatePaymentFailure(reason) {
+  const flow = appState.checkoutFlow;
+  if (!flow) return;
+  const rawMember = appState.data.members.find(m => m.id === 'MEM101') || appState.data.members[0];
+
+  flow.step = 'RESULT';
+  flow.resultStatus = 'FAILED';
+  flow.failureReason = reason || 'Giao dịch chưa hoàn tất do ngân hàng từ chối hoặc người dùng hủy thao tác.';
+
+  if (typeof recordAuditLog === 'function') {
+    recordAuditLog(
+      'ONLINE_CHECKOUT_FAILED',
+      'Payments',
+      `Giao dịch thanh toán trực tuyến của ${rawMember.name} (${rawMember.id}) thất bại. Lý do: ${flow.failureReason}`,
+      rawMember.id
+    );
+  }
+
+  showToast('Thanh toán thất bại', flow.failureReason, 'error');
+  renderApp();
+}
+
+function handleFinishCheckout() {
+  if (appState.checkoutFlow) {
+    appState.checkoutFlow.isOpen = false;
+    appState.checkoutFlow.package = null;
+  }
   appState.selectedPackageForCheckout = null;
   appState.currentTab = 'member-pass';
   renderApp();
+}
+
+function confirmMemberCheckout(pkgId) {
+  openCheckoutModal(pkgId);
+}
+
+// User Profile Actions & Handlers
+function openUserProfileModal(tab) {
+  appState.userProfileModalOpen = true;
+  appState.userProfileActiveTab = tab || 'INFO';
+  appState.userProfileDraftAvatar = null;
+  renderApp();
+}
+
+function closeUserProfileModal() {
+  appState.userProfileModalOpen = false;
+  appState.userProfileDraftAvatar = null;
+  renderApp();
+}
+
+function setUserProfileTab(tab) {
+  appState.userProfileActiveTab = tab;
+  renderApp();
+}
+
+function selectUserProfileAvatar(url) {
+  appState.userProfileDraftAvatar = url;
+  renderApp();
+}
+
+function handleSaveUserProfile(e) {
+  if (e) e.preventDefault();
+  const lastName = (document.getElementById('profile-form-lastname')?.value || '').trim();
+  const firstName = (document.getElementById('profile-form-firstname')?.value || '').trim();
+  const phone = (document.getElementById('profile-form-phone')?.value || '').trim();
+  const email = (document.getElementById('profile-form-email')?.value || '').trim();
+  const gender = document.getElementById('profile-form-gender')?.value || 'Nữ';
+  const dob = document.getElementById('profile-form-dob')?.value || '1998-05-18';
+  const address = (document.getElementById('profile-form-address')?.value || '').trim();
+  const goal = (document.getElementById('profile-form-goal')?.value || '').trim();
+  const emergency = (document.getElementById('profile-form-emergency')?.value || '').trim();
+  const customAvatar = (document.getElementById('profile-form-avatar')?.value || '').trim();
+
+  if (!firstName) {
+    showToast('Thiếu thông tin', 'Vui lòng nhập Tên của bạn.', 'error');
+    return false;
+  }
+
+  const role = appState.currentRole || 'MEMBER';
+  const fullName = `${lastName} ${firstName}`.trim();
+  const finalAvatar = customAvatar || appState.userProfileDraftAvatar;
+
+  if (role === 'MEMBER') {
+    const rawMember = (appState.data && appState.data.members) ? (appState.data.members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || appState.data.members[0]) : null;
+    if (rawMember) {
+      rawMember.name = fullName;
+      rawMember.lastName = lastName;
+      rawMember.firstName = firstName;
+      if (phone) rawMember.phone = phone;
+      if (email) rawMember.email = email;
+      rawMember.gender = gender;
+      rawMember.dob = dob;
+      rawMember.address = address;
+      if (goal) rawMember.trainingGoal = goal;
+      rawMember.emergencyContact = emergency;
+      if (finalAvatar) rawMember.avatar = finalAvatar;
+    }
+  }
+
+  if (appState.currentUser) {
+    appState.currentUser.name = fullName;
+    if (email) appState.currentUser.email = email;
+    if (finalAvatar) appState.currentUser.avatar = finalAvatar;
+  }
+
+  if (typeof recordAuditLog === 'function') {
+    recordAuditLog('UPDATE_PROFILE', 'Members', `Người dùng cập nhật thông tin hồ sơ cá nhân: ${fullName}`, appState.currentUser?.id || 'MEM101');
+  }
+
+  appState.userProfileDraftAvatar = null;
+  showToast('Cập nhật thành công', `Đã lưu hồ sơ cá nhân cho ${fullName}!`, 'success');
+  renderApp();
+  return false;
+}
+
+function handleChangeUserPassword(e) {
+  if (e) e.preventDefault();
+  const currPass = (document.getElementById('profile-sec-current-pass')?.value || '').trim();
+  const newPass = (document.getElementById('profile-sec-new-pass')?.value || '').trim();
+  const confirmPass = (document.getElementById('profile-sec-confirm-pass')?.value || '').trim();
+
+  if (!newPass || newPass.length < 6) {
+    showToast('Mật khẩu quá ngắn', 'Mật khẩu mới phải có tối thiểu 6 ký tự.', 'error');
+    return false;
+  }
+  if (newPass !== confirmPass) {
+    showToast('Mật khẩu không khớp', 'Mật khẩu mới và xác nhận mật khẩu không trùng khớp.', 'error');
+    return false;
+  }
+
+  if (typeof recordAuditLog === 'function') {
+    recordAuditLog('CHANGE_PASSWORD', 'Accounts', `Đổi mật khẩu tài khoản thành công cho ${appState.currentUser?.email || 'user'}`, appState.currentUser?.id || 'USER');
+  }
+
+  showToast('Đổi mật khẩu thành công', 'Mật khẩu mới của bạn đã được cập nhật an toàn!', 'success');
+  appState.userProfileActiveTab = 'INFO';
+  renderApp();
+  return false;
 }
 
 // Receptionist Interactions
@@ -3488,23 +6019,79 @@ function simulateGateScan(code) {
 function selectPOSPackage(pkgId) {
   const pkg = appState.data.packages.find(p => p.id === pkgId);
   appState.receptionCartPackage = pkg;
+  if (pkg) {
+    appState.posCashReceived = pkg.price;
+    appState.posVnpayPaid = false;
+  }
+  renderApp();
+}
+
+function setPOSPaymentMethod(method) {
+  appState.posPaymentMethod = method;
+  if (method === 'CASH' && appState.receptionCartPackage) {
+    if (!appState.posCashReceived) {
+      appState.posCashReceived = appState.receptionCartPackage.price;
+    }
+  }
+  renderApp();
+}
+
+function setPOSQuickCash(amount) {
+  appState.posCashReceived = amount;
+  renderApp();
+}
+
+function handlePOSCashInput(val) {
+  appState.posCashReceived = parseFloat(val) || 0;
+  const changeEl = document.getElementById('pos-cash-change');
+  if (changeEl) {
+    const price = appState.receptionCartPackage ? appState.receptionCartPackage.price : 0;
+    const diff = appState.posCashReceived - price;
+    changeEl.innerText = diff >= 0 ? diff.toLocaleString() + ' đ' : 'Còn thiếu ' + Math.abs(diff).toLocaleString() + ' đ';
+    changeEl.className = 'font-black text-xs ' + (diff >= 0 ? 'text-emerald-600' : 'text-rose-600');
+  }
+}
+
+function updatePOSCustInfo(field, val) {
+  if (!appState.posCustInfo) appState.posCustInfo = {};
+  appState.posCustInfo[field] = val;
+}
+
+function handleSimulatePOSVnpayPaid(status) {
+  appState.posVnpayPaid = status;
+  if (status) {
+    showToast('VNPAY Báo Có', 'Khách hàng đã quét mã & tài khoản ngân hàng đã nhận tiền!', 'success');
+  }
+  renderApp();
+}
+
+function closePOSReceiptModal() {
+  appState.posReceiptModal = null;
   renderApp();
 }
 
 function handlePOSCheckout(e) {
   if (e) e.preventDefault();
-  const lastName = document.getElementById('pos-cust-lastname')?.value || 'Nguyễn';
-  const firstName = document.getElementById('pos-cust-firstname')?.value || 'Văn A';
-  const fullName = `${lastName} ${firstName}`.trim();
-  const email = document.getElementById('pos-cust-email')?.value || 'khachhang@gmail.com';
-  const goal = document.getElementById('pos-cust-goal')?.value || 'Rèn luyện thể lực & sức khỏe';
-  const method = document.querySelector('input[name="pos_method"]:checked')?.value || 'CASH';
+  const rawName = (document.getElementById('pos-cust-name')?.value || appState.posCustInfo?.name || '').trim();
+  const phone = (document.getElementById('pos-cust-phone')?.value || appState.posCustInfo?.phone || '').trim();
+  const gender = document.getElementById('pos-cust-gender')?.value || appState.posCustInfo?.gender || 'Nam';
+  const method = appState.posPaymentMethod || 'CASH';
   const pkg = appState.receptionCartPackage;
 
   if (!pkg) {
-    showToast('Lỗi', 'Chưa chọn gói dịch vụ!', 'warning');
+    showToast('Lỗi', 'Vui lòng bấm chọn một gói dịch vụ ở danh mục bên trái!', 'warning');
     return false;
   }
+
+  if (!rawName) {
+    showToast('Thiếu thông tin', 'Vui lòng nhập họ tên khách hàng!', 'error');
+    return false;
+  }
+
+  const nameParts = rawName.split(' ');
+  const lastName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : 'Khách';
+  const firstName = nameParts.slice(-1).join(' ');
+  const fullName = rawName;
 
   const newMemId = 'MEM' + (100 + appState.data.members.length + 1);
   const newSubId = 'SUB' + (100 + (appState.data.subscriptions ? appState.data.subscriptions.length : 0) + 1);
@@ -3517,8 +6104,10 @@ function handlePOSCheckout(e) {
     firstName: firstName,
     lastName: lastName,
     name: fullName,
-    email: email,
-    trainingGoal: goal,
+    phone: phone || '0988000111',
+    gender: gender,
+    email: `${firstName.toLowerCase()}.${newMemId.toLowerCase()}@customer.vn`,
+    trainingGoal: 'Rèn luyện thể lực & sức khỏe',
     status: 'ACTIVE'
   };
   appState.data.members.unshift(newMember);
@@ -3530,12 +6119,16 @@ function handlePOSCheckout(e) {
     id: newSubId,
     memberId: newMemId,
     packageId: pkg.packageId || pkg.id,
-    startDate: '2026-09-19',
-    endDate: '2026-10-19',
+    startDate: '2026-09-23',
+    endDate: '2026-10-23',
     status: 'ACTIVE'
   });
 
   // 3. Payments entity (ERD: PaymentID, SubscriptionID, Amount, PaymentMethod, PaymentDate, Status)
+  let methodLabel = 'Tiền mặt';
+  if (method === 'VNPAY_QR') methodLabel = 'Cổng VNPAY-QR';
+  else if (method === 'CARD') methodLabel = 'Quẹt thẻ (Visa/Mastercard/Napas)';
+
   if (!appState.data.payments) appState.data.payments = [];
   appState.data.payments.unshift({
     paymentId: newPmtId,
@@ -3543,8 +6136,8 @@ function handlePOSCheckout(e) {
     subscriptionId: newSubId,
     amount: pkg.price,
     paymentMethod: method,
-    paymentDate: '2026-09-19',
-    date: '2026-09-19',
+    paymentDate: '2026-09-23',
+    date: '2026-09-23',
     status: 'PAID'
   });
 
@@ -3556,15 +6149,40 @@ function handlePOSCheckout(e) {
       memberName: fullName,
       packageName: pkg.packageName || pkg.name,
       amount: pkg.price,
-      paymentMethod: method,
-      date: '2026-09-19',
+      paymentMethod: methodLabel,
+      date: '2026-09-23 13:30',
       status: 'PAID'
     });
   }
 
+  // Record audit log
+  if (typeof recordAuditLog === 'function') {
+    recordAuditLog('POS_SALE', 'Payments', `Lễ tân thu tiền gói ${pkg.packageName || pkg.name} (${pkg.price.toLocaleString()}đ) bằng ${methodLabel} cho khách ${fullName}`, 'USR_RECEPTIONIST');
+  }
+
+  // Open POS receipt modal
+  appState.posReceiptModal = {
+    receiptId: newPmtId,
+    memberName: fullName,
+    memberId: newMemId,
+    phone: phone,
+    gender: gender,
+    packageName: pkg.packageName || pkg.name,
+    durationDays: pkg.durationDays,
+    amount: pkg.price,
+    method: method,
+    methodLabel: methodLabel,
+    date: '2026-09-23 13:30',
+    cashReceived: appState.posCashReceived,
+    cardLast4: appState.posCardLast4 || '9812'
+  };
+
   appState.receptionCartPackage = null;
+  appState.posVnpayPaid = false;
+  appState.posCustInfo = { name: '', phone: '', gender: 'Nam' };
+
+  showToast('Đã thu tiền & Lập hóa đơn POS', `Kích hoạt gói ${pkg.packageName || pkg.name} thành công cho hội viên ${fullName}!`, 'success');
   renderApp();
-  showToast('Đã thu tiền & Lập Subscription (ERD)', `Kích hoạt gói ${pkg.packageName || pkg.name} thành công cho hội viên ${fullName}!`, 'success');
   return false;
 }
 
@@ -3595,6 +6213,9 @@ function fastRenewMemberAtReception(memberId) {
       status: 'PAID'
     });
 
+    recordAuditLog('RENEW_MEMBERSHIP', 'Subscriptions', `Lễ tân gia hạn thẻ +30 ngày cho hội viên ${resolved.name} (${resolved.id})`, 'letan@sportscenter.vn');
+    addNotification('Gia Hạn Thẻ Thành Công', `Thẻ tập ${resolved.activePackage} của bạn đã được gia hạn thêm 30 ngày (hạn đến 19/11/2026).`, 'ACCOUNT', resolved.id);
+
     showToast('Gia hạn thành công', `Đã gia hạn 30 ngày cho hội viên ${resolved.name}. Thu 650.000đ tiền mặt!`, 'success');
     renderApp();
   }
@@ -3607,7 +6228,7 @@ function setCoachTab(tab) {
 }
 
 function selectCoachClass(classId) {
-  const c = appState.data.classes.find(item => item.id === classId);
+  const c = (appState.data.classes || []).find(item => item.id === classId);
   if (c) {
     appState.selectedClassForBooking = c;
     renderApp();
@@ -3615,27 +6236,29 @@ function selectCoachClass(classId) {
 }
 
 function toggleStudentAttendance(classId, studentId) {
-  if (!appState.data.classAttendances) appState.data.classAttendances = [];
-  let att = appState.data.classAttendances.find(a => a.classId === classId && a.memberId === studentId);
-  if (att) {
-    att.status = (att.status === 'PRESENT' || att.status === true) ? 'ABSENT' : 'PRESENT';
-  } else {
-    appState.data.classAttendances.push({
-      attendanceId: 'ATT0' + (appState.data.classAttendances.length + 1),
-      classId: classId,
-      memberId: studentId,
-      attendedDate: '2026-09-19',
-      status: 'PRESENT'
-    });
+  const c = (appState.data.classes || []).find(item => item.id === classId);
+  if (c && c.attendees) {
+    const student = c.attendees.find(s => s.id === studentId);
+    if (student) {
+      student.attended = !student.attended;
+      if (!appState.data.classAttendances) appState.data.classAttendances = [];
+      const attId = 'ATT_' + classId + '_' + studentId;
+      const existing = appState.data.classAttendances.find(a => a.id === attId || (a.classId === classId && a.memberId === studentId));
+      if (existing) {
+        existing.status = student.attended ? 'PRESENT' : 'ABSENT';
+      } else {
+        appState.data.classAttendances.push({
+          attendanceId: attId,
+          id: attId,
+          classId: classId,
+          memberId: studentId,
+          date: '2026-09-19',
+          status: student.attended ? 'PRESENT' : 'ABSENT'
+        });
+      }
+      renderApp();
+    }
   }
-  if (appState.selectedSessionDetail) {
-    const raw = appState.data.classes.find(c => c.id === classId || c.classId === classId);
-    appState.selectedSessionDetail = {
-      ...resolveClass(raw),
-      sessionDate: appState.selectedSessionDetail.sessionDate
-    };
-  }
-  renderApp();
 }
 
 function updateStudentNote(classId, studentId, note) {
@@ -3659,6 +6282,7 @@ function saveClassAttendance(classId) {
   const c = appState.data.classes.find(item => item.id === classId);
   if (c && c.attendees) {
     const presentCount = c.attendees.filter(a => a.attended).length;
+    recordAuditLog('ATTENDANCE_LOG', 'ClassAttendances', `HLV lưu điểm danh lớp ${c.title || classId}: ${presentCount}/${c.attendees.length} có mặt`, 'coach.nam@sportscenter.vn');
     showToast('Đã lưu điểm danh', `Lớp ${c.title}: ${presentCount}/${c.attendees.length} học viên có mặt`, 'success');
   }
 }
@@ -3716,6 +6340,10 @@ function handleCreatePackageSubmit(e) {
     description: desc
   });
 
+  // Record Audit Log & Notification per ERD
+  recordAuditLog('CREATE_PACKAGE', 'Packages', `Quản lý tạo mới gói ${name} (${price.toLocaleString()} VND, ${days} ngày)`, 'manager@sportscenter.vn');
+  addNotification('Gói Tập Mới Ra Mắt', `Trung tâm vừa ra mắt gói tập "${name}" (${type}) với nhiều ưu đãi hấp dẫn!`, 'ACCOUNT', 'MEM101');
+
   closeManagerModal();
   showToast('Tạo gói tập thành công (ERD Compliant)', `Đã thêm gói ${name} (Loại: ${type}) vào danh mục!`, 'success');
   return false;
@@ -3755,6 +6383,11 @@ function handleCreateClassSubmit(e) {
   });
 
   const resolved = resolveClass(newClass);
+
+  // Record Audit Log & Notification per ERD
+  recordAuditLog('CREATE_CLASS', 'Classes', `Quản lý xếp lớp ${resolved.title} (${newClassId}) tại ${resolved.room}`, 'manager@sportscenter.vn');
+  addNotification('Lớp Học Mới Được Mở', `Lớp học "${resolved.title}" đã được xếp lịch tại phòng ${resolved.room}.`, 'CLASS', newClassId);
+
   closeManagerModal();
   showToast('Tạo lớp học thành công (ERD Compliant)', `Đã tạo lớp ${resolved.title} xếp phòng ${resolved.room}!`, 'success');
   return false;
@@ -3783,6 +6416,14 @@ if (typeof window !== 'undefined') {
   window.openCheckoutModal = openCheckoutModal;
   window.closeCheckoutModal = closeCheckoutModal;
   window.confirmMemberCheckout = confirmMemberCheckout;
+  window.setCheckoutPaymentMethod = setCheckoutPaymentMethod;
+  window.updateCheckoutBuyerInfo = updateCheckoutBuyerInfo;
+  window.updateCheckoutCardInfo = updateCheckoutCardInfo;
+  window.handleProceedToPayment = handleProceedToPayment;
+  window.handleBackToCheckoutForm = handleBackToCheckoutForm;
+  window.handleSimulatePaymentSuccess = handleSimulatePaymentSuccess;
+  window.handleSimulatePaymentFailure = handleSimulatePaymentFailure;
+  window.handleFinishCheckout = handleFinishCheckout;
   window.setReceptionMode = setReceptionMode;
   window.setReceptionSearchQuery = setReceptionSearchQuery;
   window.handleGateBarcodeSubmit = handleGateBarcodeSubmit;
@@ -3808,7 +6449,36 @@ if (typeof window !== 'undefined') {
   window.selectCalendarDate = selectCalendarDate;
   window.openSessionDetail = openSessionDetail;
   window.closeSessionDetail = closeSessionDetail;
-
+  // ERD New Entities Handlers
+  window.recordAuditLog = recordAuditLog;
+  window.addNotification = addNotification;
+  window.toggleNotificationDropdown = toggleNotificationDropdown;
+  window.markAllNotificationsAsRead = markAllNotificationsAsRead;
+  window.markSingleNotificationAsRead = markSingleNotificationAsRead;
+  window.openSupportTicketModal = openSupportTicketModal;
+  window.closeSupportTicketModal = closeSupportTicketModal;
+  window.handleCreateSupportTicket = handleCreateSupportTicket;
+  window.setReceptionTicketFilter = setReceptionTicketFilter;
+  window.handleResolveSupportTicket = handleResolveSupportTicket;
+  window.handleRejectSupportTicket = handleRejectSupportTicket;
+  window.openAssignWorkoutPlanModal = openAssignWorkoutPlanModal;
+  window.closeAssignWorkoutPlanModal = closeAssignWorkoutPlanModal;
+  window.handleAssignWorkoutPlan = handleAssignWorkoutPlan;
+  window.setManagerAuditSearch = setManagerAuditSearch;
+  // User Profile Handlers
+  window.openUserProfileModal = openUserProfileModal;
+  window.closeUserProfileModal = closeUserProfileModal;
+  window.setUserProfileTab = setUserProfileTab;
+  window.selectUserProfileAvatar = selectUserProfileAvatar;
+  window.handleSaveUserProfile = handleSaveUserProfile;
+  window.handleChangeUserPassword = handleChangeUserPassword;
+  // POS Cashier Handlers
+  window.setPOSPaymentMethod = setPOSPaymentMethod;
+  window.setPOSQuickCash = setPOSQuickCash;
+  window.handlePOSCashInput = handlePOSCashInput;
+  window.updatePOSCustInfo = updatePOSCustInfo;
+  window.handleSimulatePOSVnpayPaid = handleSimulatePOSVnpayPaid;
+  window.closePOSReceiptModal = closePOSReceiptModal;
 }
 
 if (typeof document !== 'undefined') {

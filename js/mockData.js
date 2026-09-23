@@ -296,6 +296,155 @@ const INITIAL_DATA = {
       receptionistId: 'REC01',
       checkInTime: '2026-09-19 08:30'
     }
+  ],
+  // STRICT ERD: WorkoutPlans (PlanID, PlanName, Duration, Exercises, DueDate, CreateDate)
+  workoutPlans: [
+    {
+      planId: 'WP01',
+      id: 'WP01',
+      planName: 'Lộ Trình Giảm Mỡ & Săn Chắc 30 Ngày',
+      duration: '4 Tuần (3 buổi/tuần)',
+      exercises: 'Khởi động dynamic stretch (10p) - High Knees, Jump Squat & Burpees (20p) - Plank & Mountain Climber (15p) - Cooldown thả lỏng (15p)',
+      dueDate: '2026-10-20',
+      createDate: '2026-09-18',
+      coachId: 'COACH'
+    },
+    {
+      planId: 'WP02',
+      id: 'WP02',
+      planName: 'Tăng Cơ Trọng Tâm & Sức Bền Boxing',
+      duration: '6 Tuần (4 buổi/tuần)',
+      exercises: 'Nhảy dây tốc độ cao (15p) - Đấm bao cát Heavy Bag & Shadow Boxing (30p) - Hít đất tạ & gập bụng (15p)',
+      dueDate: '2026-10-31',
+      createDate: '2026-09-15',
+      coachId: 'COACH'
+    }
+  ],
+  // STRICT ERD: MemberPlan associative entity (MemberPlanID, MemberID, PlanID)
+  memberPlans: [
+    {
+      memberPlanId: 'MP01',
+      id: 'MP01',
+      memberId: 'MEM101',
+      planId: 'WP01',
+      assignedDate: '2026-09-18',
+      status: 'IN_PROGRESS'
+    },
+    {
+      memberPlanId: 'MP02',
+      id: 'MP02',
+      memberId: 'MEM102',
+      planId: 'WP02',
+      assignedDate: '2026-09-15',
+      status: 'IN_PROGRESS'
+    }
+  ],
+  // STRICT ERD: SupportTickets (TicketID, MemberID, ReceptionistID, Content, CreatedDate, Status)
+  supportTickets: [
+    {
+      ticketId: 'TCK101',
+      id: 'TCK101',
+      memberId: 'MEM101',
+      memberName: 'Phạm Thu Trang',
+      receptionistId: 'REC01',
+      content: 'Em để quên bình nước giữ nhiệt màu hồng tại Studio A ca sáng hôm nay, nhờ quầy kiểm tra giúp em ạ.',
+      createdDate: '2026-09-20 08:30',
+      status: 'PENDING',
+      response: ''
+    },
+    {
+      ticketId: 'TCK102',
+      id: 'TCK102',
+      memberId: 'MEM103',
+      memberName: 'Hoàng Minh Châu',
+      receptionistId: 'REC01',
+      content: 'Thẻ của tôi báo hết hạn nhưng tôi nhớ còn thời hạn đến cuối tháng, nhờ lễ tân tra cứu lại giúp.',
+      createdDate: '2026-09-19 14:15',
+      status: 'RESOLVED',
+      response: 'Đã kiểm tra lại thông tin trên hệ thống, thẻ gói cũ của chị đã hết hạn ngày 31/07. Quầy đã hỗ trợ tư vấn gia hạn gói mới thành công.'
+    }
+  ],
+  // STRICT ERD: Notifications, NotificationAccount, NotificationClass
+  notifications: [
+    {
+      notificationId: 'NOTIF01',
+      id: 'NOTIF01',
+      title: 'Nhắc Lịch Tập Sắp Tới',
+      content: 'Buổi học Vinyasa Yoga của bạn sẽ bắt đầu lúc 07:00 ngày mai tại Studio A.',
+      sentDate: '2026-09-21 06:30',
+      targetType: 'ACCOUNT',
+      targetId: 'MEM101',
+      isRead: false
+    },
+    {
+      notificationId: 'NOTIF02',
+      id: 'NOTIF02',
+      title: 'Gia Hạn Thẻ Thành Công',
+      content: 'Thẻ VIP All-Access Pass của bạn đã được kích hoạt thành công, thời hạn sử dụng đến 01/11/2026.',
+      sentDate: '2026-09-19 09:00',
+      targetType: 'ACCOUNT',
+      targetId: 'MEM101',
+      isRead: true
+    },
+    {
+      notificationId: 'NOTIF03',
+      id: 'NOTIF03',
+      title: 'Cập Nhật Giáo Án Lớp Boxing CLS02',
+      content: 'HLV Trần Hoàng Nam đã cập nhật giáo án Pad Work nâng cao cho ca tập chiều nay.',
+      sentDate: '2026-09-20 16:00',
+      targetType: 'CLASS',
+      targetId: 'CLS02',
+      isRead: false
+    },
+    {
+      notificationId: 'NOTIF04',
+      id: 'NOTIF04',
+      title: 'Yêu Cầu Hỗ Trợ Mới',
+      content: 'Hội viên Phạm Thu Trang (MEM101) vừa gửi yêu cầu hỗ trợ tìm đồ để quên tại Studio A.',
+      sentDate: '2026-09-20 08:31',
+      targetType: 'ACCOUNT',
+      targetId: 'REC01',
+      isRead: false
+    }
+  ],
+  // STRICT ERD: AuditLogs (LogID, ActionType, TargetTable, Timestamp, Details)
+  auditLogs: [
+    {
+      logId: 'AUD01',
+      id: 'AUD01',
+      actionType: 'CREATE_PACKAGE',
+      targetTable: 'Packages',
+      timestamp: '2026-09-20 10:15',
+      details: 'Quản lý tạo mới gói tập Super VIP Pilates & Sauna (3.500.000 VND)',
+      accountId: 'manager@sportscenter.vn'
+    },
+    {
+      logId: 'AUD02',
+      id: 'AUD02',
+      actionType: 'RENEW_MEMBERSHIP',
+      targetTable: 'Subscriptions',
+      timestamp: '2026-09-19 15:30',
+      details: 'Lễ tân gia hạn thẻ +30 ngày cho hội viên Phạm Thu Trang (MEM101)',
+      accountId: 'letan@sportscenter.vn'
+    },
+    {
+      logId: 'AUD03',
+      id: 'AUD03',
+      actionType: 'CREATE_CLASS',
+      targetTable: 'Classes',
+      timestamp: '2026-09-18 11:00',
+      details: 'Phân công ca dạy lớp CLS04 (Pilates Reformer) cho HLV Lý Kim Ngân tại RM04',
+      accountId: 'manager@sportscenter.vn'
+    },
+    {
+      logId: 'AUD04',
+      id: 'AUD04',
+      actionType: 'ASSIGN_WORKOUT_PLAN',
+      targetTable: 'WorkoutPlans',
+      timestamp: '2026-09-18 09:30',
+      details: 'HLV Trần Hoàng Nam gán lộ trình "Giảm Mỡ & Săn Chắc 30 Ngày" cho hội viên MEM101',
+      accountId: 'coach.nam@sportscenter.vn'
+    }
   ]
 };
 
