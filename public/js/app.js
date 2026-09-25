@@ -1231,9 +1231,10 @@ function getDataSource() {
 
 let appState = {
   isAuthenticated: false,
+  isViewingAuthScreen: false,
   authTab: 'login', // 'login' | 'register' | 'forgot'
   currentRole: 'MEMBER', // 'MEMBER' | 'RECEPTIONIST' | 'COACH' | 'MANAGER'
-  currentTab: 'member-classes',
+  currentTab: 'member-home',
   currentUser: null,
   otpSent: false,
   activeFilterCategory: 'ALL',
@@ -1265,6 +1266,7 @@ let appState = {
   managerMemberSearch: '',
   managerAuditSearch: '',
   showNotificationDropdown: false,
+  showUserDropdown: false,
   supportTicketModalOpen: false,
   coachSelectedMemberForWorkoutPlan: null,
   coachWorkoutPlanModalOpen: false,
@@ -1325,9 +1327,21 @@ function setAuthTab(tab) {
   renderApp();
 }
 
+function openLoginScreen(tab) {
+  if (tab) appState.authTab = tab;
+  appState.isViewingAuthScreen = true;
+  renderApp();
+}
+
+function closeLoginScreen() {
+  appState.isViewingAuthScreen = false;
+  renderApp();
+}
+
 function quickLoginAs(role) {
   const acc = (appState.data && appState.data.demoAccounts) ? appState.data.demoAccounts.find(a => a.role === role) : null;
   appState.isAuthenticated = true;
+  appState.isViewingAuthScreen = false;
   appState.currentRole = role;
   appState.currentUser = {
     id: role === 'MEMBER' ? 'MEM101' : 'USR_' + role,
@@ -1341,7 +1355,7 @@ function quickLoginAs(role) {
   appState.selectedPackageForCheckout = null;
   appState.managerActiveModal = null;
 
-  if (role === 'MEMBER') appState.currentTab = 'member-classes';
+  if (role === 'MEMBER') appState.currentTab = 'member-home';
   else if (role === 'RECEPTIONIST') {
     appState.currentTab = 'reception-kiosk';
     appState.receptionMode = 'GATE';
@@ -1356,13 +1370,21 @@ function quickLoginAs(role) {
 }
 
 function switchTab(tabName) {
+  if (!appState.isAuthenticated && (tabName === 'member-schedule' || tabName === 'member-fitness' || tabName === 'member-pass' || tabName === 'member-profile')) {
+    showToast('Yêu Cầu Đăng Nhập', 'Vui lòng đăng nhập tài khoản hội viên để truy cập tính năng cá nhân!', 'info');
+    openLoginScreen('login');
+    return;
+  }
   appState.currentTab = tabName;
   renderApp();
 }
 
 function handleLogout() {
   appState.isAuthenticated = false;
+  appState.isViewingAuthScreen = false;
   appState.currentUser = null;
+  appState.currentRole = 'MEMBER';
+  appState.currentTab = 'member-home';
   appState.authTab = 'login';
   renderApp();
 }
@@ -1384,7 +1406,7 @@ function renderApp() {
   const root = document.getElementById('app-root');
   if (!root) return;
 
-  if (!appState.isAuthenticated) {
+  if (!appState.isAuthenticated && appState.isViewingAuthScreen) {
     root.innerHTML = renderAuthScreen();
     return;
   }
@@ -1394,8 +1416,8 @@ function renderApp() {
                       (appState.userProfileModalOpen ? renderUserProfileModal() : '') +
                       (appState.posReceiptModal ? renderPOSReceiptModal() : '');
 
-  // 1. MEMBER: Consumer Web App Portal
-  if (appState.currentRole === 'MEMBER') {
+  // 1. MEMBER / GUEST: Consumer Web App Portal
+  if (appState.currentRole === 'MEMBER' || !appState.isAuthenticated) {
     root.innerHTML = renderMemberWebApp() + modalSuffix;
     return;
   }
@@ -1437,6 +1459,15 @@ function renderAuthScreen() {
         <p class="text-xs text-slate-500 font-medium mt-1">
           SWP391 FA26 Topic 04 &bull; GVHD: MinhTTH5
         </p>
+      </div>
+
+      <!-- Back to Landing Home button -->
+      <div class="w-full max-w-md flex justify-between items-center mb-3">
+        <button type="button" onclick="closeLoginScreen()" class="inline-flex items-center space-x-2 text-xs font-bold text-slate-600 hover:text-indigo-600 transition bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs hover:shadow-xs">
+          <span>&larr;</span>
+          <span>Quay lại Trang Chủ</span>
+        </button>
+        <span class="text-[11px] text-slate-400 font-semibold">Khách Vãng Lai</span>
       </div>
 
       <div class="max-w-md w-full bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/60 p-6 sm:p-8">
@@ -1733,6 +1764,177 @@ function renderNotificationBell(role) {
                 </div>
               </div>
             `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+// User Avatar Dropdown Menu (Opened by clicking avatar)
+function toggleUserDropdown() {
+  appState.showUserDropdown = !appState.showUserDropdown;
+  if (appState.showUserDropdown) {
+    appState.showNotificationDropdown = false;
+  }
+  renderApp();
+}
+
+function closeUserDropdown() {
+  if (appState.showUserDropdown) {
+    appState.showUserDropdown = false;
+    renderApp();
+  }
+}
+
+function navigateToMemberPage(tab) {
+  appState.showUserDropdown = false;
+  if (!appState.isAuthenticated) {
+    showToast('Yêu Cầu Đăng Nhập', 'Vui lòng đăng nhập tài khoản để xem thông tin cá nhân!', 'info');
+    openLoginScreen('login');
+    return;
+  }
+  switchTab(tab);
+}
+
+function renderUserAvatarDropdown(role) {
+  const isOpen = appState.showUserDropdown;
+  const currentTab = appState.currentTab;
+
+  const user = getResolvedCurrentUserProfile();
+  const members = (appState.data && appState.data.members) ? appState.data.members : [];
+  const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
+  const member = role === 'MEMBER' ? (resolveMember(rawMember) || user) : user;
+
+  const isDarkHeader = role === 'RECEPTIONIST' || role === 'MANAGER';
+
+  return `
+    <div class="relative inline-block text-left">
+      <!-- Avatar Trigger Button -->
+      <button type="button" onclick="toggleUserDropdown()" class="flex items-center space-x-2.5 p-1.5 rounded-2xl transition group focus:outline-none ${
+        isDarkHeader
+          ? (isOpen ? 'bg-slate-800 ring-2 ring-indigo-500/50' : 'hover:bg-slate-800')
+          : (isOpen ? 'bg-slate-100 ring-2 ring-indigo-500/30' : 'hover:bg-slate-100/90')
+      }" title="Menu tài khoản cá nhân">
+        <div class="relative flex-shrink-0">
+          <img src="${member.avatar || user.avatar}" class="w-8 h-8 rounded-full border ${isDarkHeader ? 'border-slate-700' : 'border-slate-200'} object-cover shadow-2xs group-hover:scale-105 transition" />
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 ${isDarkHeader ? 'border-slate-900' : 'border-white'}"></span>
+        </div>
+        <div class="hidden sm:block text-left min-w-0 max-w-[155px]">
+          <div class="text-xs font-bold ${isDarkHeader ? 'text-white' : 'text-slate-900'} truncate flex items-center space-x-1">
+            <span class="truncate">${member.name || user.name}</span>
+            <svg class="w-3 h-3 text-slate-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180 text-indigo-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <div class="text-[10px] text-emerald-500 font-semibold truncate">
+            ${role === 'MEMBER' ? `${member.status === 'ACTIVE' ? 'Thẻ Active' : 'Hết hạn'} &bull; ${member.activePackage}` : (user.department || user.roleLabel || role)}
+          </div>
+        </div>
+      </button>
+
+      <!-- Click-outside backdrop -->
+      ${isOpen ? `
+        <div class="fixed inset-0 z-40" onclick="closeUserDropdown()"></div>
+
+        <!-- Dropdown Menu Box -->
+        <div class="absolute right-0 mt-2.5 w-64 sm:w-72 rounded-3xl bg-white shadow-2xl border border-slate-200/90 py-2 z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden divide-y divide-slate-100 text-slate-900">
+          <!-- User Summary Card -->
+          <div class="px-4 py-3 bg-gradient-to-br from-slate-50 to-indigo-50/40">
+            <div class="flex items-center space-x-3">
+              <img src="${member.avatar || user.avatar}" class="w-11 h-11 rounded-2xl border-2 border-white shadow-sm object-cover flex-shrink-0" />
+              <div class="min-w-0 flex-1">
+                <div class="font-black text-sm text-slate-900 truncate">${member.name || user.name}</div>
+                <div class="text-[11px] text-slate-500 font-medium truncate">${member.email || user.email || 'member@sportscenter.vn'}</div>
+                <div class="mt-1 flex items-center space-x-1.5 flex-wrap gap-y-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ${role === 'MEMBER' ? (member.status === 'ACTIVE' ? 'HỘI VIÊN CHÍNH THỨC' : 'HẾT HẠN') : role}
+                  </span>
+                  <span class="text-[10px] text-indigo-700 font-bold truncate">${member.activePackage || user.roleLabel || ''}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Menu Items List -->
+          <div class="p-2 space-y-1">
+            ${role === 'MEMBER' ? `
+              <!-- 1. Hồ Sơ Cá Nhân -->
+              <button type="button" onclick="navigateToMemberPage('member-profile')" class="w-full flex items-center space-x-3 px-3 py-2 rounded-2xl text-left transition group ${currentTab === 'member-profile' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-700'}">
+                <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm group-hover:scale-105 transition flex-shrink-0">
+                  👤
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold leading-tight group-hover:text-indigo-600 transition">Hồ Sơ Cá Nhân</div>
+                </div>
+                <span class="text-slate-300 group-hover:text-indigo-600 transition text-xs">&rarr;</span>
+              </button>
+
+              <!-- 2. Thẻ Điện Tử & Hóa Đơn -->
+              <button type="button" onclick="navigateToMemberPage('member-pass')" class="w-full flex items-center space-x-3 px-3 py-2 rounded-2xl text-left transition group ${currentTab === 'member-pass' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-700'}">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm group-hover:scale-105 transition flex-shrink-0">
+                  💳
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold leading-tight group-hover:text-emerald-700 transition">Thẻ Điện Tử & Hóa Đơn</div>
+                </div>
+                <span class="text-slate-300 group-hover:text-emerald-600 transition text-xs">&rarr;</span>
+              </button>
+
+              <!-- 3. Thể Trạng & InBody -->
+              <button type="button" onclick="navigateToMemberPage('member-fitness')" class="w-full flex items-center space-x-3 px-3 py-2 rounded-2xl text-left transition group ${currentTab === 'member-fitness' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-700'}">
+                <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm group-hover:scale-105 transition flex-shrink-0">
+                  📊
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold leading-tight group-hover:text-amber-700 transition">Thể Trạng & InBody</div>
+                </div>
+                <span class="text-slate-300 group-hover:text-amber-600 transition text-xs">&rarr;</span>
+              </button>
+
+              <!-- 4. Gửi Hỗ Trợ / Ticket -->
+              <button type="button" onclick="closeUserDropdown(); openSupportTicketModal();" class="w-full flex items-center space-x-3 px-3 py-2 rounded-2xl text-left transition hover:bg-slate-50 text-slate-700 group">
+                <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm group-hover:scale-105 transition flex-shrink-0">
+                  🎫
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold leading-tight group-hover:text-blue-600 transition">Hỗ Trợ & Khiếu Nại</div>
+                </div>
+                <span class="text-slate-300 group-hover:text-blue-600 transition text-xs">&rarr;</span>
+              </button>
+            ` : `
+              <!-- Staff / Coach / Manager Items -->
+              <button type="button" onclick="closeUserDropdown(); openUserProfileModal('INFO');" class="w-full flex items-center space-x-3 px-3 py-2 rounded-2xl text-left transition hover:bg-slate-50 text-slate-700 group">
+                <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                  👤
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold leading-tight group-hover:text-indigo-600 transition">Hồ Sơ Cá Nhân & Công Tác</div>
+                </div>
+                <span class="text-slate-300 group-hover:text-indigo-600 transition text-xs">&rarr;</span>
+              </button>
+              <button type="button" onclick="closeUserDropdown(); openUserProfileModal('SECURITY');" class="w-full flex items-center space-x-3 px-3 py-2 rounded-2xl text-left transition hover:bg-slate-50 text-slate-700 group">
+                <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                  🔒
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold leading-tight group-hover:text-indigo-600 transition">Bảo Mật & Mật Khẩu</div>
+                </div>
+                <span class="text-slate-300 group-hover:text-indigo-600 transition text-xs">&rarr;</span>
+              </button>
+            `}
+          </div>
+
+          <!-- Logout Button -->
+          <div class="p-2">
+            <button type="button" onclick="closeUserDropdown(); handleLogout();" class="w-full flex items-center space-x-3 px-3 py-2 rounded-2xl text-left transition hover:bg-rose-50 text-rose-600 group">
+              <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm group-hover:scale-105 transition flex-shrink-0">
+                🚪
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold leading-tight text-rose-600">Đăng Xuất Tài Khoản</div>
+              </div>
+            </button>
           </div>
         </div>
       ` : ''}
@@ -2207,6 +2409,7 @@ function renderManagerAuditLogs() {
 // =========================================================================
 function renderMemberWebApp() {
   const currentTab = appState.currentTab;
+  const isAuth = appState.isAuthenticated;
   const members = (appState.data && appState.data.members) ? appState.data.members : [];
   const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
   const member = resolveMember(rawMember) || {
@@ -2219,7 +2422,7 @@ function renderMemberWebApp() {
     endDate: '2026-11-01'
   };
 
-  const myBookedCount = (appState.data?.classes || []).filter(c => c.attendees && c.attendees.some(a => a.id === member.id)).length;
+  const myBookedCount = isAuth ? ((appState.data?.classes || []).filter(c => c.attendees && c.attendees.some(a => a.id === member.id)).length) : 0;
 
   return `
     <div class="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col">
@@ -2228,72 +2431,69 @@ function renderMemberWebApp() {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <!-- Logo & Brand -->
           <div class="flex items-center space-x-6">
-            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('member-classes')">
+            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('member-home')">
               <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-xs">SC</span>
               <div>
                 <div class="font-extrabold text-sm tracking-tight text-slate-900 leading-tight">SPORTS CENTER</div>
-                <div class="text-[10px] text-slate-500 font-semibold">Member Portal</div>
+                <div class="text-[10px] text-slate-500 font-semibold">${isAuth ? 'Member Portal' : 'Khách Vãng Lai'}</div>
               </div>
             </div>
 
-            <!-- Horizontal Nav Menu -->
-            <nav class="hidden md:flex items-center space-x-1">
-              <button type="button" onclick="switchTab('member-classes')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-classes' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+            <!-- Horizontal Nav Menu (Dashboard Ngang: Trang Chủ + Các mục khám phá & đặt lịch chính) -->
+            <nav class="hidden md:flex items-center space-x-1.5">
+              <button type="button" onclick="switchTab('member-home')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-home' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+                Trang Chủ
+              </button>
+              <button type="button" onclick="switchTab('member-classes')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-classes' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Khám Phá Lớp Học
               </button>
-              <button type="button" onclick="switchTab('member-packages')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-packages' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+              <button type="button" onclick="switchTab('member-packages')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-packages' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Gói Hội Viên
               </button>
-              <button type="button" onclick="switchTab('member-schedule')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${currentTab === 'member-schedule' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
-                <span>Lịch Tập Của Tôi</span>
-                ${myBookedCount > 0 ? `<span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-indigo-600 text-white">${myBookedCount}</span>` : ''}
-              </button>
-              <button type="button" onclick="switchTab('member-fitness')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-fitness' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
-                Thể Trạng & InBody
-              </button>
-              <button type="button" onclick="switchTab('member-pass')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-pass' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
-                Thẻ Điện Tử & Hóa Đơn
-              </button>
-              <button type="button" onclick="switchTab('member-profile')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-profile' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
-                Hồ Sơ Cá Nhân
-              </button>
+              ${isAuth ? `
+                <button type="button" onclick="switchTab('member-schedule')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${currentTab === 'member-schedule' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+                  <span>Lịch Tập Của Tôi</span>
+                  ${myBookedCount > 0 ? `<span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-indigo-600 text-white">${myBookedCount}</span>` : ''}
+                </button>
+              ` : ''}
             </nav>
           </div>
 
-          <!-- User Info & Logout -->
-          <div class="flex items-center space-x-4">
-            ${renderNotificationBell('MEMBER')}
-
-            <div class="flex items-center space-x-3 cursor-pointer hover:bg-slate-100/80 p-1.5 rounded-xl transition group" onclick="openUserProfileModal()" title="Xem & Chỉnh sửa hồ sơ cá nhân">
-              <img src="${member.avatar}" class="w-8 h-8 rounded-full border border-slate-200 object-cover group-hover:ring-2 group-hover:ring-indigo-500 transition" />
-              <div class="hidden sm:block text-left">
-                <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition flex items-center space-x-1">
-                  <span>${member.name}</span>
-                  <span class="text-[10px] text-slate-400">⚙</span>
-                </div>
-                <div class="text-[11px] text-emerald-600 font-semibold">${member.status === 'ACTIVE' ? 'Thẻ Active' : 'Hết hạn'} &bull; ${member.activePackage}</div>
-              </div>
+          <!-- Right Controls: If Authenticated -> Bell + User Avatar Dropdown. If Guest -> Register + Login Buttons -->
+          ${isAuth ? `
+            <div class="flex items-center space-x-2 sm:space-x-3">
+              ${renderNotificationBell('MEMBER')}
+              ${renderUserAvatarDropdown('MEMBER')}
             </div>
-
-            <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition">
-              Đăng Xuất
-            </button>
-          </div>
+          ` : `
+            <div class="flex items-center space-x-2">
+              <button type="button" onclick="openLoginScreen('register')" class="hidden sm:inline-flex px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition">
+                Đăng Ký
+              </button>
+              <button type="button" onclick="openLoginScreen('login')" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition flex items-center space-x-1.5">
+                <span>Đăng Nhập</span>
+                <span class="text-xs">&rarr;</span>
+              </button>
+            </div>
+          `}
         </div>
 
-        <!-- Mobile horizontal sub-bar -->
+        <!-- Mobile horizontal sub-bar (Gọn gàng cho di động) -->
         <div class="md:hidden flex border-t border-slate-100 overflow-x-auto px-4 py-2 space-x-2 bg-slate-50">
-          <button type="button" onclick="switchTab('member-classes')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-classes' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Lớp học</button>
-          <button type="button" onclick="switchTab('member-packages')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-packages' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Gói tập</button>
-          <button type="button" onclick="switchTab('member-schedule')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-schedule' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Lịch (${myBookedCount})</button>
-          <button type="button" onclick="switchTab('member-fitness')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-fitness' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">InBody</button>
-          <button type="button" onclick="switchTab('member-pass')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-pass' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Thẻ QR</button>
-          <button type="button" onclick="switchTab('member-profile')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-semibold ${currentTab === 'member-profile' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border'}">Hồ sơ</button>
+          <button type="button" onclick="switchTab('member-home')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-home' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Trang chủ</button>
+          <button type="button" onclick="switchTab('member-classes')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-classes' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Lớp học</button>
+          <button type="button" onclick="switchTab('member-packages')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-packages' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Gói tập</button>
+          ${isAuth ? `
+            <button type="button" onclick="switchTab('member-schedule')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-schedule' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Lịch (${myBookedCount})</button>
+          ` : `
+            <button type="button" onclick="openLoginScreen('login')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200">Đăng Nhập</button>
+          `}
         </div>
       </header>
 
       <!-- Main Body Container -->
       <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">
+        ${currentTab === 'member-home' ? renderMemberLandingHome() : ''}
         ${currentTab === 'member-classes' ? renderMemberClassDiscovery() : ''}
         ${currentTab === 'member-packages' ? renderMemberPackageCatalog() : ''}
         ${currentTab === 'member-schedule' ? renderMemberMySchedule() : ''}
@@ -2314,6 +2514,459 @@ function renderMemberWebApp() {
       <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
         Sports Center Management Portal &bull; SWP391 FA26 Topic 04 &bull; FPT University
       </footer>
+    </div>
+  `;
+}
+
+// Landing / Homepage: Sports Center Discovery & App Introduction (Vietnam.travel Style)
+function quickExploreCategory(cat) {
+  appState.activeFilterCategory = cat;
+  appState.memberSearchKeyword = '';
+  switchTab('member-classes');
+}
+
+function handleHomeSearch(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const input = document.getElementById('home-search-input');
+  if (input) {
+    appState.memberSearchKeyword = input.value.trim();
+  }
+  switchTab('member-classes');
+  return false;
+}
+
+function renderMemberLandingHome() {
+  const pkgs = (appState.data && appState.data.packages) ? appState.data.packages : [];
+
+  return `
+    <div class="space-y-10 sm:space-y-14 animate-fade-in pb-8">
+      <!-- 1. HERO SECTION (Immersive Vietnam.travel aesthetic) -->
+      <section class="relative rounded-3xl overflow-hidden shadow-xl min-h-[480px] sm:min-h-[540px] flex flex-col justify-between p-6 sm:p-10 text-white">
+        <!-- Background Image with Gradient Overlay -->
+        <div class="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&auto=format&fit=crop&q=80" 
+            alt="Sports Center Hero" 
+            class="w-full h-full object-cover object-center filter brightness-90 scale-105 transition-transform duration-1000 ease-out"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/75 to-slate-950/40"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/60 to-transparent"></div>
+        </div>
+
+        <!-- Top Badge -->
+        <div class="relative z-10">
+          <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-black uppercase tracking-wider text-amber-300 shadow-xs">
+            <span>✨</span>
+            <span>Tổ Hợp Thể Thao & Sống Khỏe Tiêu Chuẩn Quốc Tế</span>
+          </div>
+        </div>
+
+        <!-- Hero Main Content -->
+        <div class="relative z-10 max-w-3xl my-auto py-4 sm:py-6 space-y-4">
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-white">
+            Đánh Thức Thể Lực. <br />
+            <span class="bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300 bg-clip-text text-transparent">
+              Định Hình Phong Cách Sống.
+            </span>
+          </h1>
+          <p class="text-slate-200 text-xs sm:text-base leading-relaxed max-w-2xl font-normal drop-shadow-xs">
+            Chào mừng bạn đến với <strong class="text-white font-bold">Sports Center</strong> – Không gian luyện tập 5.000m² tích hợp dàn máy TechnoGym AI, bể bơi bốn mùa ozone, phòng xông hơi đá muối Himalaya cùng ứng dụng số hóa quản lý 1-chạm thông minh.
+          </p>
+
+          <!-- Interactive Search / Filter Bar on Hero -->
+          <div class="pt-2">
+            <form onsubmit="return handleHomeSearch(event)" class="bg-white/95 backdrop-blur-md p-2 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/40 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-2xl text-slate-800">
+              <div class="flex-1 flex items-center px-3.5 py-2 space-x-2.5">
+                <svg class="w-5 h-5 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input 
+                  type="text" 
+                  id="home-search-input" 
+                  placeholder="Tìm lớp học, bộ môn (Yoga, Boxing...), HLV..." 
+                  class="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                />
+              </div>
+              <button 
+                type="submit" 
+                class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl transition shadow-md flex items-center justify-center space-x-1.5 flex-shrink-0"
+              >
+                <span>Tìm Lớp Ngay</span>
+                <span>&rarr;</span>
+              </button>
+            </form>
+
+            <!-- Quick Pill Filters -->
+            <div class="flex items-center gap-2 mt-3 flex-wrap">
+              <span class="text-[11px] text-slate-300 font-semibold">Khám phá nhanh:</span>
+              <button type="button" onclick="quickExploreCategory('Yoga')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
+                🧘 Yoga Thân Tâm
+              </button>
+              <button type="button" onclick="quickExploreCategory('Boxing')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
+                🥊 Boxing Đốt Mỡ
+              </button>
+              <button type="button" onclick="quickExploreCategory('Pilates')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
+                🤸 Pilates Vóc Dáng
+              </button>
+              <button type="button" onclick="quickExploreCategory('Zumba')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
+                💃 Zumba Vũ Điệu
+              </button>
+              <button type="button" onclick="switchTab('member-packages')" class="px-3 py-1 rounded-full bg-amber-500/30 hover:bg-amber-500/50 backdrop-blur-xs border border-amber-400/40 text-[11px] text-amber-200 font-bold transition">
+                🏷️ Bảng Giá Gói Tập
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Bottom Action Strip -->
+        <div class="relative z-10 pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/15 text-xs text-slate-300">
+          <div class="flex items-center space-x-6 flex-wrap gap-y-2">
+            <span class="flex items-center space-x-1.5"><strong class="text-white font-bold">📍 Địa chỉ:</strong> Khu Công Nghệ Cao Hòa Lạc, Hà Nội</span>
+            <span class="flex items-center space-x-1.5"><strong class="text-white font-bold">⏰ Giờ mở cửa:</strong> 05:30 – 22:00 Hàng ngày</span>
+            <span class="flex items-center space-x-1.5"><strong class="text-white font-bold">📞 Hotline:</strong> 1900 6868</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button type="button" onclick="switchTab('member-classes')" class="text-xs font-bold text-white hover:text-indigo-300 underline underline-offset-4 transition">
+              Xem Lịch Tập Hôm Nay &rarr;
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. STATS BAR (SỐ LIỆU ẤN TƯỢNG) -->
+      <section class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
+          <div class="text-2xl sm:text-3xl font-black text-indigo-600 tracking-tight">15,000+</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">Hội Viên Thân Thiết</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Tập luyện & gắn bó mỗi ngày</div>
+        </div>
+        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
+          <div class="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">50+</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">Master Coach Quốc Tế</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Chứng chỉ NASM, ACE, Yoga Alliance</div>
+        </div>
+        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
+          <div class="text-2xl sm:text-3xl font-black text-amber-500 tracking-tight">120+</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">Lớp Học / Tuần</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Đa dạng khung giờ từ 06:00 - 21:00</div>
+        </div>
+        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
+          <div class="text-2xl sm:text-3xl font-black text-rose-500 tracking-tight">99.8%</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">Hài Lòng Dịch Vụ</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Đánh giá 5 sao từ cộng đồng</div>
+        </div>
+      </section>
+
+      <!-- 3. FEATURED DISCIPLINES & EXPERIENCES (BỘ SƯU TẬP BỘ MÔN ĐẲNG CẤP) -->
+      <section class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-indigo-600">Trải Nghiệm Đa Dạng</div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+              Các Bộ Môn Thể Thao Đỉnh Cao
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+              Được thiết kế từ bài bản đến nâng cao, dẫn dắt trực tiếp bởi các huấn luyện viên chuyên nghiệp.
+            </p>
+          </div>
+          <button type="button" onclick="switchTab('member-classes')" class="inline-flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition self-start sm:self-auto">
+            <span>Khám phá toàn bộ 120+ lớp</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- 1. Yoga -->
+          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
+            <div class="relative h-48 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&auto=format&fit=crop&q=80" 
+                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
+                alt="Yoga Studio"
+              />
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-indigo-800 backdrop-blur-xs shadow-xs">
+                Studio A Tĩnh Lặng
+              </span>
+              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white shadow-xs">
+                ⭐ 4.9/5
+              </span>
+            </div>
+            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 class="font-black text-base text-slate-900 group-hover:text-indigo-600 transition">Yoga Thân - Tâm - Trí</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Cân bằng hơi thở, tăng độ dẻo dai khớp và phục hồi năng lượng sống trong phòng tập sàn gỗ sồi tràn ngập hương tinh dầu tự nhiên.
+                </p>
+              </div>
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-semibold">Tất cả trình độ</span>
+                <button type="button" onclick="quickExploreCategory('Yoga')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                  Đặt Lớp Ngay &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Boxing -->
+          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
+            <div class="relative h-48 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&auto=format&fit=crop&q=80" 
+                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
+                alt="Boxing Arena"
+              />
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-rose-800 backdrop-blur-xs shadow-xs">
+                Combat Arena
+              </span>
+              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-rose-600 text-white shadow-xs">
+                🔥 Đốt 800kcal
+              </span>
+            </div>
+            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 class="font-black text-base text-slate-900 group-hover:text-rose-600 transition">Boxing & KickFit Rực Lửa</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Rèn luyện phản xạ tự vệ, giải tỏa áp lực cực đỉnh và đốt mỡ toàn thân cùng dàn HLV Cựu VĐV đội tuyển quốc gia.
+                </p>
+              </div>
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-semibold">Cường độ cao</span>
+                <button type="button" onclick="quickExploreCategory('Boxing')" class="text-xs font-bold text-rose-600 hover:text-rose-800 transition">
+                  Đặt Lớp Ngay &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Pilates -->
+          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
+            <div class="relative h-48 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&auto=format&fit=crop&q=80" 
+                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
+                alt="Pilates Reformer"
+              />
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-amber-800 backdrop-blur-xs shadow-xs">
+                Máy Reformer Nhập Khẩu
+              </span>
+              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-600 text-white shadow-xs">
+                ✨ Siết Eo & Chỉnh Dáng
+              </span>
+            </div>
+            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 class="font-black text-base text-slate-900 group-hover:text-amber-600 transition">Pilates Cân Chỉnh Cột Sống</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Tập trung phục hồi cơ lõi sâu, chỉnh cong vẹo cột sống do ngồi máy tính nhiều và kiến tạo vóc dáng thanh thoát, chuẩn mẫu.
+                </p>
+              </div>
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-semibold">Phục hồi & Dáng vóc</span>
+                <button type="button" onclick="quickExploreCategory('Pilates')" class="text-xs font-bold text-amber-600 hover:text-amber-800 transition">
+                  Đặt Lớp Ngay &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Gym & Strength -->
+          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
+            <div class="relative h-48 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&auto=format&fit=crop&q=80" 
+                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
+                alt="Fitness Gym Area"
+              />
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-indigo-800 backdrop-blur-xs shadow-xs">
+                Sàn Gym 1.200m²
+              </span>
+              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white shadow-xs">
+                TechnoGym Live
+              </span>
+            </div>
+            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 class="font-black text-base text-slate-900 group-hover:text-indigo-600 transition">Gym & Sức Mạnh Thể Lực</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Dàn máy khối, khu tạ tự do chuẩn Olympic, máy cardio màn hình tương tác thông minh hỗ trợ kết nối dữ liệu buổi tập cá nhân.
+                </p>
+              </div>
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-semibold">Tự do & Có HLV</span>
+                <button type="button" onclick="switchTab('member-packages')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                  Xem Gói Tập &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. APP ECOSYSTEM WALKTHROUGH (HỆ SINH THÁI ỨNG DỤNG SỐ HÓA 4.0) -->
+      <section class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-12 text-white relative overflow-hidden shadow-2xl">
+        <div class="relative z-10 max-w-3xl">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-3">
+            <span>📱</span>
+            <span>Ứng Dụng Hội Viên Toàn Diện</span>
+          </div>
+          <h2 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+            Một Ứng Dụng Thông Minh.<br />
+            Trọn Vẹn Mọi Tiện Ích Thể Thao.
+          </h2>
+          <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
+            Quên đi thẻ nhựa hay thủ tục giấy tờ phiền hà. Toàn bộ hành trình tập luyện từ cổng soát vé, đặt lớp học đến biểu đồ chỉ số cơ thể được điều khiển ngay trong lòng bàn tay bạn.
+          </p>
+        </div>
+
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-5 mt-8 sm:mt-10">
+          <!-- Feature 1 -->
+          <div class="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/30 border border-indigo-400/40 text-indigo-300 flex items-center justify-center font-black text-2xl">
+              📲
+            </div>
+            <h3 class="font-bold text-base text-white">Thẻ Số & Check-in QR</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Mã QR động qua cổng Turnstile tự động trong 0.5s. Tích hợp lịch sử ra vào và xuất hóa đơn điện tử minh bạch.
+            </p>
+            <div class="pt-2">
+              <button type="button" onclick="navigateToMemberPage('member-pass')" class="text-xs font-bold text-indigo-300 hover:text-indigo-200 transition">
+                Xem Thẻ Điện Tử &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-black text-2xl">
+              📅
+            </div>
+            <h3 class="font-bold text-base text-white">Đặt Chỗ & Quản Lý Lịch</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Xem sơ đồ chỗ lớp học trước 7 ngày, chọn huấn luyện viên yêu thích và nhận thông báo nhắc giờ tập tự động.
+            </p>
+            <div class="pt-2">
+              <button type="button" onclick="switchTab('member-classes')" class="text-xs font-bold text-emerald-300 hover:text-emerald-200 transition">
+                Khám Phá Lớp Học &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/30 border border-amber-400/40 text-amber-300 flex items-center justify-center font-black text-2xl">
+              📊
+            </div>
+            <h3 class="font-bold text-base text-white">Đo InBody & Giáo Án Riêng</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Theo dõi biểu đồ cân nặng, cơ, mỡ, BMI định kỳ và tiếp nhận giáo án bài tập cá nhân do HLV trực tiếp phân công.
+            </p>
+            <div class="pt-2">
+              <button type="button" onclick="navigateToMemberPage('member-fitness')" class="text-xs font-bold text-amber-300 hover:text-amber-200 transition">
+                Xem Thể Trạng Của Tôi &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 6. POPULAR PACKAGES PREVIEW (CÁC GÓI TẬP BÁN CHẠY NHẤT) -->
+      <section class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-indigo-600">Đăng Ký Linh Hoạt</div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+              Các Gói Hội Viên Được Tin Chọn
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+              Thanh toán an toàn qua VNPay QR hoặc thẻ Visa/Mastercard/Napas, kích hoạt gói tức thì.
+            </p>
+          </div>
+          <button type="button" onclick="switchTab('member-packages')" class="inline-flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+            <span>Xem tất cả gói &rarr;</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${pkgs.slice(0, 3).map(pkg => `
+            <div class="rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 relative ${
+              pkg.popular 
+                ? 'bg-gradient-to-b from-indigo-900 to-slate-900 text-white shadow-xl ring-2 ring-indigo-500 scale-[1.02]' 
+                : 'bg-white text-slate-900 border border-slate-200 shadow-xs hover:shadow-lg'
+            }">
+              ${pkg.popular ? `
+                <div class="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-sm">
+                  ★ Phổ Biến Nhất
+                </div>
+              ` : ''}
+
+              <div>
+                <h3 class="text-lg font-black tracking-tight">${pkg.name}</h3>
+                <p class="text-xs ${pkg.popular ? 'text-slate-300' : 'text-slate-500'} mt-1">${pkg.description}</p>
+                <div class="mt-4 pb-4 border-b ${pkg.popular ? 'border-white/10' : 'border-slate-100'}">
+                  <div class="text-2xl sm:text-3xl font-black">${(pkg.price || 0).toLocaleString()} <span class="text-xs font-normal ${pkg.popular ? 'text-slate-300' : 'text-slate-500'}">VND</span></div>
+                  <div class="text-[11px] ${pkg.popular ? 'text-indigo-300' : 'text-slate-400'} font-semibold mt-0.5">Thời hạn: ${pkg.durationDays || 30} Ngày Sử Dụng</div>
+                </div>
+                <div class="py-4 space-y-2.5">
+                  ${(pkg.features || []).slice(0, 4).map(f => `
+                    <div class="flex items-start space-x-2 text-xs">
+                      <span class="${pkg.popular ? 'text-amber-400' : 'text-indigo-600'} font-bold flex-shrink-0">✓</span>
+                      <span class="${pkg.popular ? 'text-slate-200' : 'text-slate-600'}">${f}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="pt-4">
+                <button 
+                  type="button" 
+                  onclick="openCheckoutModal('${pkg.id}')" 
+                  class="w-full py-3 rounded-2xl font-bold text-xs transition shadow-sm ${
+                    pkg.popular 
+                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
+                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  }"
+                >
+                  Đăng Ký Gói Này &rarr;
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+
+
+
+      <!-- 8. FINAL CALL TO ACTION (CHÂN TRANG KÊU GỌI HÀNH ĐỘNG) -->
+      <section class="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-700 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div class="max-w-xl space-y-2">
+          <div class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider">
+            Bắt Đầu Ngay Hôm Nay
+          </div>
+          <h2 class="text-2xl sm:text-4xl font-black tracking-tight">
+            Sẵn Sàng Nâng Tầm Thể Chất Cùng Sports Center?
+          </h2>
+          <p class="text-indigo-100 text-xs sm:text-sm leading-relaxed">
+            Đăng ký gói thẻ ngay hôm nay để nhận buổi đo InBody 770 miễn phí và tư vấn lộ trình 1-1 cùng Master Coach.
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-3 flex-shrink-0 w-full sm:w-auto">
+          <button 
+            type="button" 
+            onclick="switchTab('member-classes')" 
+            class="w-full sm:w-auto px-6 py-3.5 bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs sm:text-sm rounded-2xl shadow-md transition"
+          >
+            Khám Phá Lớp Học &rarr;
+          </button>
+          <button 
+            type="button" 
+            onclick="switchTab('member-packages')" 
+            class="w-full sm:w-auto px-6 py-3.5 bg-indigo-900/60 hover:bg-indigo-900/80 text-white border border-white/20 font-bold text-xs sm:text-sm rounded-2xl transition"
+          >
+            Xem Bảng Giá Gói
+          </button>
+        </div>
+      </section>
     </div>
   `;
 }
@@ -3947,23 +4600,10 @@ function renderReceptionistWebApp() {
           </button>
         </div>
 
-        <!-- Operator & Logout -->
-        <div class="flex items-center space-x-4">
+        <!-- Operator & Dropdown Menu -->
+        <div class="flex items-center space-x-3">
           ${renderNotificationBell('RECEPTIONIST')}
-
-          <div class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition" onclick="openUserProfileModal()" title="Xem & chỉnh sửa hồ sơ">
-            <div class="text-right hidden sm:block">
-              <div class="text-xs font-bold text-white flex items-center justify-end space-x-1">
-                <span>Lê Ngọc Lễ Tân</span>
-                <span class="text-[10px] text-slate-400">⚙</span>
-              </div>
-              <div class="text-[10px] text-emerald-400">Ca Sáng (06:00 - 14:00) &bull; Hồ Sơ</div>
-            </div>
-            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full border border-slate-700 object-cover" />
-          </div>
-          <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-rose-400 hover:bg-slate-800 border border-slate-700 rounded-lg transition">
-            Đăng Xuất
-          </button>
+          ${renderUserAvatarDropdown('RECEPTIONIST')}
         </div>
       </header>
 
@@ -4700,21 +5340,7 @@ function renderCoachWebApp() {
 
         <div class="flex items-center space-x-3">
           ${renderNotificationBell('COACH')}
-
-          <div class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition" onclick="openUserProfileModal()" title="Xem & chỉnh sửa hồ sơ">
-            <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full border border-slate-200 object-cover" />
-            <div class="hidden sm:block text-left">
-              <div class="text-xs font-bold text-slate-900 flex items-center space-x-1">
-                <span>Trần Hoàng Nam</span>
-                <span class="text-[10px] text-slate-400">⚙</span>
-              </div>
-              <div class="text-[10px] text-indigo-600 font-semibold">HLV Trưởng &bull; Hồ Sơ</div>
-            </div>
-          </div>
-
-          <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition">
-            Đăng Xuất
-          </button>
+          ${renderUserAvatarDropdown('COACH')}
         </div>
       </header>
 
@@ -4977,22 +5603,9 @@ function renderManagerWebApp() {
             <span class="text-xs font-semibold text-slate-700">${getManagerTabTitle(currentTab)}</span>
           </div>
 
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-3">
             ${renderNotificationBell('MANAGER')}
-
-            <div class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition" onclick="openUserProfileModal()" title="Xem & chỉnh sửa hồ sơ">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full border border-slate-200 object-cover" />
-              <div class="text-right hidden sm:block">
-                <div class="text-xs font-bold text-slate-900 flex items-center justify-end space-x-1">
-                  <span>Nguyễn Văn Quản Lý</span>
-                  <span class="text-[10px] text-slate-400">⚙</span>
-                </div>
-                <div class="text-[10px] text-slate-500">manager@sportscenter.vn &bull; Hồ Sơ</div>
-              </div>
-            </div>
-            <button type="button" onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition">
-              Đăng Xuất
-            </button>
+            ${renderUserAvatarDropdown('MANAGER')}
           </div>
         </header>
 
@@ -5570,6 +6183,11 @@ function setMemberSearchKeyword(kw) {
 }
 
 function openBookingModal(classId) {
+  if (!appState.isAuthenticated) {
+    showToast('Yêu Cầu Đăng Nhập', 'Vui lòng đăng nhập tài khoản hội viên để đặt chỗ lớp học!', 'info');
+    openLoginScreen('login');
+    return;
+  }
   const c = appState.data.classes.find(item => item.id === classId || item.classId === classId);
   if (!c) return;
   appState.selectedClassForBooking = resolveClass(c);
@@ -5620,6 +6238,11 @@ function cancelMemberBooking(classId) {
 
 // Member Shopee-style Checkout Interactions
 function openCheckoutModal(pkgId) {
+  if (!appState.isAuthenticated) {
+    showToast('Yêu Cầu Đăng Nhập', 'Vui lòng đăng nhập tài khoản hội viên để mua gói tập!', 'info');
+    openLoginScreen('login');
+    return;
+  }
   const pkg = appState.data.packages.find(p => p.id === pkgId);
   if (!pkg) return;
   const rawMember = appState.data.members.find(m => m.id === 'MEM101') || appState.data.members[0];
@@ -6479,6 +7102,18 @@ if (typeof window !== 'undefined') {
   window.updatePOSCustInfo = updatePOSCustInfo;
   window.handleSimulatePOSVnpayPaid = handleSimulatePOSVnpayPaid;
   window.closePOSReceiptModal = closePOSReceiptModal;
+  // User Avatar Dropdown Handlers
+  window.renderUserAvatarDropdown = renderUserAvatarDropdown;
+  window.renderMemberWebApp = renderMemberWebApp;
+  window.toggleUserDropdown = toggleUserDropdown;
+  window.closeUserDropdown = closeUserDropdown;
+  window.navigateToMemberPage = navigateToMemberPage;
+  // Landing / Home Handlers
+  window.renderMemberLandingHome = renderMemberLandingHome;
+  window.quickExploreCategory = quickExploreCategory;
+  window.handleHomeSearch = handleHomeSearch;
+  window.openLoginScreen = openLoginScreen;
+  window.closeLoginScreen = closeLoginScreen;
 }
 
 if (typeof document !== 'undefined') {
