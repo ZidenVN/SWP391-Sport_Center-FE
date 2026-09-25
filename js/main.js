@@ -14,6 +14,9 @@
  * - /api: Unified HTTP client & role-based services ready for Backend integration
  */
 
+// 0. ERD Initial Mock Data
+import './mockData.js';
+
 // 1. Core State & ERD Resolvers
 import './state/resolvers.js';
 import './state/defaultData.js';
