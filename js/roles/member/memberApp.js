@@ -39,9 +39,7 @@ function renderMemberWebApp() {
 
             <!-- Horizontal Nav Menu (Dashboard Ngang: Trang Chủ + Các mục khám phá & đặt lịch chính) -->
             <nav class="hidden md:flex items-center space-x-1.5">
-              <button type="button" onclick="switchTab('member-home')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-home' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
-                Trang Chủ
-              </button>
+           
               <button type="button" onclick="switchTab('member-classes')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-classes' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Khám Phá Lớp Học
               </button>
@@ -78,7 +76,6 @@ function renderMemberWebApp() {
 
         <!-- Mobile horizontal sub-bar (Gọn gàng cho di động) -->
         <div class="md:hidden flex border-t border-slate-100 overflow-x-auto px-4 py-2 space-x-2 bg-slate-50">
-          <button type="button" onclick="switchTab('member-home')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-home' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Trang chủ</button>
           <button type="button" onclick="switchTab('member-classes')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-classes' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Lớp học</button>
           <button type="button" onclick="switchTab('member-packages')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-packages' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Gói tập</button>
           ${isAuth ? `

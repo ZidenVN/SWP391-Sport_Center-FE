@@ -113,49 +113,56 @@ function renderLoginForm() {
 function renderRegisterForm() {
   return `
     <form onsubmit="return handleFormRegister(event)" class="space-y-3.5">
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Họ và Tên</label>
-        <input type="text" id="reg-name" required class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="Ví dụ: Hoàng Nhật Nam" />
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Họ (Last Name) <span class="text-rose-500">*</span></label>
+          <input type="text" id="reg-lastname" required class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="Ví dụ: Admin" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tên (First Name) <span class="text-rose-500">*</span></label>
+          <input type="text" id="reg-firstname" required class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="Ví dụ: Toi La" />
+        </div>
       </div>
 
       <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Số Điện Thoại</label>
-          <input type="tel" id="reg-phone" required class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="09xxxxxxxx" />
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Số Điện Thoại <span class="text-rose-500">*</span></label>
+          <input type="tel" id="reg-phone" required pattern="[0-9]{9,11}" class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="0987123456" />
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Giới Tính</label>
-          <select id="reg-gender" class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm">
-            <option value="Nam">Nam</option>
-            <option value="Nữ">Nữ</option>
-            <option value="Khác">Khác</option>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Giới Tính <span class="text-rose-500">*</span></label>
+          <select id="reg-gender" class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm font-medium">
+            <option value="MALE">Nam (MALE)</option>
+            <option value="FEMALE">Nữ (FEMALE)</option>
+            <option value="OTHER">Khác (OTHER)</option>
           </select>
         </div>
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Email</label>
-        <input type="email" id="reg-email" required class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="email@gmail.com" />
+        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Địa Chỉ Email <span class="text-rose-500">*</span></label>
+        <input type="email" id="reg-email" required class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="admin@ad.com" />
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mật Khẩu</label>
-        <input type="password" id="reg-password" required minlength="3" class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="Tối thiểu 3 ký tự" />
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mật Khẩu <span class="text-rose-500">*</span></label>
+          <input type="password" id="reg-password" required minlength="6" class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="Tối thiểu 6 ký tự" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Xác Nhận Mật Khẩu <span class="text-rose-500">*</span></label>
+          <input type="password" id="reg-confirm-password" required minlength="6" class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm" placeholder="Nhập lại mật khẩu" />
+        </div>
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mục Tiêu Thể Hình (Training Goal)</label>
-        <select id="reg-goal" class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm">
-          <option value="Giảm mỡ, tăng cơ săn chắc">Giảm mỡ, tăng cơ săn chắc</option>
-          <option value="Tăng cân & phát triển khối cơ">Tăng cân & phát triển khối cơ</option>
-          <option value="Tập Yoga dẻo dai & giải tỏa stress">Tập Yoga dẻo dai & giải tỏa stress</option>
-          <option value="Rèn luyện sức bền & tim mạch">Rèn luyện sức bền & tim mạch</option>
-        </select>
-      </div>
-
-      <button type="submit" class="w-full py-2.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm transition">
-        Hoàn Tất Đăng Ký Tài Khoản
+      <button type="submit" id="reg-submit-btn" class="w-full py-2.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center space-x-2">
+        <span>Hoàn Tất Đăng Ký Tài Khoản</span>
       </button>
+
+      <div class="text-center pt-1">
+        <span class="text-xs text-slate-500">Đã có tài khoản?</span>
+        <button type="button" onclick="setAuthTab('login')" class="text-xs text-indigo-600 hover:text-indigo-700 font-semibold hover:underline ml-1">Đăng nhập ngay</button>
+      </div>
     </form>
   `;
 }
@@ -218,35 +225,156 @@ function handleFormLogin(e) {
   return false;
 }
 
-function handleFormRegister(e) {
-  if (e) e.preventDefault();
-  const lastName = document.getElementById('reg-lastname')?.value || 'Phạm';
-  const firstName = document.getElementById('reg-firstname')?.value || 'Thu Trang';
-  const fullName = `${lastName} ${firstName}`.trim();
-  const email = document.getElementById('reg-email')?.value || 'new@customer.vn';
-  const goal = document.getElementById('reg-goal')?.value || 'Giảm mỡ, tăng cơ săn chắc';
+async function handleFormRegister(e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
 
-  const newId = 'MEM' + (100 + appState.data.members.length + 1);
-  
-  // STRICT ERD: Members entity (MemberID, FirstName, LastName, Email, TrainingGoal, Status)
-  const newMember = {
-    memberId: newId,
-    id: newId,
+  const lastName = (document.getElementById('reg-lastname')?.value || '').trim();
+  const firstName = (document.getElementById('reg-firstname')?.value || '').trim();
+  const gender = document.getElementById('reg-gender')?.value || 'MALE';
+  const email = (document.getElementById('reg-email')?.value || '').trim();
+  const phone = (document.getElementById('reg-phone')?.value || '').trim();
+  const password = document.getElementById('reg-password')?.value || '';
+  const confirmPassword = document.getElementById('reg-confirm-password')?.value || '';
+
+  // 1. Kiểm tra validation phía client
+  if (!lastName || !firstName) {
+    showToast('Lỗi nhập liệu', 'Vui lòng nhập đầy đủ Họ và Tên', 'error');
+    return false;
+  }
+  if (!phone) {
+    showToast('Lỗi nhập liệu', 'Vui lòng nhập số điện thoại liên hệ', 'error');
+    return false;
+  }
+  if (!email) {
+    showToast('Lỗi nhập liệu', 'Vui lòng nhập địa chỉ email hợp lệ', 'error');
+    return false;
+  }
+  if (!password || password.length < 6) {
+    showToast('Mật khẩu yếu', 'Mật khẩu phải chứa tối thiểu 6 ký tự', 'error');
+    return false;
+  }
+  if (confirmPassword && password !== confirmPassword) {
+    showToast('Mật khẩu không khớp', 'Mật khẩu xác nhận không trùng khớp với mật khẩu đã nhập', 'error');
+    return false;
+  }
+
+  // 2. Chuẩn bị payload chuẩn theo API backend
+  const registerPayload = {
     firstName: firstName,
     lastName: lastName,
-    name: fullName,
+    gender: gender,
     email: email,
-    trainingGoal: goal,
-    status: 'ACTIVE'
+    phone: phone,
+    passwordHash: password
   };
 
-  appState.data.members.unshift(newMember);
-  quickLoginAs('MEMBER');
-  appState.currentUser.name = fullName;
-  appState.currentUser.email = email;
-  appState.currentTab = 'member-packages';
-  renderApp();
-  showToast('Đăng ký thành công (ERD Compliant)', `Chào mừng hội viên ${fullName}! Vui lòng chọn gói tập để kích hoạt thẻ.`, 'success');
+  const submitBtn = document.getElementById('reg-submit-btn');
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      <span>Đang gửi thông tin đăng ký...</span>
+    `;
+  }
+
+  try {
+    // 3. Gọi Backend Register API
+    let responseData = null;
+    const authService = (typeof window !== 'undefined' && window.api && window.api.auth) ? window.api.auth : null;
+
+    if (authService && typeof authService.register === 'function') {
+      responseData = await authService.register(registerPayload);
+    } else {
+      // Fallback gọi fetch trực tiếp tới API endpoint từ env
+      const baseUrl = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
+      const res = await fetch(`${baseUrl}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(registerPayload)
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = (data && (data.message || data.error || data.detail)) || `Đăng ký thất bại (Mã lỗi: ${res.status})`;
+        throw new Error(msg);
+      }
+      responseData = data;
+    }
+
+    console.log('[Auth] Đăng ký thành công từ API:', responseData);
+
+    // 4. Đồng bộ vào Local App State & Demo Accounts
+    const fullName = `${lastName} ${firstName}`.trim();
+    if (appState && appState.data) {
+      if (Array.isArray(appState.data.demoAccounts)) {
+        const accIdx = appState.data.demoAccounts.findIndex(a => a.email.toLowerCase() === email.toLowerCase());
+        const accObj = {
+          email: email,
+          name: fullName,
+          role: 'MEMBER',
+          roleLabel: 'Hội Viên Mới',
+          phone: phone,
+          gender: gender
+        };
+        if (accIdx >= 0) {
+          appState.data.demoAccounts[accIdx] = accObj;
+        } else {
+          appState.data.demoAccounts.push(accObj);
+        }
+      }
+
+      if (Array.isArray(appState.data.members)) {
+        const newMember = {
+          memberId: 'MEM' + (100 + appState.data.members.length + 1),
+          id: 'MEM' + (100 + appState.data.members.length + 1),
+          firstName: firstName,
+          lastName: lastName,
+          name: fullName,
+          email: email,
+          phone: phone,
+          gender: gender,
+          status: 'ACTIVE'
+        };
+        appState.data.members.unshift(newMember);
+      }
+    }
+
+    showToast('Đăng ký thành công', `Tài khoản ${email} đã được đăng ký thành công! Vui lòng đăng nhập.`, 'success');
+
+    // 5. Chuyển tab sang Đăng Nhập và điền sẵn email
+    setAuthTab('login');
+    setTimeout(() => {
+      const emailInput = document.getElementById('login-email');
+      if (emailInput) {
+        emailInput.value = email;
+      }
+      const passInput = document.getElementById('login-password');
+      if (passInput) {
+        passInput.value = '';
+        passInput.focus();
+      }
+    }, 150);
+
+  } catch (err) {
+    console.error('[Auth] Lỗi đăng ký:', err);
+    let errMsg = err.message || 'Đăng ký không thành công!';
+    if (err.message && err.message.includes('Failed to fetch')) {
+      const apiBase = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
+      errMsg = `Không thể kết nối đến máy chủ (${apiBase}). Vui lòng kiểm tra lại dịch vụ Backend đang chạy!`;
+    }
+    showToast('Đăng ký thất bại', errMsg, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHtml;
+    }
+  }
+
   return false;
 }
 
