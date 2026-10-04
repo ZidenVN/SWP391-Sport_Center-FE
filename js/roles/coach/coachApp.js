@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // COACH WEB APP (ATTENDANCE, TIMETABLE, ROSTER, WORKOUT PLAN)
 // =========================================================================
 
@@ -16,42 +16,85 @@ function renderCoachWebApp() {
   const attendees = (selectedClass && selectedClass.attendees) ? selectedClass.attendees : [];
 
   return `
-    <div class="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col">
-      <!-- Trainer Top Bar -->
-      <header class="bg-white border-b border-slate-200 px-4 sm:px-8 h-16 flex items-center justify-between sticky top-0 z-40 shadow-xs">
-        <div class="flex items-center space-x-4">
-          <div class="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center font-black text-sm">TR</div>
-          <div>
-            <div class="font-extrabold text-sm tracking-tight text-slate-900 leading-tight">TRAINER HUB & SÀN TẬP</div>
-            <div class="text-[10px] text-slate-500 font-semibold">HLV Trần Hoàng Nam &bull; Lịch Dạy & Điểm Danh</div>
+    <div class="min-h-screen bg-[#f8fafc] text-slate-900 flex">
+      <!-- Coach Left Sidebar -->
+      <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between shadow-xs flex-shrink-0 sticky top-0 h-screen">
+        <div class="flex flex-col h-full overflow-y-auto">
+          <!-- Logo -->
+          <div class="h-16 flex items-center px-5 border-b border-slate-200 flex-shrink-0">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-xs">TR</span>
+              <div>
+                <div class="font-extrabold text-xs tracking-tight text-slate-900 uppercase">TRAINER HUB</div>
+                <div class="text-[9px] text-indigo-600 font-bold uppercase">Huấn Luyện Viên</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nav Menu -->
+          <nav class="p-3 space-y-0.5 flex-1">
+            <div class="text-[10px] font-bold text-slate-400 uppercase px-3 mb-2 tracking-wider">Quản Lý Lớp Dạy</div>
+            <button type="button" onclick="setCoachTab('TODAY')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'TODAY' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              <span>Hôm Nay & Điểm Danh</span>
+            </button>
+            <button type="button" onclick="setCoachTab('WEEK')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'WEEK' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span>Lịch Dạy Cả Tuần</span>
+            </button>
+            <button type="button" onclick="setCoachTab('STUDENTS')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'STUDENTS' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span>Học Viên & Thể Lực</span>
+            </button>
+          </nav>
+
+          <!-- User Info at bottom removed to put in top bar -->
+        </div>
+        
+      </aside>
+
+      <!-- Mobile Top Bar -->
+      <div class="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-xs">
+        <div class="h-14 flex items-center justify-between px-4">
+          <div class="flex items-center space-x-2">
+            <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-xs">TR</span>
+            <span class="font-extrabold text-sm text-slate-900">TRAINER HUB</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            ${renderNotificationBell('COACH')}
+            ${renderUserAvatarDropdown('COACH')}
           </div>
         </div>
-
-        <!-- 3 Coach Tabs -->
-        <div class="hidden sm:flex bg-slate-100 p-1 rounded-xl border border-slate-200 space-x-1">
-          <button type="button" onclick="setCoachTab('TODAY')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'TODAY' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
-            Hôm Nay & Điểm Danh
-          </button>
-          <button type="button" onclick="setCoachTab('WEEK')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'WEEK' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
-            Lịch Dạy Cả Tuần
-          </button>
-          <button type="button" onclick="setCoachTab('STUDENTS')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'STUDENTS' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
-            Học Viên & Thể Lực
-          </button>
+        <div class="flex overflow-x-auto px-3 pb-2 space-x-1.5">
+          <button type="button" onclick="setCoachTab('TODAY')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'TODAY' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Hôm Nay</button>
+          <button type="button" onclick="setCoachTab('WEEK')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'WEEK' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Lịch Tuần</button>
+          <button type="button" onclick="setCoachTab('STUDENTS')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'STUDENTS' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Học Viên</button>
         </div>
+      </div>
 
-        <div class="flex items-center space-x-3">
-          ${renderNotificationBell('COACH')}
-          ${renderUserAvatarDropdown('COACH')}
-        </div>
-      </header>
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col min-w-0 md:mt-0 mt-24">
+        <!-- Desktop Top Header for User Profile -->
+        <header class="h-16 bg-white border-b border-slate-200 hidden md:flex items-center justify-between px-6 z-10 sticky top-0">
+          <div class="flex items-center space-x-3">
+            <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+              Huấn Luyện Viên (Coach)
+            </span>
+            <span class="text-slate-300">/</span>
+            <span class="text-xs font-semibold text-slate-700">${mode === 'TODAY' ? 'Hôm Nay & Điểm Danh' : mode === 'WEEK' ? 'Lịch Dạy Cả Tuần' : 'Học Viên & Thể Lực'}</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            ${renderNotificationBell('COACH')}
+            ${renderUserAvatarDropdown('COACH')}
+          </div>
+        </header>
 
-      <!-- Main Body Container -->
-      <main class="max-w-6xl mx-auto w-full p-4 sm:p-6 lg:p-8 flex-1 space-y-6">
-        ${mode === 'TODAY' ? renderCoachTodayMode(coachClasses, selectedClass, attendees) : ''}
-        ${mode === 'WEEK' ? renderCoachWeekMode(allClasses) : ''}
-        ${mode === 'STUDENTS' ? renderCoachStudentsMode(coachClasses) : ''}
-      </main>
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          ${mode === 'TODAY' ? renderCoachTodayMode(coachClasses, selectedClass, attendees) : ''}
+          ${mode === 'WEEK' ? renderCoachWeekMode(allClasses) : ''}
+          ${mode === 'STUDENTS' ? renderCoachStudentsMode(coachClasses) : ''}
+        </main>
+      </div>
 
       <!-- Coach Workout Plan Assignment Modal -->
       ${appState.coachWorkoutPlanModalOpen ? renderAssignWorkoutPlanModal() : ''}
@@ -70,9 +113,9 @@ function renderCoachTodayMode(rawCoachClasses, selectedClass, attendees) {
         <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Các Ca Dạy Phụ Trách Hôm Nay</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           ${coachClasses.map(c => `
-            <div onclick="selectCoachClass('${c.id}')" class="p-5 rounded-2xl border cursor-pointer transition ${resolvedSelected?.id === c.id ? 'border-orange-500 bg-orange-50/40 ring-2 ring-orange-500/20 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}">
+            <div onclick="selectCoachClass('${c.id}')" class="p-5 rounded-2xl border cursor-pointer transition ${resolvedSelected?.id === c.id ? 'border-indigo-500 bg-indigo-50/40 ring-2 ring-indigo-500/20 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}">
               <div class="flex justify-between items-start">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-orange-100 text-orange-800">${c.category}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-100 text-indigo-800">${c.category}</span>
                 <span class="text-xs font-extrabold text-slate-800">${c.scheduleTime || c.time}</span>
               </div>
               <h3 class="font-black text-sm text-slate-900 mt-2">${c.title}</h3>
@@ -86,7 +129,7 @@ function renderCoachTodayMode(rawCoachClasses, selectedClass, attendees) {
         <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 gap-3">
             <div>
-              <span class="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Bảng Điểm Danh Lớp</span>
+              <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Bảng Điểm Danh Lớp</span>
               <h2 class="text-xl font-black text-slate-900 mt-0.5">${resolvedSelected.title}</h2>
               <p class="text-xs text-slate-500 mt-0.5">${resolvedSelected.time} &bull; ${resolvedSelected.room} &bull; Danh sách ${resolvedAttendees.length} học viên đăng ký</p>
             </div>
@@ -157,7 +200,7 @@ function _unused_old_renderCoachWeekMode(allClasses) {
                 ` : `
                   ${classesOnDay.map(cl => `
                     <div class="p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs text-left">
-                      <div class="text-[10px] font-bold text-orange-600 uppercase">${cl.category}</div>
+                      <div class="text-[10px] font-bold text-indigo-600 uppercase">${cl.category}</div>
                       <div class="text-xs font-bold text-slate-900 line-clamp-1">${cl.title}</div>
                       <div class="text-[10px] text-slate-500 mt-0.5">${cl.time}</div>
                       <div class="text-[10px] text-slate-400 mt-0.5">${cl.room}</div>
@@ -449,3 +492,6 @@ if (_targetGlobal) {
   if (typeof updateStudentNote !== 'undefined') _targetGlobal.updateStudentNote = updateStudentNote;
   if (typeof saveClassAttendance !== 'undefined') _targetGlobal.saveClassAttendance = saveClassAttendance;
 }
+
+
+

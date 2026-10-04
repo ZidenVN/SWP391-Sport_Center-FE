@@ -49,10 +49,7 @@ function renderManagerWebApp() {
           </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-200 text-center">
-          <div class="text-[11px] font-semibold text-slate-800">SWP391 FA26 Topic 04</div>
-          <div class="text-[10px] text-slate-400 mt-0.5">GVHD: MinhTTH5</div>
-        </div>
+        
       </aside>
 
       <!-- Main Admin Content Area -->
