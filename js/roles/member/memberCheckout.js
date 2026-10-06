@@ -532,13 +532,31 @@ function openCheckoutModal(pkgId) {
     openLoginScreen('login');
     return;
   }
-  const pkg = appState.data.packages.find(p => p.id === pkgId);
-  if (!pkg) return;
-  const rawMember = appState.data.members.find(m => m.id === 'MEM101') || appState.data.members[0];
-  const member = resolveMember ? resolveMember(rawMember) : rawMember;
-  const nameParts = (member.name || 'Phạm Thu Trang').split(' ');
-  const lastName = nameParts.length > 1 ? nameParts[0] : 'Phạm';
-  const firstName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : (member.name || 'Thu Trang');
+  const packages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const rawPkg = packages.find(p => String(p.packageId || p.id) === String(pkgId)) || packages.find(p => p.id === pkgId);
+  if (!rawPkg) return;
+  const pkg = (typeof normalizePackage === 'function' ? normalizePackage(rawPkg) : (typeof window !== 'undefined' && typeof window.normalizePackage === 'function' ? window.normalizePackage(rawPkg) : null)) || {
+    ...rawPkg,
+    id: rawPkg.packageId || rawPkg.id,
+    packageId: rawPkg.packageId || rawPkg.id,
+    name: rawPkg.packageName || rawPkg.name || 'Gói Tập',
+    packageName: rawPkg.packageName || rawPkg.name || 'Gói Tập',
+    price: Number(rawPkg.price || 0),
+    durationDays: Number(rawPkg.durationDays || 30),
+    description: rawPkg.description || ''
+  };
+  const curr = appState.currentUser || {};
+  const members = (appState.data && appState.data.members) ? appState.data.members : [];
+  let rawMember = null;
+  if (curr.email || curr.id) {
+    rawMember = members.find(m => (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase()) || (curr.id && (m.id === curr.id || m.memberId === curr.id)));
+  }
+  if (!rawMember) rawMember = members.find(m => m.id === 'MEM101') || members[0] || {};
+  const member = (typeof resolveMember === 'function') ? (resolveMember(rawMember) || {}) : rawMember;
+  const displayName = curr.name || member.name || 'Hội viên';
+  const nameParts = displayName.split(' ');
+  const lastName = nameParts.length > 1 ? nameParts[0] : '';
+  const firstName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : displayName;
 
   appState.checkoutFlow = {
     isOpen: true,
@@ -630,7 +648,13 @@ function handleBackToCheckoutForm() {
 function handleSimulatePaymentSuccess() {
   const flow = appState.checkoutFlow;
   const pkg = flow?.package || appState.selectedPackageForCheckout;
-  const rawMember = appState.data.members.find(m => m.id === 'MEM101') || appState.data.members[0];
+  const curr = appState.currentUser || {};
+  const members = (appState.data && appState.data.members) ? appState.data.members : [];
+  let rawMember = null;
+  if (curr.email || curr.id) {
+    rawMember = members.find(m => (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase()) || (curr.id && (m.id === curr.id || m.memberId === curr.id)));
+  }
+  if (!rawMember) rawMember = members.find(m => m.id === 'MEM101') || members[0];
   if (!pkg || !rawMember) return;
 
   const todayStr = '2026-09-23';

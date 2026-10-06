@@ -1,8 +1,11 @@
 import { apiClient } from './apiClient.js';
+import { packageApi } from './packageApi.js';
+
+export { packageApi };
 
 export const memberApi = {
-  getClasses: (params) => apiClient.get('/member/classes', params),
-  getPackages: () => apiClient.get('/member/packages'),
+  getClasses: (params) => apiClient.get('/classes', params),
+  getPackages: () => packageApi.getAll(),
   bookClass: (classId) => apiClient.post('/member/bookings', { classId }),
   cancelBooking: (classId) => apiClient.delete(`/member/bookings/${classId}`),
   checkoutPackage: (payload) => apiClient.post('/member/checkout', payload),
@@ -29,7 +32,10 @@ export const coachApi = {
 
 export const managerApi = {
   getDashboardStats: () => apiClient.get('/manager/dashboard'),
-  createPackage: (pkg) => apiClient.post('/manager/packages', pkg),
-  createClass: (cls) => apiClient.post('/manager/classes', cls),
+  getPackages: () => packageApi.getAll(),
+  createPackage: (pkg) => packageApi.create(pkg),
+  updatePackage: (id, pkg) => packageApi.update(id, pkg),
+  deletePackage: (id) => packageApi.delete(id),
+  createClass: (cls) => apiClient.post('/classes', cls),
   getAuditLogs: (params) => apiClient.get('/manager/audit-logs', params)
 };

@@ -44,13 +44,14 @@ import './roles/root.js';
 // 6. Backend API Client & Services
 import { apiClient } from './api/apiClient.js';
 import { authApi } from './api/authApi.js';
-import { memberApi, receptionApi, coachApi, managerApi } from './api/index.js';
+import { memberApi, receptionApi, coachApi, managerApi, packageApi } from './api/index.js';
 
 // Expose API services on window for integration and debugging
 if (typeof window !== 'undefined') {
   window.api = {
     client: apiClient,
     auth: authApi,
+    package: packageApi,
     member: memberApi,
     reception: receptionApi,
     coach: coachApi,

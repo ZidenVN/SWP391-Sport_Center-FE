@@ -1,4 +1,4 @@
-﻿// =========================================================================
+// =========================================================================
 // MEMBER WEB APP (GUEST LANDING, CATALOG, CLASSES, SCHEDULE, STATS, PASS)
 // =========================================================================
 
@@ -8,16 +8,29 @@
 function renderMemberWebApp() {
   const currentTab = appState.currentTab;
   const isAuth = appState.isAuthenticated;
+  const curr = appState.currentUser;
   const members = (appState.data && appState.data.members) ? appState.data.members : [];
-  const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
-  const member = resolveMember(rawMember) || {
-    id: 'MEM101',
-    name: 'Phạm Thu Trang',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    status: 'ACTIVE',
-    activePackage: 'VIP All-Access Pass',
-    phone: '0912345678',
-    endDate: '2026-11-01'
+  let rawMember = null;
+  if (curr && (curr.email || curr.id)) {
+    rawMember = members.find(m => 
+      (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase()) ||
+      (curr.id && (m.id === curr.id || m.memberId === curr.id))
+    );
+  }
+  if (!rawMember) {
+    rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
+  }
+  const resolved = resolveMember(rawMember) || {};
+  const member = {
+    id: curr?.id || resolved.id || 'MEM101',
+    name: curr?.name || resolved.name || 'Hội viên',
+    email: curr?.email || resolved.email || '',
+    phone: curr?.phone || resolved.phone || '',
+    gender: curr?.gender || rawMember?.gender || 'Nam',
+    avatar: curr?.avatar || resolved.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    status: rawMember?.status || resolved.status || 'ACTIVE',
+    activePackage: resolved.activePackage || 'Gói Hội Viên',
+    endDate: resolved.endDate || '2026-11-01'
   };
 
   const myBookedCount = isAuth ? ((appState.data?.classes || []).filter(c => c.attendees && c.attendees.some(a => a.id === member.id)).length) : 0;
@@ -233,7 +246,10 @@ function handleHomeSearch(e) {
 }
 
 function renderMemberLandingHome() {
-  const pkgs = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const rawPkgs = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const pkgs = rawPkgs
+    .map(p => (typeof normalizePackage === 'function' ? normalizePackage(p) : p))
+    .filter(p => p && (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
 
   return `
     <div class="space-y-8 sm:space-y-10 animate-fade-in pb-8">
@@ -596,7 +612,7 @@ function renderMemberLandingHome() {
               <div class="pt-4">
                 <button 
                   type="button" 
-                  onclick="openCheckoutModal('${pkg.id}')" 
+                  onclick="openCheckoutModal('${pkg.packageId || pkg.id}')" 
                   class="w-full py-3 rounded-2xl font-bold text-xs transition shadow-sm ${
                     pkg.popular 
                       ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
@@ -752,54 +768,72 @@ function renderMemberClassDiscovery() {
 }
 
 function renderMemberPackageCatalog() {
-  const packages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const rawPackages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  // Member CHỈ nhìn thấy các gói đang ACTIVE
+  const packages = rawPackages
+    .map(pkg => (typeof normalizePackage === 'function' ? normalizePackage(pkg) : pkg))
+    .filter(pkg => pkg && (pkg.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
 
   return `
     <div class="space-y-8">
       <div class="text-center max-w-2xl mx-auto">
         <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Chọn Gói Thẻ Hội Viên Phù Hợp</h2>
         <p class="text-xs sm:text-sm text-slate-500 mt-2">
-          Đăng ký hoặc gia hạn trực tuyến tức thì. Hệ thống hỗ trợ quét mã QR Chuyển khoản ngân hàng hoặc thanh toán tại quầy lễ tân.
+          Đăng ký hoặc gia hạn trực tuyến tức thì. Hệ thống hỗ trợ thanh toán chuyển khoản và bảo mật tự động.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        ${packages.map(pkg => `
-          <div class="bg-white rounded-2xl border ${pkg.popular ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-md' : 'border-slate-200 shadow-xs'} p-6 flex flex-col justify-between relative">
-            ${pkg.popular ? `
-              <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded-full shadow-xs">
-                Gói Phổ Biến Nhất
+      ${packages.length === 0 ? `
+        <div class="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-md mx-auto shadow-xs">
+          <div class="text-4xl mb-3">&#x1f4e6;</div>
+          <h3 class="font-extrabold text-slate-900 text-base">Hiện Chưa Có Gói Tập Đang Mở Bán</h3>
+          <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            Các gói tập hiện tại đang được trung tâm cập nhật. Vui lòng quay lại sau hoặc liên hệ quầy lễ tân để được hỗ trợ!
+          </p>
+        </div>
+      ` : `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          ${packages.map(pkg => `
+            <div class="bg-white rounded-2xl border ${pkg.popular ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-md' : 'border-slate-200 shadow-xs'} p-6 flex flex-col justify-between relative hover:shadow-lg transition">
+              ${pkg.popular ? `
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded-full shadow-xs">
+                  Gói Phổ Biến Nhất
+                </div>
+              ` : ''}
+
+              <div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">${pkg.durationDays || 30} Ngày Sử Dụng</div>
+                <h3 class="text-lg font-black text-slate-900 mt-1">${pkg.name}</h3>
+                <p class="text-xs text-slate-500 mt-2 min-h-[36px] line-clamp-3">${pkg.description || 'Truy cập đầy đủ dịch vụ trung tâm thể thao.'}</p>
+
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                  <div class="text-2xl font-black text-slate-900">${(Number(pkg.price || 0)).toLocaleString()} <span class="text-xs font-normal text-slate-500">VND</span></div>
+                </div>
+
+                <div class="mt-5 space-y-2 text-xs text-slate-600">
+                  <div class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-2">Quyền lợi gói:</div>
+                  ${(pkg.features || [
+                    'Tập luyện tự do toàn bộ máy Gym & Cardio',
+                    'Tủ đồ thông minh & phòng tắm nóng lạnh',
+                    'Nước uống lọc tinh khiết miễn phí'
+                  ]).map(f => `
+                    <div class="flex items-start space-x-2">
+                      <span class="text-indigo-600 font-bold">&check;</span>
+                      <span>${f}</span>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
-            ` : ''}
 
-            <div>
-              <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">${pkg.durationDays} Ngày Sử Dụng</div>
-              <h3 class="text-lg font-black text-slate-900 mt-1">${pkg.name}</h3>
-              <p class="text-xs text-slate-500 mt-2 min-h-[36px]">${pkg.description}</p>
-
-              <div class="mt-4 pt-4 border-t border-slate-100">
-                <div class="text-2xl font-black text-slate-900">${(pkg.price).toLocaleString()} <span class="text-xs font-normal text-slate-500">VND</span></div>
-              </div>
-
-              <div class="mt-5 space-y-2 text-xs text-slate-600">
-                <div class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-2">Quyền lợi gói:</div>
-                ${(pkg.features || []).map(f => `
-                  <div class="flex items-start space-x-2">
-                    <span class="text-indigo-600 font-bold">&check;</span>
-                    <span>${f}</span>
-                  </div>
-                `).join('')}
+              <div class="mt-8 pt-4 border-t border-slate-100">
+                <button type="button" onclick="openCheckoutModal('${pkg.packageId || pkg.id}')" class="w-full py-2.5 ${pkg.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'} rounded-xl font-bold text-xs transition shadow-xs">
+                  Đăng Ký Gói Này
+                </button>
               </div>
             </div>
-
-            <div class="mt-8 pt-4 border-t border-slate-100">
-              <button type="button" onclick="openCheckoutModal('${pkg.id}')" class="w-full py-2.5 ${pkg.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'} rounded-xl font-bold text-xs transition shadow-xs">
-                Đăng Ký Gói Này
-              </button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
+          `).join('')}
+        </div>
+      `}
     </div>
   `;
 }
