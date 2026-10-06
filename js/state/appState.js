@@ -150,6 +150,9 @@ function switchTab(tabName) {
 }
 
 function handleLogout() {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('token');
+  }
   appState.isAuthenticated = false;
   appState.isViewingAuthScreen = false;
   appState.currentUser = null;

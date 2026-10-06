@@ -8,16 +8,29 @@
 function renderMemberWebApp() {
   const currentTab = appState.currentTab;
   const isAuth = appState.isAuthenticated;
+  const curr = appState.currentUser;
   const members = (appState.data && appState.data.members) ? appState.data.members : [];
-  const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
-  const member = resolveMember(rawMember) || {
-    id: 'MEM101',
-    name: 'Phạm Thu Trang',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    status: 'ACTIVE',
-    activePackage: 'VIP All-Access Pass',
-    phone: '0912345678',
-    endDate: '2026-11-01'
+  let rawMember = null;
+  if (curr && (curr.email || curr.id)) {
+    rawMember = members.find(m => 
+      (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase()) ||
+      (curr.id && (m.id === curr.id || m.memberId === curr.id))
+    );
+  }
+  if (!rawMember) {
+    rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
+  }
+  const resolved = resolveMember(rawMember) || {};
+  const member = {
+    id: curr?.id || resolved.id || 'MEM101',
+    name: curr?.name || resolved.name || 'Hội viên',
+    email: curr?.email || resolved.email || '',
+    phone: curr?.phone || resolved.phone || '',
+    gender: curr?.gender || rawMember?.gender || 'Nam',
+    avatar: curr?.avatar || resolved.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    status: rawMember?.status || resolved.status || 'ACTIVE',
+    activePackage: resolved.activePackage || 'Gói Hội Viên',
+    endDate: resolved.endDate || '2026-11-01'
   };
 
   const myBookedCount = isAuth ? ((appState.data?.classes || []).filter(c => c.attendees && c.attendees.some(a => a.id === member.id)).length) : 0;

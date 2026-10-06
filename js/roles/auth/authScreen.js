@@ -102,8 +102,8 @@ function renderLoginForm() {
           <input type="password" id="login-password" required value="123" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition shadow-sm" placeholder="Nhập mật khẩu" />
         </div>
 
-        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition">
-          Đăng Nhập Vào Hệ Thống
+        <button type="submit" id="login-submit-btn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition flex items-center justify-center space-x-2">
+          <span>Đăng Nhập Vào Hệ Thống</span>
         </button>
         
         <div class="relative flex items-center my-1.5">
@@ -226,18 +226,181 @@ function renderForgotPasswordForm() {
 }
 
 
-function handleFormLogin(e) {
-  if (e) e.preventDefault();
-  const email = (document.getElementById('login-email')?.value || '').trim();
-  const acc = (appState.data && appState.data.demoAccounts) ? appState.data.demoAccounts.find(a => a.email.toLowerCase() === email.toLowerCase()) : null;
+async function handleFormLogin(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
-  if (acc) {
-    quickLoginAs(acc.role);
-    showToast('Đăng nhập thành công', `Chào mừng ${acc.name} (${acc.roleLabel})`, 'success');
-  } else {
-    quickLoginAs('MEMBER');
-    showToast('Đăng nhập thành công', 'Đã đăng nhập tài khoản Hội viên', 'success');
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  const email = (emailInput?.value || '').trim();
+  const password = passInput?.value || '';
+
+  if (!email || !password) {
+    showToast('Thiếu thông tin', 'Vui lòng nhập đầy đủ Email và Mật khẩu', 'error');
+    return false;
   }
+
+  const submitBtn = document.getElementById('login-submit-btn');
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      <span>Đang xác thực tài khoản...</span>
+    `;
+  }
+
+  try {
+    const loginPayload = { email, password };
+    let responseData = null;
+    const authService = (typeof window !== 'undefined' && window.api && window.api.auth) ? window.api.auth : null;
+
+    if (authService && typeof authService.login === 'function') {
+      responseData = await authService.login(loginPayload);
+    } else {
+      const baseUrl = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
+      const res = await fetch(`${baseUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginPayload)
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Đăng nhập thất bại (Mã lỗi: ${res.status})`);
+      }
+      responseData = await res.json();
+    }
+
+    console.log('[Auth] Đăng nhập thành công từ API:', responseData);
+
+    // 1. Lưu JWT token vào localStorage để apiClient tự động đính kèm Header Authorization
+    if (responseData && responseData.token) {
+      localStorage.setItem('token', responseData.token);
+    }
+
+    // 2. Xác định Role và Thông tin User
+    let userRole = 'MEMBER';
+    let userName = email.split('@')[0];
+    let userPhone = '';
+    let userGender = 'Nam';
+    let memberId = 'MEM101';
+
+    // Thử truy vấn danh sách users từ BE với Bearer token vừa nhận
+    try {
+      const users = await (window.api && window.api.client ? window.api.client.get('/users') : null);
+      if (Array.isArray(users)) {
+        const matched = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+        if (matched) {
+          if (matched.userId) memberId = 'MEM' + matched.userId;
+          userName = `${matched.lastName || ''} ${matched.firstName || ''}`.trim() || matched.email;
+          userPhone = matched.phone || '';
+          userGender = matched.gender || 'Nam';
+          if (matched.role && matched.role.roleName) {
+            const rName = matched.role.roleName.toUpperCase();
+            if (rName.includes('ADMIN') || rName.includes('MANAGER')) userRole = 'MANAGER';
+            else if (rName.includes('COACH')) userRole = 'COACH';
+            else if (rName.includes('RECEPTION')) userRole = 'RECEPTIONIST';
+            else userRole = 'MEMBER';
+          }
+        }
+      }
+    } catch (ignore) {
+      // Backend có thể chặn phân quyền GET /users, chuyển sang kiểm tra email / demoAccounts
+    }
+
+    // Map qua danh sách members / demoAccounts nếu khớp
+    const matchedMember = appState.data?.members?.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+    const matchedDemo = appState.data?.demoAccounts?.find(a => a.email && a.email.toLowerCase() === email.toLowerCase());
+
+    if (matchedMember) {
+      memberId = matchedMember.memberId || matchedMember.id || memberId;
+      userName = matchedMember.name || `${matchedMember.lastName || ''} ${matchedMember.firstName || ''}`.trim() || userName;
+      userPhone = matchedMember.phone || userPhone;
+      userGender = matchedMember.gender || userGender;
+    } else if (matchedDemo) {
+      userRole = matchedDemo.role;
+      userName = matchedDemo.name || userName;
+    } else if (email.toLowerCase().includes('admin') || email.toLowerCase().includes('manager')) {
+      userRole = 'MANAGER';
+    } else if (email.toLowerCase().includes('coach')) {
+      userRole = 'COACH';
+    } else if (email.toLowerCase().includes('letan') || email.toLowerCase().includes('reception')) {
+      userRole = 'RECEPTIONIST';
+    }
+
+    if (userRole === 'MEMBER') {
+      if (!appState.data.members) appState.data.members = [];
+      const existingIdx = appState.data.members.findIndex(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+      if (existingIdx === -1) {
+        appState.data.members.unshift({
+          memberId: memberId,
+          id: memberId,
+          name: userName,
+          email: email,
+          phone: userPhone,
+          gender: userGender,
+          status: 'ACTIVE',
+          activePackage: 'Standard Gym & Cardio',
+          startDate: '2026-10-01',
+          endDate: '2026-11-01'
+        });
+      }
+    }
+
+    // 3. Cập nhật State ứng dụng
+    appState.isAuthenticated = true;
+    appState.isViewingAuthScreen = false;
+    appState.currentRole = userRole;
+    appState.currentUser = {
+      id: memberId,
+      name: userName,
+      email: email,
+      phone: userPhone,
+      gender: userGender,
+      role: userRole,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+    };
+
+    // 4. Điều hướng vào đúng màn hình theo Role
+    if (userRole === 'MANAGER') {
+      appState.currentTab = 'dashboard';
+    } else if (userRole === 'COACH') {
+      appState.currentTab = 'coach-hub';
+      appState.coachActiveTab = 'TODAY';
+    } else if (userRole === 'RECEPTIONIST') {
+      appState.currentTab = 'reception-kiosk';
+      appState.receptionMode = 'GATE';
+    } else {
+      appState.currentTab = 'member-home';
+    }
+
+    renderApp();
+    showToast('Đăng nhập thành công', `Chào mừng ${userName} (${getRoleLabel(userRole)})`, 'success');
+
+  } catch (err) {
+    console.error('[Auth] Lỗi đăng nhập:', err);
+    let errMsg = err.message || 'Sai Email hoặc Mật khẩu!';
+
+    // Fallback: nếu Backend chưa bật, cho phép đăng nhập offline bằng tài khoản demo để trải nghiệm không bị gián đoạn
+    if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
+      const acc = (appState.data && appState.data.demoAccounts) ? appState.data.demoAccounts.find(a => a.email.toLowerCase() === email.toLowerCase()) : null;
+      if (acc) {
+        quickLoginAs(acc.role);
+        showToast('Chế độ Demo Offline', `Máy chủ Backend chưa bật. Đã đăng nhập tạm tài khoản mẫu ${acc.name}!`, 'info');
+        return false;
+      } else {
+        const apiBase = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
+        errMsg = `Không thể kết nối đến máy chủ (${apiBase}). Vui lòng kiểm tra lại dịch vụ Backend Spring Boot!`;
+      }
+    }
+
+    showToast('Đăng nhập thất bại', errMsg, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHtml;
+    }
+  }
+
   return false;
 }
 
