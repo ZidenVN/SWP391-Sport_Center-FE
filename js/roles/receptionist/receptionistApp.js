@@ -1,4 +1,4 @@
-﻿// =========================================================================
+// =========================================================================
 // RECEPTIONIST WEB APP (GATE, POS, LOOKUP, SHIFT, TICKETS)
 // =========================================================================
 
@@ -210,7 +210,8 @@ function renderReceptionGateMode() {
 
 function renderReceptionPOSMode() {
   const cart = appState.receptionCartPackage;
-  const packages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const rawPackages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const packages = rawPackages.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
   const method = appState.posPaymentMethod || 'CASH';
   const custInfo = appState.posCustInfo || { name: '', phone: '', gender: 'Nam' };
   const price = cart ? cart.price : 0;

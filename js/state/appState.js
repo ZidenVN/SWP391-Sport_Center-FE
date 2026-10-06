@@ -147,6 +147,13 @@ function switchTab(tabName) {
   }
   appState.currentTab = tabName;
   renderApp();
+
+  // Auto-sync packages with backend when visiting packages tab
+  if ((tabName === 'manager-packages' || tabName === 'member-packages') && typeof window !== 'undefined' && typeof window.syncPackagesWithBackend === 'function') {
+    window.syncPackagesWithBackend().then(() => {
+      if (typeof renderApp === 'function') renderApp();
+    }).catch(() => {});
+  }
 }
 
 function handleLogout() {

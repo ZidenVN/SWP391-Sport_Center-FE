@@ -83,6 +83,8 @@ function renderManagerWebApp() {
 
       <!-- Manager CRUD Modals -->
       ${appState.managerActiveModal === 'CREATE_PACKAGE' ? renderCreatePackageModal() : ''}
+      ${appState.managerActiveModal === 'EDIT_PACKAGE' ? renderEditPackageModal() : ''}
+      ${appState.managerActiveModal === 'DELETE_PACKAGE' ? renderDeletePackageModal() : ''}
       ${appState.managerActiveModal === 'CREATE_CLASS' ? renderCreateClassModal() : ''}
       ${appState.managerActiveModal === 'RENEW_MEMBER' ? renderRenewMemberModal() : ''}
     </div>
@@ -216,36 +218,169 @@ function renderManagerMembers() {
   `;
 }
 
+function setManagerPackageFilter(filter) {
+  appState.managerPackageFilter = filter;
+  renderApp();
+}
+
+function setManagerPackageSearch(query) {
+  appState.managerPackageSearch = query;
+  renderApp();
+}
+
+async function refreshManagerPackagesFromApi() {
+  try {
+    if (typeof syncPackagesWithBackend === 'function') {
+      const pkgs = await syncPackagesWithBackend(true);
+      showToast('Đồng Bộ Dữ Liệu', `Đã đồng bộ ${pkgs.length} gói tập từ Backend!`, 'success');
+      renderApp();
+    }
+  } catch (err) {
+    showToast('Lỗi Kết Nối', 'Không thể kết nối đến máy chủ: ' + err.message, 'error');
+  }
+}
+
 function renderManagerPackages() {
-  const packages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const rawPackages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const packages = rawPackages.map(p => (typeof normalizePackage === 'function' ? normalizePackage(p) : p));
+
+  const filter = appState.managerPackageFilter || 'ALL';
+  const search = (appState.managerPackageSearch || '').toLowerCase().trim();
+
+  const totalCount = packages.length;
+  const activeCount = packages.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
+  const inactiveCount = packages.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'INACTIVE').length;
+
+  let displayPackages = packages;
+  if (filter === 'ACTIVE') {
+    displayPackages = displayPackages.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
+  } else if (filter === 'INACTIVE') {
+    displayPackages = displayPackages.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'INACTIVE');
+  }
+
+  if (search) {
+    displayPackages = displayPackages.filter(p => 
+      (p.name || '').toLowerCase().includes(search) || 
+      (p.description || '').toLowerCase().includes(search) ||
+      String(p.id || '').toLowerCase().includes(search)
+    );
+  }
 
   return `
-    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-      <div class="flex justify-between items-center">
+    <div class="space-y-4">
+      <!-- Header Toolbar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">Danh Mục Các Gói Tập & Dịch Vụ</h3>
-          <div class="text-xs text-slate-400">Các gói thẻ hội viên đang được mở bán trên toàn hệ thống</div>
+          <div class="flex items-center space-x-2">
+            <h3 class="font-black text-base text-slate-900 tracking-tight">Quản Lý Danh Mục Gói Tập & Dịch Vụ</h3>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Admin View (Toàn Quyền)
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">
+            Quản trị viên có thể xem toàn bộ gói (cả Đang mở bán & Ngừng bán), thêm mới, cập nhật giá và ngừng kinh doanh gói.
+          </p>
         </div>
-        <button type="button" onclick="openManagerModal('CREATE_PACKAGE')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs">
-          + Tạo Gói Tập Mới
-        </button>
+        <div class="flex items-center space-x-2.5 shrink-0">
+          <button type="button" onclick="refreshManagerPackagesFromApi()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200">
+            <span>&#x21bb;</span>
+            <span>Làm Mới</span>
+          </button>
+          <button type="button" onclick="openManagerModal('CREATE_PACKAGE')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5">
+            <span>+</span>
+            <span>Tạo Gói Tập Mới</span>
+          </button>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        ${packages.map(p => `
-          <div class="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2">
-            <div class="flex justify-between items-start">
-              <h4 class="font-black text-sm text-slate-900">${p.name}</h4>
-              <span class="text-sm font-black text-indigo-600">${(p.price).toLocaleString()} VND</span>
-            </div>
-            <div class="text-xs text-slate-500">${p.description}</div>
-            <div class="text-xs text-slate-600 pt-2 border-t border-slate-200 flex justify-between items-center">
-              <span>Thời hạn: <strong>${p.durationDays} Ngày</strong></span>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">ĐANG MỞ BÁN</span>
-            </div>
-          </div>
-        `).join('')}
+      <!-- Filters & Search Toolbar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- Status Filter Tabs -->
+        <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
+          <button type="button" onclick="setManagerPackageFilter('ALL')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${filter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+            Tất Cả (${totalCount})
+          </button>
+          <button type="button" onclick="setManagerPackageFilter('ACTIVE')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${filter === 'ACTIVE' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+            Đang Mở Bán (${activeCount})
+          </button>
+          <button type="button" onclick="setManagerPackageFilter('INACTIVE')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${filter === 'INACTIVE' ? 'bg-white text-rose-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+            Đã Ngừng Bán (${inactiveCount})
+          </button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-sm">
+          <input 
+            type="text" 
+            placeholder="Tìm theo tên gói, mô tả, ID..." 
+            value="${appState.managerPackageSearch || ''}" 
+            oninput="setManagerPackageSearch(this.value)"
+            class="w-full pl-3.5 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition"
+          />
+          ${search ? `
+            <button type="button" onclick="setManagerPackageSearch('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold">&times;</button>
+          ` : ''}
+        </div>
       </div>
+
+      <!-- Package Cards Grid -->
+      ${displayPackages.length === 0 ? `
+        <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+          <div class="text-3xl mb-2">&#x1f4e6;</div>
+          <h4 class="font-extrabold text-slate-800 text-sm">Không tìm thấy gói tập nào phù hợp</h4>
+          <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            ${search ? `Không có kết quả khớp với từ khóa "${search}". Hãy thử tìm kiếm từ khóa khác.` : 'Chưa có gói tập nào thuộc danh mục này.'}
+          </p>
+          <button type="button" onclick="openManagerModal('CREATE_PACKAGE')" class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition">
+            + Tạo Gói Tập Đầu Tiên
+          </button>
+        </div>
+      ` : `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${displayPackages.map(p => {
+            const isActive = (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+            return `
+              <div class="p-5 rounded-2xl border ${isActive ? 'border-slate-200 bg-white hover:border-indigo-200' : 'border-rose-200 bg-rose-50/30'} shadow-xs flex flex-col justify-between transition group">
+                <div>
+                  <div class="flex justify-between items-start gap-2">
+                    <div>
+                      <h4 class="font-black text-sm text-slate-900">${p.name}</h4>
+                    </div>
+                    <span class="text-sm font-black text-indigo-600 shrink-0">
+                      ${(Number(p.price || 0)).toLocaleString()} <span class="text-[10px] font-normal text-slate-500">VND</span>
+                    </span>
+                  </div>
+
+                  <p class="text-xs text-slate-500 mt-2.5 min-h-[36px] line-clamp-2">${p.description || 'Chưa có mô tả quyền lợi chi tiết.'}</p>
+
+                  <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span class="text-slate-600 font-medium">Thời hạn: <strong class="text-slate-900">${p.durationDays || 30} Ngày</strong></span>
+                    ${isActive ? `
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        ĐANG MỞ BÁN
+                      </span>
+                    ` : `
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        ĐÃ TẠM NGỪNG
+                      </span>
+                    `}
+                  </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                  <button type="button" onclick="openEditPackageModal('${p.packageId || p.id}')" class="px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-indigo-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition flex items-center space-x-1">
+                    <span>&#x270E;</span>
+                    <span>Sửa</span>
+                  </button>
+                  <button type="button" onclick="openDeletePackageModal('${p.packageId || p.id}')" class="px-3 py-1.5 text-xs font-bold ${isActive ? 'text-rose-600 hover:bg-rose-600 hover:text-white bg-rose-50 border border-rose-200' : 'text-slate-600 hover:bg-slate-200 bg-slate-100 border border-slate-200'} rounded-xl transition">
+                    ${isActive ? 'Ngừng Bán' : 'Xóa Hẳn'}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
     </div>
   `;
 }
@@ -370,20 +505,20 @@ function renderCreatePackageModal() {
       <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fade-in">
         <div class="flex justify-between items-start pb-3 border-b border-slate-100">
           <div>
-            <h3 class="font-black text-base text-slate-900">Tạo Gói Tập Mới (Chuẩn ERD)</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Khai báo PackageID, PackageName, Type, Price, DurationDays, Description.</p>
+            <h3 class="font-black text-base text-slate-900">Tạo Gói Tập Mới</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Khai báo thông tin tên gói, thời hạn sử dụng, đơn giá và quyền lợi.</p>
           </div>
           <button type="button" onclick="closeManagerModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
         </div>
 
         <form onsubmit="return handleCreatePackageSubmit(event)" class="space-y-3.5 mt-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tên Gói Tập (PackageName)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tên Gói Tập</label>
             <input type="text" id="new-pkg-name" required placeholder="VD: Platinum Gym & Cardio 6 Tháng" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Phân Loại Gói (Type)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Phân Loại Gói</label>
             <select id="new-pkg-type" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900">
               <option value="GYM">GYM - Tập Gym & Tạ</option>
               <option value="VIP">VIP - Toàn Quyền Trung Tâm</option>
@@ -395,25 +530,138 @@ function renderCreatePackageModal() {
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Thời Hạn (DurationDays)</label>
-              <input type="number" id="new-pkg-days" required value="180" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Thời Hạn (Ngày)</label>
+              <input type="number" id="new-pkg-days" required value="30" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Đơn Giá (Price VNĐ)</label>
-              <input type="number" id="new-pkg-price" required value="4200000" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Đơn Giá (VNĐ)</label>
+              <input type="number" id="new-pkg-price" required value="550000" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mô Tả Quyền Lợi (Description)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Trạng Thái Ban Đầu</label>
+            <select id="new-pkg-status" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900">
+              <option value="ACTIVE" selected>ACTIVE - Mở Bán Ngay Cho Hội Viên</option>
+              <option value="INACTIVE">INACTIVE - Lưu Nháp (Tạm Ẩn)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mô Tả Quyền Lợi</label>
             <textarea id="new-pkg-desc" rows="2" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" placeholder="Mô tả quyền lợi gói tập..."></textarea>
           </div>
 
           <div class="pt-2 flex space-x-3">
             <button type="button" onclick="closeManagerModal()" class="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50">Hủy</button>
-            <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs">Lưu Gói Tập</button>
+            <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs">Tạo Gói Tập</button>
           </div>
         </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderEditPackageModal() {
+  const p = appState.managerSelectedPackageForEdit;
+  if (!p) return '';
+
+  const isActive = (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+
+  return `
+    <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fade-in">
+        <div class="flex justify-between items-start pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="font-black text-base text-slate-900">Chỉnh Sửa Gói Tập</h3>
+            <p class="text-xs text-slate-500 mt-0.5">${p.name}</p>
+          </div>
+          <button type="button" onclick="closeManagerModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="return handleEditPackageSubmit(event)" class="space-y-3.5 mt-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tên Gói Tập</label>
+            <input type="text" id="edit-pkg-name" required value="${p.name || ''}" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Thời Hạn (Ngày)</label>
+              <input type="number" id="edit-pkg-days" required value="${p.durationDays || 30}" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Đơn Giá (VNĐ)</label>
+              <input type="number" id="edit-pkg-price" required value="${p.price || 0}" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Trạng Thái Kinh Doanh</label>
+            <select id="edit-pkg-status" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900">
+              <option value="ACTIVE" ${isActive ? 'selected' : ''}>ACTIVE - Đang Mở Bán Cho Hội Viên</option>
+              <option value="INACTIVE" ${!isActive ? 'selected' : ''}>INACTIVE - Tạm Ngừng (Ẩn Khỏi Hội Viên)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mô Tả Quyền Lợi</label>
+            <textarea id="edit-pkg-desc" rows="3" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" placeholder="Mô tả quyền lợi...">${p.description || ''}</textarea>
+          </div>
+
+          <div class="pt-2 flex space-x-3">
+            <button type="button" onclick="closeManagerModal()" class="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50">Hủy</button>
+            <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs">Lưu Thay Đổi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderDeletePackageModal() {
+  const p = appState.managerSelectedPackageForDelete;
+  if (!p) return '';
+
+  const isActive = (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+
+  return `
+    <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fade-in">
+        <div class="flex justify-between items-start pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="font-black text-base text-slate-900">Xác Nhận ${isActive ? 'Ngừng Bán' : 'Xóa'} Gói Tập</h3>
+            <p class="text-xs text-slate-500 mt-0.5">${p.name}</p>
+          </div>
+          <button type="button" onclick="closeManagerModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+        </div>
+
+        <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-500">Tên gói:</span>
+            <span class="font-bold text-slate-900">${p.name}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Đơn giá:</span>
+            <span class="font-bold text-indigo-700">${(Number(p.price || 0)).toLocaleString()} VND</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Thời hạn:</span>
+            <span class="font-bold text-slate-900">${p.durationDays || 30} Ngày</span>
+          </div>
+          <div class="pt-2 border-t border-slate-200 text-rose-600 font-semibold leading-relaxed">
+            ${isActive 
+              ? 'Lưu ý: Thao tác này sẽ ngừng kinh doanh gói tập. Trạng thái gói sẽ chuyển sang INACTIVE và ẩn hoàn toàn đối với Hội Viên.' 
+              : 'Gói này hiện đang INACTIVE. Thao tác này sẽ xác nhận gỡ bỏ khỏi danh mục.'}
+          </div>
+        </div>
+
+        <div class="mt-6 flex space-x-3">
+          <button type="button" onclick="closeManagerModal()" class="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50">Đóng</button>
+          <button type="button" onclick="confirmDeletePackage()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs">
+            Xác Nhận ${isActive ? 'Ngừng Bán' : 'Xóa'}
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -429,15 +677,15 @@ function renderCreateClassModal() {
       <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fade-in">
         <div class="flex justify-between items-start pb-3 border-b border-slate-100">
           <div>
-            <h3 class="font-black text-base text-slate-900">Thêm Lớp Học Mới (Chuẩn ERD)</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Liên kết SubjectID, RoomID, CoachID và ScheduleTime.</p>
+            <h3 class="font-black text-base text-slate-900">Thêm Lớp Học Mới</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Chọn bộ môn, phòng tập, huấn luyện viên và thời gian biểu.</p>
           </div>
           <button type="button" onclick="closeManagerModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
         </div>
 
         <form onsubmit="return handleCreateClassSubmit(event)" class="space-y-3.5 mt-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bộ Môn Thể Thao (SubjectID)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Bộ Môn Thể Thao</label>
             <select id="new-class-sub" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600">
               ${subjects.map(s => `<option value="${s.subjectId}">${s.subjectName} - ${s.description}</option>`).join('')}
             </select>
@@ -445,26 +693,26 @@ function renderCreateClassModal() {
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Phòng Tập (RoomID)</label>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Phòng Tập</label>
               <select id="new-class-room" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900">
                 ${rooms.map(r => `<option value="${r.roomId}">${r.roomName}</option>`).join('')}
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sức Chứa (MaxCapacity)</label>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sức Chứa Tối Đa</label>
               <input type="number" id="new-class-cap" required value="20" min="1" max="100" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Huấn Luyện Viên (CoachID)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Huấn Luyện Viên Phụ Trách</label>
             <select id="new-class-coach" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900">
               ${coaches.map(co => `<option value="${co.coachId || co.id}">${co.name} (${co.specialty})</option>`).join('')}
             </select>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lịch Đào Tạo (ScheduleTime)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lịch Đào Tạo (Thời Gian)</label>
             <input type="text" id="new-class-schedule" required value="Thứ 2, 4, 6 | 17:30 - 18:45" placeholder="VD: Thứ 2, 4, 6 | 17:30 - 18:45" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-600" />
           </div>
 
@@ -673,35 +921,175 @@ function confirmManagerRenew(memberId) {
   closeManagerModal();
 }
 
-function handleCreatePackageSubmit(e) {
+function openEditPackageModal(packageId) {
+  const pkgs = appState.data?.packages || [];
+  const found = pkgs.find(p => String(p.packageId || p.id) === String(packageId));
+  if (found) {
+    appState.managerSelectedPackageForEdit = (typeof normalizePackage === 'function') ? normalizePackage(found) : found;
+    appState.managerActiveModal = 'EDIT_PACKAGE';
+    renderApp();
+  }
+}
+
+function openDeletePackageModal(packageId) {
+  const pkgs = appState.data?.packages || [];
+  const found = pkgs.find(p => String(p.packageId || p.id) === String(packageId));
+  if (found) {
+    appState.managerSelectedPackageForDelete = (typeof normalizePackage === 'function') ? normalizePackage(found) : found;
+    appState.managerActiveModal = 'DELETE_PACKAGE';
+    renderApp();
+  }
+}
+
+async function handleCreatePackageSubmit(e) {
   if (e) e.preventDefault();
-  const name = document.getElementById('new-pkg-name')?.value || 'Gói Mới';
+  const name = document.getElementById('new-pkg-name')?.value?.trim() || 'Gói Mới';
   const type = document.getElementById('new-pkg-type')?.value || 'GYM';
   const days = parseInt(document.getElementById('new-pkg-days')?.value || '30', 10);
-  const price = parseInt(document.getElementById('new-pkg-price')?.value || '1000000', 10);
-  const desc = document.getElementById('new-pkg-desc')?.value || 'Quyền lợi đầy đủ';
+  const price = parseFloat(document.getElementById('new-pkg-price')?.value || '550000');
+  const desc = document.getElementById('new-pkg-desc')?.value?.trim() || 'Quyền lợi đầy đủ';
+  const status = document.getElementById('new-pkg-status')?.value || 'ACTIVE';
 
-  const newPkgId = 'PKG0' + (appState.data.packages.length + 1);
-  
-  // STRICT ERD: PackageID, PackageName, Type, Price, DurationDays, Description
-  appState.data.packages.push({
-    packageId: newPkgId,
-    id: newPkgId,
+  const payload = {
     packageName: name,
-    name: name,
-    type: type,
     durationDays: days,
+    description: desc,
     price: price,
-    description: desc
-  });
+    status: status
+  };
 
-  // Record Audit Log & Notification per ERD
-  recordAuditLog('CREATE_PACKAGE', 'Packages', `Quản lý tạo mới gói ${name} (${price.toLocaleString()} VND, ${days} ngày)`, 'manager@sportscenter.vn');
-  addNotification('Gói Tập Mới Ra Mắt', `Trung tâm vừa ra mắt gói tập "${name}" (${type}) với nhiều ưu đãi hấp dẫn!`, 'ACCOUNT', 'MEM101');
+  try {
+    let createdPkg = null;
+    if (typeof packageApi !== 'undefined' && packageApi.create) {
+      createdPkg = await packageApi.create(payload);
+    }
+    const finalPkg = (typeof normalizePackage === 'function') ? normalizePackage(createdPkg || {
+      id: 'PKG0' + (appState.data.packages.length + 1),
+      packageId: 'PKG0' + (appState.data.packages.length + 1),
+      ...payload,
+      name: name,
+      type: type
+    }) : {
+      id: 'PKG0' + (appState.data.packages.length + 1),
+      packageId: 'PKG0' + (appState.data.packages.length + 1),
+      ...payload,
+      name: name,
+      type: type
+    };
 
-  closeManagerModal();
-  showToast('Tạo gói tập thành công (ERD Compliant)', `Đã thêm gói ${name} (Loại: ${type}) vào danh mục!`, 'success');
+    if (!appState.data.packages) appState.data.packages = [];
+    appState.data.packages.unshift(finalPkg);
+
+    recordAuditLog('CREATE_PACKAGE', 'Packages', `Quản lý tạo mới gói ${name} (${price.toLocaleString()} VND, ${days} ngày)`, 'manager@sportscenter.vn');
+    addNotification('Gói Tập Mới Ra Mắt', `Trung tâm vừa ra mắt gói tập "${name}" với nhiều ưu đãi hấp dẫn!`, 'ACCOUNT', 'MEM101');
+
+    closeManagerModal();
+    showToast('Tạo Gói Tập Thành Công', `Đã thêm gói "${name}" (${status}) vào hệ thống!`, 'success');
+  } catch (err) {
+    console.warn('Lỗi gọi API tạo gói:', err.message);
+    const fallbackId = 'PKG0' + ((appState.data.packages?.length || 0) + 1);
+    const localPkg = {
+      id: fallbackId,
+      packageId: fallbackId,
+      ...payload,
+      name: name,
+      type: type
+    };
+    if (!appState.data.packages) appState.data.packages = [];
+    appState.data.packages.unshift(localPkg);
+    closeManagerModal();
+    showToast('Đã Lưu Cục Bộ', `Backend: ${err.message || 'Lỗi kết nối'}. Đã lưu gói vào bộ nhớ trình duyệt!`, 'warning');
+  }
+  renderApp();
   return false;
+}
+
+async function handleEditPackageSubmit(e) {
+  if (e) e.preventDefault();
+  const pkg = appState.managerSelectedPackageForEdit;
+  if (!pkg) return false;
+
+  const pkgId = pkg.packageId || pkg.id;
+  const name = document.getElementById('edit-pkg-name')?.value?.trim() || pkg.name;
+  const days = parseInt(document.getElementById('edit-pkg-days')?.value || pkg.durationDays, 10);
+  const price = parseFloat(document.getElementById('edit-pkg-price')?.value || pkg.price);
+  const desc = document.getElementById('edit-pkg-desc')?.value?.trim() || pkg.description;
+  const status = document.getElementById('edit-pkg-status')?.value || 'ACTIVE';
+
+  const payload = {
+    packageName: name,
+    durationDays: days,
+    description: desc,
+    price: price,
+    status: status
+  };
+
+  try {
+    let updatedRes = null;
+    if (typeof packageApi !== 'undefined' && packageApi.update && !String(pkgId).startsWith('PKG0')) {
+      updatedRes = await packageApi.update(pkgId, payload);
+    }
+    const finalPkg = (typeof normalizePackage === 'function') ? normalizePackage(updatedRes || {
+      ...pkg,
+      ...payload,
+      id: pkgId,
+      packageId: pkgId,
+      name: name
+    }) : {
+      ...pkg,
+      ...payload,
+      id: pkgId,
+      packageId: pkgId,
+      name: name
+    };
+
+    const idx = appState.data.packages.findIndex(p => String(p.packageId || p.id) === String(pkgId));
+    if (idx >= 0) {
+      appState.data.packages[idx] = finalPkg;
+    }
+
+    recordAuditLog('UPDATE_PACKAGE', 'Packages', `Quản lý cập nhật gói ${name} (${price.toLocaleString()} VND, ${status})`, 'manager@sportscenter.vn');
+    closeManagerModal();
+    showToast('Cập Nhật Thành Công', `Đã cập nhật gói "${name}"!`, 'success');
+  } catch (err) {
+    console.warn('Lỗi gọi API cập nhật gói:', err.message);
+    const idx = appState.data.packages.findIndex(p => String(p.packageId || p.id) === String(pkgId));
+    if (idx >= 0) {
+      appState.data.packages[idx] = { ...pkg, ...payload, name: name };
+    }
+    closeManagerModal();
+    showToast('Đã Cập Nhật Cục Bộ', `Backend: ${err.message || 'Lỗi kết nối'}. Đã lưu thay đổi vào bộ nhớ!`, 'warning');
+  }
+  renderApp();
+  return false;
+}
+
+async function confirmDeletePackage() {
+  const pkg = appState.managerSelectedPackageForDelete;
+  if (!pkg) return;
+  const pkgId = pkg.packageId || pkg.id;
+
+  try {
+    if (typeof packageApi !== 'undefined' && packageApi.delete && !String(pkgId).startsWith('PKG0')) {
+      await packageApi.delete(pkgId);
+    }
+    const idx = appState.data.packages.findIndex(p => String(p.packageId || p.id) === String(pkgId));
+    if (idx >= 0) {
+      appState.data.packages[idx].status = 'INACTIVE';
+    }
+    recordAuditLog('DELETE_PACKAGE', 'Packages', `Quản lý ngừng kinh doanh / xóa gói ${pkg.name} (ID: ${pkgId})`, 'manager@sportscenter.vn');
+    closeManagerModal();
+    showToast('Đã Ngừng Bán Gói Tập', `Gói "${pkg.name}" đã được chuyển sang trạng thái INACTIVE (Ẩn khỏi hội viên)!`, 'success');
+  } catch (err) {
+    console.warn('Lỗi gọi API xóa gói:', err.message);
+    const idx = appState.data.packages.findIndex(p => String(p.packageId || p.id) === String(pkgId));
+    if (idx >= 0) {
+      appState.data.packages[idx].status = 'INACTIVE';
+    }
+    closeManagerModal();
+    showToast('Đã Ngừng Bán Cục Bộ', `Backend: ${err.message || 'Lỗi kết nối'}. Đã chuyển trạng thái INACTIVE!`, 'warning');
+  }
+  renderApp();
 }
 
 function handleCreateClassSubmit(e) {
@@ -744,7 +1132,7 @@ function handleCreateClassSubmit(e) {
   addNotification('Lớp Học Mới Được Mở', `Lớp học "${resolved.title}" đã được xếp lịch tại phòng ${resolved.room}.`, 'CLASS', newClassId);
 
   closeManagerModal();
-  showToast('Tạo lớp học thành công (ERD Compliant)', `Đã tạo lớp ${resolved.title} xếp phòng ${resolved.room}!`, 'success');
+  showToast('Tạo Lớp Học Thành Công', `Đã tạo lớp ${resolved.title} tại phòng ${resolved.room}!`, 'success');
   return false;
 }
 
@@ -760,16 +1148,25 @@ if (_targetGlobal) {
   if (typeof renderManagerStaff !== 'undefined') _targetGlobal.renderManagerStaff = renderManagerStaff;
   if (typeof renderManagerFinances !== 'undefined') _targetGlobal.renderManagerFinances = renderManagerFinances;
   if (typeof renderCreatePackageModal !== 'undefined') _targetGlobal.renderCreatePackageModal = renderCreatePackageModal;
+  if (typeof renderEditPackageModal !== 'undefined') _targetGlobal.renderEditPackageModal = renderEditPackageModal;
+  if (typeof renderDeletePackageModal !== 'undefined') _targetGlobal.renderDeletePackageModal = renderDeletePackageModal;
   if (typeof renderCreateClassModal !== 'undefined') _targetGlobal.renderCreateClassModal = renderCreateClassModal;
   if (typeof renderRenewMemberModal !== 'undefined') _targetGlobal.renderRenewMemberModal = renderRenewMemberModal;
   if (typeof initChartsIfNeeded !== 'undefined') _targetGlobal.initChartsIfNeeded = initChartsIfNeeded;
   if (typeof setManagerAuditSearch !== 'undefined') _targetGlobal.setManagerAuditSearch = setManagerAuditSearch;
   if (typeof renderManagerAuditLogs !== 'undefined') _targetGlobal.renderManagerAuditLogs = renderManagerAuditLogs;
   if (typeof setManagerMemberSearch !== 'undefined') _targetGlobal.setManagerMemberSearch = setManagerMemberSearch;
+  if (typeof setManagerPackageFilter !== 'undefined') _targetGlobal.setManagerPackageFilter = setManagerPackageFilter;
+  if (typeof setManagerPackageSearch !== 'undefined') _targetGlobal.setManagerPackageSearch = setManagerPackageSearch;
+  if (typeof refreshManagerPackagesFromApi !== 'undefined') _targetGlobal.refreshManagerPackagesFromApi = refreshManagerPackagesFromApi;
   if (typeof openManagerModal !== 'undefined') _targetGlobal.openManagerModal = openManagerModal;
   if (typeof closeManagerModal !== 'undefined') _targetGlobal.closeManagerModal = closeManagerModal;
   if (typeof openRenewModal !== 'undefined') _targetGlobal.openRenewModal = openRenewModal;
   if (typeof confirmManagerRenew !== 'undefined') _targetGlobal.confirmManagerRenew = confirmManagerRenew;
+  if (typeof openEditPackageModal !== 'undefined') _targetGlobal.openEditPackageModal = openEditPackageModal;
+  if (typeof openDeletePackageModal !== 'undefined') _targetGlobal.openDeletePackageModal = openDeletePackageModal;
   if (typeof handleCreatePackageSubmit !== 'undefined') _targetGlobal.handleCreatePackageSubmit = handleCreatePackageSubmit;
+  if (typeof handleEditPackageSubmit !== 'undefined') _targetGlobal.handleEditPackageSubmit = handleEditPackageSubmit;
+  if (typeof confirmDeletePackage !== 'undefined') _targetGlobal.confirmDeletePackage = confirmDeletePackage;
   if (typeof handleCreateClassSubmit !== 'undefined') _targetGlobal.handleCreateClassSubmit = handleCreateClassSubmit;
 }
