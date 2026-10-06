@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // RECEPTIONIST WEB APP (GATE, POS, LOOKUP, SHIFT, TICKETS)
 // =========================================================================
 
@@ -9,60 +9,98 @@ function renderReceptionistWebApp() {
   const mode = appState.receptionMode;
 
   return `
-    <div class="min-h-screen bg-[#f1f5f9] text-slate-900 flex flex-col">
-      <!-- Front-Desk Top Console Bar -->
-      <header class="bg-slate-900 text-white px-4 sm:px-6 h-16 flex items-center justify-between shadow-md">
-        <div class="flex items-center space-x-4">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center font-black text-sm">POS</div>
-          <div>
-            <div class="font-extrabold text-sm tracking-tight text-white leading-tight">FRONT-DESK WORKSTATION #01</div>
-            <div class="text-[10px] text-slate-400 font-semibold">Trạm Lễ Tân & Cổng Kiểm Soát Turnstile</div>
+    <div class="min-h-screen bg-[#f1f5f9] text-slate-900 flex">
+      <!-- Receptionist Left Sidebar -->
+      <aside class="w-64 bg-white border-r border-slate-200 text-slate-900 hidden md:flex flex-col justify-between shadow-xl flex-shrink-0 sticky top-0 h-screen">
+        <div class="flex flex-col h-full overflow-y-auto">
+          <!-- Logo -->
+          <div class="h-16 flex items-center px-5 border-b border-slate-200 flex-shrink-0">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-7 h-7 rounded-lg bg-indigo-500 text-white flex items-center justify-center font-black text-xs">POS</span>
+              <div>
+                <div class="font-extrabold text-xs tracking-tight text-slate-900 uppercase">FRONT-DESK</div>
+                <div class="text-[9px] text-indigo-600 font-bold uppercase">Workstation #01</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nav Menu -->
+          <nav class="p-3 space-y-0.5 flex-1">
+            <div class="text-[10px] font-bold text-slate-400 uppercase px-3 mb-2 tracking-wider">Nghiệp Vụ Lễ Tân</div>
+            <button type="button" onclick="setReceptionMode('GATE')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'GATE' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              <span>Cổng Turnstile</span>
+            </button>
+            <button type="button" onclick="setReceptionMode('POS')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'POS' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              <span>Bán Gói POS</span>
+            </button>
+            <button type="button" onclick="setReceptionMode('LOOKUP')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'LOOKUP' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <span>Tra Cứu Hội Viên</span>
+            </button>
+            <button type="button" onclick="setReceptionMode('SHIFT')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'SHIFT' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Sổ Quỹ Ca Trực</span>
+            </button>
+            <button type="button" onclick="setReceptionMode('TICKETS')" class="w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-xl text-xs transition ${mode === 'TICKETS' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+              <span>Xử Lý Ticket</span>
+            </button>
+          </nav>
+
+          <!-- User Info at bottom removed to top -->
+
+        </div>
+        
+      </aside>
+
+      <!-- Mobile Top Bar -->
+      <div class="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-xs text-slate-900">
+        <div class="h-14 flex items-center justify-between px-4">
+          <div class="flex items-center space-x-2">
+            <span class="w-7 h-7 rounded-lg bg-indigo-500 text-white flex items-center justify-center font-black text-xs">POS</span>
+            <span class="font-extrabold text-sm text-slate-900">FRONT-DESK</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            ${renderNotificationBell('RECEPTIONIST')}
+            ${renderUserAvatarDropdown('RECEPTIONIST')}
           </div>
         </div>
-
-        <!-- 5-Mode Switcher Tabs -->
-        <div class="hidden sm:flex bg-slate-800 p-1 rounded-xl border border-slate-700 space-x-1">
-          <button type="button" onclick="setReceptionMode('GATE')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'GATE' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
-            CỔNG TURNSTILE
-          </button>
-          <button type="button" onclick="setReceptionMode('POS')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'POS' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
-            BÁN GÓI POS
-          </button>
-          <button type="button" onclick="setReceptionMode('LOOKUP')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'LOOKUP' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
-            TRA CỨU HỘI VIÊN
-          </button>
-          <button type="button" onclick="setReceptionMode('SHIFT')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'SHIFT' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
-            SỔ QUỸ CA TRỰC
-          </button>
-          <button type="button" onclick="setReceptionMode('TICKETS')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'TICKETS' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">
-            XỬ LÝ TICKET
-          </button>
+        <div class="flex overflow-x-auto px-3 pb-2 space-x-1.5 ">
+          <button type="button" onclick="setReceptionMode('GATE')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'GATE' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Cổng</button>
+          <button type="button" onclick="setReceptionMode('POS')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'POS' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Bán POS</button>
+          <button type="button" onclick="setReceptionMode('LOOKUP')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'LOOKUP' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Tra Cứu</button>
+          <button type="button" onclick="setReceptionMode('SHIFT')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'SHIFT' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Sổ Quỹ</button>
+          <button type="button" onclick="setReceptionMode('TICKETS')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold ${mode === 'TICKETS' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-slate-100'}">Ticket</button>
         </div>
-
-        <!-- Operator & Dropdown Menu -->
-        <div class="flex items-center space-x-3">
-          ${renderNotificationBell('RECEPTIONIST')}
-          ${renderUserAvatarDropdown('RECEPTIONIST')}
-        </div>
-      </header>
-
-      <!-- Mobile sub-tabs -->
-      <div class="sm:hidden flex bg-slate-800 p-2 overflow-x-auto space-x-2 border-b border-slate-700">
-        <button type="button" onclick="setReceptionMode('GATE')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'GATE' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Cổng</button>
-        <button type="button" onclick="setReceptionMode('POS')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'POS' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Bán POS</button>
-        <button type="button" onclick="setReceptionMode('LOOKUP')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'LOOKUP' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Tra Cứu</button>
-        <button type="button" onclick="setReceptionMode('SHIFT')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'SHIFT' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Sổ Quỹ</button>
-        <button type="button" onclick="setReceptionMode('TICKETS')" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold ${mode === 'TICKETS' ? 'bg-indigo-600 text-white' : 'text-slate-400'}">Ticket</button>
       </div>
 
-      <!-- Main Kiosk Body -->
-      <main class="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full">
-        ${mode === 'GATE' ? renderReceptionGateMode() : ''}
-        ${mode === 'POS' ? renderReceptionPOSMode() : ''}
-        ${mode === 'LOOKUP' ? renderReceptionLookupMode() : ''}
-        ${mode === 'SHIFT' ? renderReceptionShiftMode() : ''}
-        ${mode === 'TICKETS' ? renderReceptionTicketsMode() : ''}
-      </main>
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col min-w-0 md:mt-0 mt-24">
+        <!-- Desktop Top Header for User Profile -->
+        <header class="h-16 bg-white border-b border-slate-200 hidden md:flex items-center justify-between px-6 z-10 sticky top-0">
+          <div class="flex items-center space-x-3">
+            <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+              Lễ Tân (Receptionist)
+            </span>
+            <span class="text-slate-300">/</span>
+            <span class="text-xs font-semibold text-slate-700">${mode === 'GATE' ? 'Cổng Turnstile' : mode === 'POS' ? 'Bán POS' : mode === 'LOOKUP' ? 'Tra Cứu' : mode === 'SHIFT' ? 'Sổ Quỹ' : 'Ticket'}</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            ${renderNotificationBell('RECEPTIONIST')}
+            ${renderUserAvatarDropdown('RECEPTIONIST')}
+          </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+          ${mode === 'GATE' ? renderReceptionGateMode() : ''}
+          ${mode === 'POS' ? renderReceptionPOSMode() : ''}
+          ${mode === 'LOOKUP' ? renderReceptionLookupMode() : ''}
+          ${mode === 'SHIFT' ? renderReceptionShiftMode() : ''}
+          ${mode === 'TICKETS' ? renderReceptionTicketsMode() : ''}
+        </main>
+      </div>
     </div>
   `;
 }
@@ -72,8 +110,8 @@ function renderReceptionGateMode() {
   const logs = (appState.data && appState.data.checkinLogs) ? appState.data.checkinLogs : [];
 
   return `
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div class="lg:col-span-7 space-y-6">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <div class="xl:col-span-7 space-y-6">
         <!-- Barcode / QR Scanner Input Box -->
         <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
           <div class="flex justify-between items-center mb-3">
@@ -140,7 +178,7 @@ function renderReceptionGateMode() {
       </div>
 
       <!-- Real-time Check-in Log Stream -->
-      <div class="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col h-full">
+      <div class="xl:col-span-5 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col h-full">
         <div class="flex justify-between items-center pb-4 border-b border-slate-100">
           <div>
             <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">Nhật Ký Cổng Thời Gian Thực</h3>
@@ -180,9 +218,9 @@ function renderReceptionPOSMode() {
   const cashDiff = cashReceived - price;
 
   return `
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
       <!-- Left Column: Package Catalogue -->
-      <div class="lg:col-span-6 space-y-4">
+      <div class="xl:col-span-6 space-y-4">
         <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
           <div class="flex justify-between items-center mb-4">
             <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
@@ -209,7 +247,7 @@ function renderReceptionPOSMode() {
       </div>
 
       <!-- Right Column: Customer Info & Cashier Checkout -->
-      <div class="lg:col-span-6">
+      <div class="xl:col-span-6">
         <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
             <div>
@@ -1207,3 +1245,6 @@ if (_targetGlobal) {
   if (typeof handlePOSCheckout !== 'undefined') _targetGlobal.handlePOSCheckout = handlePOSCheckout;
   if (typeof fastRenewMemberAtReception !== 'undefined') _targetGlobal.fastRenewMemberAtReception = fastRenewMemberAtReception;
 }
+
+
+
