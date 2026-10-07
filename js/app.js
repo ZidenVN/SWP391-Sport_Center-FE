@@ -2427,33 +2427,32 @@ function renderMemberWebApp() {
   return `
     <div class="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col">
       <!-- Member Top Horizontal Navigation Bar -->
-      <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-2 flex items-center justify-between">
           <!-- Logo & Brand -->
-          <div class="flex items-center space-x-6">
-            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('member-home')">
-              <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-xs">SC</span>
+          <div class="flex items-center space-x-8">
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchTab('member-home')">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition-transform">
+                SC
+              </div>
               <div>
-                <div class="font-extrabold text-sm tracking-tight text-slate-900 leading-tight">SPORTS CENTER</div>
-                <div class="text-[10px] text-slate-500 font-semibold">${isAuth ? 'Member Portal' : 'Khách Vãng Lai'}</div>
+                <div class="font-extrabold text-base tracking-tight text-slate-900 leading-tight">SPORT CENTER</div>
+                <div class="text-[11px] text-indigo-600 font-bold uppercase tracking-wider">${isAuth ? 'Member Portal' : 'Gym & Fitness'}</div>
               </div>
             </div>
 
-            <!-- Horizontal Nav Menu (Dashboard Ngang: Trang Chủ + Các mục khám phá & đặt lịch chính) -->
+            <!-- Horizontal Nav Menu -->
             <nav class="hidden md:flex items-center space-x-1.5">
-              <button type="button" onclick="switchTab('member-home')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-home' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
-                Trang Chủ
-              </button>
-              <button type="button" onclick="switchTab('member-classes')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-classes' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+              <button type="button" onclick="switchTab('member-classes')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentTab === 'member-classes' ? 'bg-blue-50 text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Khám Phá Lớp Học
               </button>
-              <button type="button" onclick="switchTab('member-packages')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${currentTab === 'member-packages' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+              <button type="button" onclick="switchTab('member-packages')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentTab === 'member-packages' ? 'bg-blue-50 text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Gói Hội Viên
               </button>
               ${isAuth ? `
-                <button type="button" onclick="switchTab('member-schedule')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${currentTab === 'member-schedule' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
+                <button type="button" onclick="switchTab('member-schedule')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${currentTab === 'member-schedule' ? 'bg-blue-50 text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                   <span>Lịch Tập Của Tôi</span>
-                  ${myBookedCount > 0 ? `<span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-indigo-600 text-white">${myBookedCount}</span>` : ''}
+                  ${myBookedCount > 0 ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white">${myBookedCount}</span>` : ''}
                 </button>
               ` : ''}
             </nav>
@@ -2466,11 +2465,11 @@ function renderMemberWebApp() {
               ${renderUserAvatarDropdown('MEMBER')}
             </div>
           ` : `
-            <div class="flex items-center space-x-2">
-              <button type="button" onclick="openLoginScreen('register')" class="hidden sm:inline-flex px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition">
+            <div class="flex items-center space-x-3">
+              <button type="button" onclick="openLoginScreen('register')" class="hidden sm:inline-flex px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition">
                 Đăng Ký
               </button>
-              <button type="button" onclick="openLoginScreen('login')" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition flex items-center space-x-1.5">
+              <button type="button" onclick="openLoginScreen('login')" class="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition flex items-center space-x-1.5">
                 <span>Đăng Nhập</span>
                 <span class="text-xs">&rarr;</span>
               </button>
@@ -2478,13 +2477,13 @@ function renderMemberWebApp() {
           `}
         </div>
 
-        <!-- Mobile horizontal sub-bar (Gọn gàng cho di động) -->
+        <!-- Mobile horizontal sub-bar -->
         <div class="md:hidden flex border-t border-slate-100 overflow-x-auto px-4 py-2 space-x-2 bg-slate-50">
-          <button type="button" onclick="switchTab('member-home')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-home' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Trang chủ</button>
-          <button type="button" onclick="switchTab('member-classes')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-classes' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Lớp học</button>
-          <button type="button" onclick="switchTab('member-packages')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-packages' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Gói tập</button>
+          <button type="button" onclick="switchTab('member-home')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-home' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Trang chủ</button>
+          <button type="button" onclick="switchTab('member-classes')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-classes' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Lớp học</button>
+          <button type="button" onclick="switchTab('member-packages')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-packages' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Gói tập</button>
           ${isAuth ? `
-            <button type="button" onclick="switchTab('member-schedule')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold ${currentTab === 'member-schedule' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 bg-white border border-slate-200'}">Lịch (${myBookedCount})</button>
+            <button type="button" onclick="switchTab('member-schedule')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-schedule' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Lịch (${myBookedCount})</button>
           ` : `
             <button type="button" onclick="openLoginScreen('login')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200">Đăng Nhập</button>
           `}
@@ -2511,14 +2510,222 @@ function renderMemberWebApp() {
       <!-- Member Support Ticket Modal (If Open) -->
       ${appState.supportTicketModalOpen ? renderSupportTicketModal() : ''}
 
-      <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
-        Sports Center Management Portal &bull; SWP391 FA26 Topic 04 &bull; FPT University
+      <!-- Redesigned Comprehensive Modern Footer -->
+      <footer class="bg-slate-950 text-slate-300 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            <!-- Brand Column -->
+            <div class="space-y-4">
+              <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('member-home')">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-md">
+                  SC
+                </div>
+                <div>
+                  <div class="font-extrabold text-base tracking-tight text-white">SPORT CENTER</div>
+                  <div class="text-[11px] text-indigo-400 font-bold uppercase tracking-wider">Gym & Fitness System</div>
+                </div>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                Tổ hợp thể thao và chăm sóc thể chất tiêu chuẩn 5 sao với không gian 5.000m², thiết bị thông minh hiện đại hàng đầu cùng trải nghiệm hội viên số hóa toàn diện.
+              </p>
+              <div class="pt-1 flex items-center space-x-3 text-xs text-slate-400">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] text-amber-300 font-bold">
+                  ★ 4.9 / 5.0
+                </span>
+                <span>Hơn 15.000 học viên tin cậy</span>
+              </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="space-y-4">
+              <h4 class="text-xs font-black uppercase tracking-wider text-white">Khám Phá Nhanh</h4>
+              <ul class="space-y-2.5 text-xs text-slate-400">
+                <li><button type="button" onclick="switchTab('member-home')" class="hover:text-indigo-400 transition">Trang Chủ Giới Thiệu</button></li>
+                <li><button type="button" onclick="switchTab('member-classes')" class="hover:text-indigo-400 transition">Lịch Khám Phá Lớp Học</button></li>
+                <li><button type="button" onclick="switchTab('member-packages')" class="hover:text-indigo-400 transition">Bảng Giá Gói Hội Viên</button></li>
+                <li><button type="button" onclick="quickExploreCategory('Yoga')" class="hover:text-indigo-400 transition">Yoga & Thiền Định</button></li>
+                <li><button type="button" onclick="quickExploreCategory('Boxing')" class="hover:text-indigo-400 transition">Boxing & Combat Arena</button></li>
+                <li><button type="button" onclick="quickExploreCategory('Pilates')" class="hover:text-indigo-400 transition">Pilates Reformer Chuyên Sâu</button></li>
+              </ul>
+            </div>
+
+            <!-- Operating Hours & Amenities -->
+            <div class="space-y-4">
+              <h4 class="text-xs font-black uppercase tracking-wider text-white">Giờ Mở Cửa & Tiện Ích</h4>
+              <div class="space-y-2.5 text-xs text-slate-400">
+                <div class="flex items-start space-x-2">
+                  <span class="text-indigo-400 font-bold">⏰</span>
+                  <div>
+                    <strong class="text-slate-200">05:30 – 22:00</strong>
+                    <div class="text-[11px] text-slate-500">Thứ 2 – Chủ Nhật (Cả ngày lễ)</div>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-2">
+                  <span class="text-indigo-400 font-bold">🏊</span>
+                  <div>
+                    <strong class="text-slate-200">Bể Bơi Bốn Mùa Ozone</strong>
+                    <div class="text-[11px] text-slate-500">Khử trùng tiêu chuẩn y tế</div>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-2">
+                  <span class="text-indigo-400 font-bold">🧖</span>
+                  <div>
+                    <strong class="text-slate-200">Xông Hơi Đá Muối Himalaya</strong>
+                    <div class="text-[11px] text-slate-500">Khu vực Nam/Nữ riêng biệt</div>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-2">
+                  <span class="text-indigo-400 font-bold">🅿️</span>
+                  <div>
+                    <strong class="text-slate-200">Bãi Đỗ Xe Thông Minh</strong>
+                    <div class="text-[11px] text-slate-500">Miễn phí ô tô & xe máy</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact & Support -->
+            <div class="space-y-4">
+              <h4 class="text-xs font-black uppercase tracking-wider text-white">Liên Hệ & Trợ Giúp</h4>
+              <div class="space-y-2.5 text-xs text-slate-400">
+                <div class="flex items-start space-x-2">
+                  <span class="text-indigo-400 font-bold">📍</span>
+                  <span>Khu Công Nghệ Cao Hòa Lạc, Thạch Thất, Hà Nội</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-indigo-400 font-bold">📞</span>
+                  <a href="tel:19006868" class="text-amber-300 font-extrabold hover:underline">1900 6868</a>
+                  <span class="text-[11px] text-slate-500">(24/7)</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-indigo-400 font-bold">✉️</span>
+                  <a href="mailto:contact@sportcenter.vn" class="hover:text-white transition">contact@sportcenter.vn</a>
+                </div>
+                <div class="pt-2">
+                  <button type="button" onclick="openLoginScreen('login')" class="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/10 transition">
+                    Cổng Đăng Nhập Hội Viên &rarr;
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Bar -->
+          <div class="border-t border-slate-800/80 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-3">
+            <div>
+              &copy; 2026 Sport Center Management System. All rights reserved.
+            </div>
+            <div class="flex items-center space-x-4">
+              <span>SWP391 FA26 Topic 04</span>
+              <span>&bull;</span>
+              <span>FPT University</span>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   `;
 }
 
-// Landing / Homepage: Sports Center Discovery & App Introduction (Vietnam.travel Style)
+// =========================================================================
+// LANDING / HOME PAGE CONSTANTS & REDESIGNED TEMPLATES
+// =========================================================================
+
+const GYM_LANDING_DATA = {
+  info: {
+    name: 'Sport Center',
+    badge: 'Hệ Thống Thể Thao & Sống Khỏe Tiêu Chuẩn Quốc Tế',
+    tagline: 'Đánh Thức Thể Lực. Định Hình Phong Cách Sống.',
+    subTagline: 'Không gian tập luyện đẳng cấp 5.000m² tích hợp thiết bị TechnoGym AI thế hệ mới, hồ bơi ozone bốn mùa và hệ sinh thái hội viên thông minh 1-chạm.',
+    address: 'Khu Công Nghệ Cao Hòa Lạc, Thạch Thất, Hà Nội',
+    hours: '05:30 – 22:00 (Thứ 2 – Chủ Nhật)',
+    hotline: '1900 6868',
+    email: 'contact@sportcenter.vn'
+  },
+  stats: [
+    { value: '15,000+', label: 'Hội Viên Thân Thiết', sub: 'Cộng đồng tập luyện gắn bó mỗi ngày', color: 'from-blue-500 to-indigo-600', icon: 'users' },
+    { value: '50+', label: 'Master Coach Chuẩn Quốc Tế', sub: 'Chứng chỉ NASM, ACE, Yoga Alliance', color: 'from-emerald-500 to-teal-600', icon: 'award' },
+    { value: '120+', label: 'Lớp Học Hàng Tuần', sub: 'Khung giờ đa dạng 05:30 - 21:00', color: 'from-amber-500 to-orange-600', icon: 'calendar' },
+    { value: '99.8%', label: 'Hài Lòng Dịch Vụ', sub: 'Đánh giá 5 sao về cơ sở vật chất', color: 'from-rose-500 to-pink-600', icon: 'heart' }
+  ],
+  classes: [
+    {
+      id: 'yoga',
+      category: 'Yoga',
+      title: 'Yoga Thân - Tâm - Trí',
+      tag: 'Studio Yên Tĩnh',
+      badge: 'Thư Giãn & Cân Bằng',
+      rating: '4.9 ★',
+      level: 'Mọi trình độ',
+      desc: 'Cân bằng hơi thở, tăng tính dẻo dai và thanh lọc tâm trí với sàn gỗ sồi tự nhiên cùng tinh dầu thảo mộc cao cấp.',
+      image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800&auto=format&fit=crop&q=80',
+      color: 'indigo'
+    },
+    {
+      id: 'boxing',
+      category: 'Boxing',
+      title: 'Boxing & KickFit Rực Lửa',
+      tag: 'Combat Arena',
+      badge: 'Đốt 800+ Kcal',
+      rating: '5.0 ★',
+      level: 'Cường độ cao',
+      desc: 'Giải tỏa stress tột đỉnh, tăng tốc phản xạ tự vệ và đốt mỡ cùng sàn đấu chuyên nghiệp chuẩn thi đấu Olympic.',
+      image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&auto=format&fit=crop&q=80',
+      color: 'rose'
+    },
+    {
+      id: 'pilates',
+      category: 'Pilates',
+      title: 'Pilates Chỉnh Dáng & Cột Sống',
+      tag: 'Máy Reformer',
+      badge: 'Siết Eo & Cân Chỉnh',
+      rating: '4.9 ★',
+      level: 'Căn bản & Nâng cao',
+      desc: 'Kích hoạt nhóm cơ lõi sâu, chỉnh cong vẹo cột sống do ngồi văn phòng và điêu khắc đường cong mềm mại săn chắc.',
+      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop&q=80',
+      color: 'amber'
+    },
+    {
+      id: 'gym',
+      category: 'Gym',
+      title: 'Gym & Sức Mạnh Thể Lực',
+      tag: 'Sàn Gym 1.200m²',
+      badge: 'TechnoGym AI 2026',
+      rating: '5.0 ★',
+      level: 'Tự do & Có HLV',
+      desc: 'Hệ thống máy khối, dàn rack Olympic chuyên nghiệp kết nối máy đo nhịp tim thông minh phân tích chuyển động tức thì.',
+      image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80',
+      color: 'blue'
+    }
+  ],
+  features: [
+    {
+      title: 'Thẻ Số & Check-in QR 0.5s',
+      desc: 'Không cần thẻ nhựa. Cổng kiểm soát Turnstile thông minh mở tức thì với mã QR động bảo mật cao trên điện thoại.',
+      icon: 'smartphone',
+      badge: 'Công Nghệ Không Chạm',
+      actionText: 'Trải Nghiệm Thẻ Số',
+      actionTab: 'member-pass'
+    },
+    {
+      title: 'Đặt Chỗ & Quản Lý Lịch Học',
+      desc: 'Chủ động chọn chỗ thảm tập, đặt trước với HLV yêu thích trước 7 ngày và đồng bộ lịch tập thông minh vào điện thoại.',
+      icon: 'calendar-check',
+      badge: 'Tiện Lợi 24/7',
+      actionText: 'Khám Phá Lớp Học',
+      actionTab: 'member-classes'
+    },
+    {
+      title: 'Đo InBody & Lộ Trình Riêng',
+      desc: 'Máy InBody 770 y khoa quét chỉ số cơ xương mỡ định kỳ. HLV lên giáo án cá nhân hóa theo tiến độ thực tế.',
+      icon: 'activity',
+      badge: 'Khoa Học & Hiệu Quả',
+      actionText: 'Theo Dõi Chỉ Số',
+      actionTab: 'member-fitness'
+    }
+  ]
+};
+
 function quickExploreCategory(cat) {
   appState.activeFilterCategory = cat;
   appState.memberSearchKeyword = '';
@@ -2536,382 +2743,383 @@ function handleHomeSearch(e) {
 }
 
 function renderMemberLandingHome() {
-  const pkgs = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const pkgs = (appState.data && appState.data.packages && appState.data.packages.length) 
+    ? appState.data.packages 
+    : [
+        {
+          id: 'PKG_STANDARD',
+          name: 'Classic Fitness',
+          description: 'Lựa chọn lý tưởng để rèn luyện thói quen thể thao bền vững hàng ngày.',
+          price: 590000,
+          durationDays: 30,
+          popular: false,
+          features: ['Không giới hạn giờ tập sàn Gym', 'Tủ đồ locker thông minh & tắm nóng lạnh', 'Đo InBody phân tích thể trạng 1 lần/tháng', 'Nước uống điện giải ion kiềm miễn phí']
+        },
+        {
+          id: 'PKG_VIP',
+          name: 'VIP All-Access Pass',
+          description: 'Trải nghiệm đỉnh cao không giới hạn bộ môn cùng các đặc quyền ưu tiên cao cấp.',
+          price: 1290000,
+          durationDays: 30,
+          popular: true,
+          features: ['Toàn quyền tham gia mọi lớp Yoga, Boxing, Zumba', 'Khu xông hơi đá muối Himalaya & bể sục Jacuzzi', '02 buổi tập định hướng 1-1 với Master Coach', 'Khăn tập cao cấp & đồ uống thể thao miễn phí', 'Ưu tiên đặt chỗ lớp học trước 7 ngày']
+        },
+        {
+          id: 'PKG_PILATES',
+          name: 'Pilates & Yoga Master',
+          description: 'Gói chuyên sâu cân chỉnh vóc dáng và phục hồi năng lượng tinh thần.',
+          price: 990000,
+          durationDays: 30,
+          popular: false,
+          features: ['Không giới hạn lớp Yoga Studio & Pilates Mat', '04 buổi tập máy Pilates Reformer chuyên sâu', 'Thảm tập cá nhân kháng khuẩn cao cấp', 'Đánh giá định kỳ độ linh hoạt và cột sống']
+        }
+      ];
+
+  const info = GYM_LANDING_DATA.info;
 
   return `
-    <div class="space-y-10 sm:space-y-14 animate-fade-in pb-8">
-      <!-- 1. HERO SECTION (Immersive Vietnam.travel aesthetic) -->
-      <section class="relative rounded-3xl overflow-hidden shadow-xl min-h-[480px] sm:min-h-[540px] flex flex-col justify-between p-6 sm:p-10 text-white">
-        <!-- Background Image with Gradient Overlay -->
+    <div class="space-y-16 sm:space-y-24 animate-fade-in pb-12 overflow-x-hidden">
+      
+      <!-- ================================================================= -->
+      <!-- 1. HERO SECTION: PREMIUM DARK GYM AESTHETIC -->
+      <!-- ================================================================= -->
+      <section class="relative rounded-3xl overflow-hidden shadow-2xl min-h-[540px] sm:min-h-[620px] flex flex-col justify-between p-6 sm:p-12 lg:p-16 text-white border border-slate-800/80">
+        <!-- Background Image with Multi-layer Gradient Overlay -->
         <div class="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&auto=format&fit=crop&q=80" 
-            alt="Sports Center Hero" 
-            class="w-full h-full object-cover object-center filter brightness-90 scale-105 transition-transform duration-1000 ease-out"
+            src="/assets/images/gym-bg.jpg" 
+            onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&auto=format&fit=crop&q=80';"
+            alt="Sport Center Gym Floor" 
+            class="w-full h-full object-cover object-center filter brightness-[0.75] contrast-[1.05] scale-100 hover:scale-105 transition-transform duration-1000 ease-out"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/75 to-slate-950/40"></div>
-          <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/60 to-transparent"></div>
+          <!-- Navy / Dark Overlay for supreme contrast & readability -->
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/60"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/70 to-indigo-950/40"></div>
+          <!-- Subtle Glow Accent -->
+          <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
         </div>
 
         <!-- Top Badge -->
-        <div class="relative z-10">
-          <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-black uppercase tracking-wider text-amber-300 shadow-xs">
-            <span>✨</span>
-            <span>Tổ Hợp Thể Thao & Sống Khỏe Tiêu Chuẩn Quốc Tế</span>
+        <div class="relative z-10 flex items-center justify-between flex-wrap gap-3">
+          <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/20 text-xs font-bold uppercase tracking-wider text-amber-300 shadow-sm transition">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>${info.badge}</span>
+          </div>
+          <div class="hidden sm:flex items-center space-x-4 text-xs text-slate-300 font-medium">
+            <span class="flex items-center gap-1.5"><span class="text-amber-400">★</span> Đánh giá 4.9/5 từ hơn 15,000 học viên</span>
           </div>
         </div>
 
         <!-- Hero Main Content -->
-        <div class="relative z-10 max-w-3xl my-auto py-4 sm:py-6 space-y-4">
-          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-white">
+        <div class="relative z-10 max-w-3xl my-auto py-6 sm:py-8 space-y-6">
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.12] text-white">
             Đánh Thức Thể Lực. <br />
-            <span class="bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300 bg-clip-text text-transparent">
+            <span class="bg-gradient-to-r from-cyan-300 via-indigo-300 to-amber-300 bg-clip-text text-transparent">
               Định Hình Phong Cách Sống.
             </span>
           </h1>
-          <p class="text-slate-200 text-xs sm:text-base leading-relaxed max-w-2xl font-normal drop-shadow-xs">
-            Chào mừng bạn đến với <strong class="text-white font-bold">Sports Center</strong> – Không gian luyện tập 5.000m² tích hợp dàn máy TechnoGym AI, bể bơi bốn mùa ozone, phòng xông hơi đá muối Himalaya cùng ứng dụng số hóa quản lý 1-chạm thông minh.
+          <p class="text-slate-200 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl font-normal drop-shadow-sm">
+            ${info.subTagline}
           </p>
 
-          <!-- Interactive Search / Filter Bar on Hero -->
-          <div class="pt-2">
-            <form onsubmit="return handleHomeSearch(event)" class="bg-white/95 backdrop-blur-md p-2 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/40 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-2xl text-slate-800">
-              <div class="flex-1 flex items-center px-3.5 py-2 space-x-2.5">
-                <svg class="w-5 h-5 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input 
-                  type="text" 
-                  id="home-search-input" 
-                  placeholder="Tìm lớp học, bộ môn (Yoga, Boxing...), HLV..." 
-                  class="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
-                />
-              </div>
+          <!-- CTAs & Quick Filters -->
+          <div class="pt-2 space-y-4">
+            <!-- Direct CTA Buttons -->
+            <div class="flex flex-wrap items-center gap-3">
               <button 
-                type="submit" 
-                class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl transition shadow-md flex items-center justify-center space-x-1.5 flex-shrink-0"
+                type="button" 
+                onclick="switchTab('member-classes')" 
+                class="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-md transition flex items-center justify-center space-x-2"
               >
-                <span>Tìm Lớp Ngay</span>
+                <span>Khám Phá Lớp Học</span>
                 <span>&rarr;</span>
               </button>
-            </form>
+              <button 
+                type="button" 
+                onclick="switchTab('member-packages')" 
+                class="px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md font-bold text-xs sm:text-sm rounded-2xl transition flex items-center justify-center"
+              >
+                Xem Bảng Giá Gói Tập
+              </button>
+            </div>
 
-            <!-- Quick Pill Filters -->
-            <div class="flex items-center gap-2 mt-3 flex-wrap">
-              <span class="text-[11px] text-slate-300 font-semibold">Khám phá nhanh:</span>
-              <button type="button" onclick="quickExploreCategory('Yoga')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
-                🧘 Yoga Thân Tâm
+            <!-- Quick Pill Categories -->
+            <div class="flex items-center gap-2 flex-wrap pt-2">
+              <span class="text-xs text-slate-300 font-semibold mr-1">Bộ môn nổi bật:</span>
+              <button type="button" onclick="quickExploreCategory('Yoga')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-xs text-white font-medium transition flex items-center gap-1.5">
+                <span>🧘</span> Yoga Thân Tâm
               </button>
-              <button type="button" onclick="quickExploreCategory('Boxing')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
-                🥊 Boxing Đốt Mỡ
+              <button type="button" onclick="quickExploreCategory('Boxing')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-xs text-white font-medium transition flex items-center gap-1.5">
+                <span>🥊</span> Boxing Đốt Mỡ
               </button>
-              <button type="button" onclick="quickExploreCategory('Pilates')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
-                🤸 Pilates Vóc Dáng
+              <button type="button" onclick="quickExploreCategory('Pilates')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-xs text-white font-medium transition flex items-center gap-1.5">
+                <span>🤸</span> Pilates Vóc Dáng
               </button>
-              <button type="button" onclick="quickExploreCategory('Zumba')" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-[11px] text-white font-medium transition">
-                💃 Zumba Vũ Điệu
-              </button>
-              <button type="button" onclick="switchTab('member-packages')" class="px-3 py-1 rounded-full bg-amber-500/30 hover:bg-amber-500/50 backdrop-blur-xs border border-amber-400/40 text-[11px] text-amber-200 font-bold transition">
-                🏷️ Bảng Giá Gói Tập
+              <button type="button" onclick="quickExploreCategory('Gym')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 text-xs text-white font-medium transition flex items-center gap-1.5">
+                <span>🏋️</span> Gym & Sức Mạnh
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Hero Bottom Action Strip -->
-        <div class="relative z-10 pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/15 text-xs text-slate-300">
+        <!-- Hero Bottom Information Strip -->
+        <div class="relative z-10 pt-5 mt-2 flex flex-wrap items-center justify-between gap-4 border-t border-white/15 text-xs text-slate-300">
           <div class="flex items-center space-x-6 flex-wrap gap-y-2">
-            <span class="flex items-center space-x-1.5"><strong class="text-white font-bold">📍 Địa chỉ:</strong> Khu Công Nghệ Cao Hòa Lạc, Hà Nội</span>
-            <span class="flex items-center space-x-1.5"><strong class="text-white font-bold">⏰ Giờ mở cửa:</strong> 05:30 – 22:00 Hàng ngày</span>
-            <span class="flex items-center space-x-1.5"><strong class="text-white font-bold">📞 Hotline:</strong> 1900 6868</span>
+            <span class="flex items-center space-x-1.5">
+              <span class="text-indigo-400 font-bold">📍 Địa chỉ:</span> 
+              <span class="text-white font-medium">${info.address}</span>
+            </span>
+            <span class="flex items-center space-x-1.5">
+              <span class="text-indigo-400 font-bold">⏰ Giờ mở cửa:</span> 
+              <span class="text-white font-medium">${info.hours}</span>
+            </span>
+            <span class="flex items-center space-x-1.5">
+              <span class="text-indigo-400 font-bold">📞 Hotline:</span> 
+              <a href="tel:${info.hotline.replace(/\s+/g, '')}" class="text-amber-300 font-bold hover:underline">${info.hotline}</a>
+            </span>
           </div>
           <div class="flex items-center space-x-3">
-            <button type="button" onclick="switchTab('member-classes')" class="text-xs font-bold text-white hover:text-indigo-300 underline underline-offset-4 transition">
-              Xem Lịch Tập Hôm Nay &rarr;
+            <button type="button" onclick="switchTab('member-classes')" class="text-xs font-bold text-cyan-300 hover:text-white transition flex items-center gap-1">
+              <span>Xem Lịch Tập Hôm Nay</span>
+              <span>&rarr;</span>
             </button>
           </div>
         </div>
       </section>
 
-      <!-- 2. STATS BAR (SỐ LIỆU ẤN TƯỢNG) -->
-      <section class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
-          <div class="text-2xl sm:text-3xl font-black text-indigo-600 tracking-tight">15,000+</div>
-          <div class="text-xs font-bold text-slate-800 mt-1">Hội Viên Thân Thiết</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Tập luyện & gắn bó mỗi ngày</div>
+      <!-- ================================================================= -->
+      <!-- 2. GYM QUICK INFO CARDS (TỔNG QUAN TIỆN ÍCH TRUNG TÂM) -->
+      <!-- ================================================================= -->
+      <section class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition flex items-start space-x-4">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xl flex-shrink-0">
+            📍
+          </div>
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-indigo-600">Vị Trí Đắc Địa</div>
+            <div class="font-extrabold text-slate-900 text-sm mt-0.5">${info.address}</div>
+            <div class="text-xs text-slate-500 mt-1">Bãi đỗ xe ô tô & xe máy thông minh miễn phí</div>
+          </div>
         </div>
-        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
-          <div class="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">50+</div>
-          <div class="text-xs font-bold text-slate-800 mt-1">Master Coach Quốc Tế</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Chứng chỉ NASM, ACE, Yoga Alliance</div>
+
+        <div class="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition flex items-start space-x-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl flex-shrink-0">
+            ⏰
+          </div>
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-emerald-600">Giờ Hoạt Động</div>
+            <div class="font-extrabold text-slate-900 text-sm mt-0.5">${info.hours}</div>
+            <div class="text-xs text-slate-500 mt-1">Mở cửa xuyên suốt tất cả các ngày trong năm</div>
+          </div>
         </div>
-        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
-          <div class="text-2xl sm:text-3xl font-black text-amber-500 tracking-tight">120+</div>
-          <div class="text-xs font-bold text-slate-800 mt-1">Lớp Học / Tuần</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Đa dạng khung giờ từ 06:00 - 21:00</div>
-        </div>
-        <div class="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition text-center sm:text-left">
-          <div class="text-2xl sm:text-3xl font-black text-rose-500 tracking-tight">99.8%</div>
-          <div class="text-xs font-bold text-slate-800 mt-1">Hài Lòng Dịch Vụ</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Đánh giá 5 sao từ cộng đồng</div>
+
+        <div class="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition flex items-start space-x-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xl flex-shrink-0">
+            📞
+          </div>
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-amber-600">Hỗ Trợ Hội Viên 24/7</div>
+            <div class="font-extrabold text-slate-900 text-sm mt-0.5">Hotline: ${info.hotline}</div>
+            <div class="text-xs text-slate-500 mt-1">Tư vấn lộ trình & giải đáp mọi thắc mắc</div>
+          </div>
         </div>
       </section>
 
-      <!-- 3. FEATURED DISCIPLINES & EXPERIENCES (BỘ SƯU TẬP BỘ MÔN ĐẲNG CẤP) -->
-      <section class="space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div>
-            <div class="text-[11px] font-black uppercase tracking-wider text-indigo-600">Trải Nghiệm Đa Dạng</div>
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+      <!-- ================================================================= -->
+      <!-- 3. STATISTICS BAR (SỐ LIỆU ĐÁNG TIN CẬY) -->
+      <!-- ================================================================= -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        ${GYM_LANDING_DATA.stats.map(s => `
+          <div class="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
+            <div class="text-3xl sm:text-4xl font-black bg-gradient-to-r ${s.color} bg-clip-text text-transparent tracking-tight">
+              ${s.value}
+            </div>
+            <div class="text-xs sm:text-sm font-bold text-slate-900 mt-2">${s.label}</div>
+            <div class="text-[11px] sm:text-xs text-slate-500 mt-1">${s.sub}</div>
+            <div class="w-8 h-1 bg-gradient-to-r ${s.color} rounded-full mt-3 group-hover:w-16 transition-all duration-300"></div>
+          </div>
+        `).join('')}
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- 4. FEATURED CLASSES & DISCIPLINES (CÁC BỘ MÔN THỂ THAO ĐỈNH CAO) -->
+      <!-- ================================================================= -->
+      <section class="space-y-8">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div class="max-w-2xl">
+            <div class="text-xs font-black uppercase tracking-wider text-indigo-600">Hệ Thống Huấn Luyện</div>
+            <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mt-1.5">
               Các Bộ Môn Thể Thao Đỉnh Cao
             </h2>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">
-              Được thiết kế từ bài bản đến nâng cao, dẫn dắt trực tiếp bởi các huấn luyện viên chuyên nghiệp.
+            <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
+              Thiết kế bài bản từ cơ bản đến nâng cao, trang thiết bị tối tân chuẩn quốc tế và được kèm cặp bởi đội ngũ huấn luyện viên tâm huyết.
             </p>
           </div>
-          <button type="button" onclick="switchTab('member-classes')" class="inline-flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition self-start sm:self-auto">
+          <button 
+            type="button" 
+            onclick="switchTab('member-classes')" 
+            class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition self-start sm:self-auto shadow-2xs"
+          >
             <span>Khám phá toàn bộ 120+ lớp</span>
             <span>&rarr;</span>
           </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- 1. Yoga -->
-          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
-            <div class="relative h-48 overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&auto=format&fit=crop&q=80" 
-                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
-                alt="Yoga Studio"
-              />
-              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-indigo-800 backdrop-blur-xs shadow-xs">
-                Studio A Tĩnh Lặng
-              </span>
-              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white shadow-xs">
-                ⭐ 4.9/5
-              </span>
-            </div>
-            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+          ${GYM_LANDING_DATA.classes.map(item => `
+            <div class="group bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
               <div>
-                <h3 class="font-black text-base text-slate-900 group-hover:text-indigo-600 transition">Yoga Thân - Tâm - Trí</h3>
-                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                  Cân bằng hơi thở, tăng độ dẻo dai khớp và phục hồi năng lượng sống trong phòng tập sàn gỗ sồi tràn ngập hương tinh dầu tự nhiên.
-                </p>
-              </div>
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[11px] text-slate-400 font-semibold">Tất cả trình độ</span>
-                <button type="button" onclick="quickExploreCategory('Yoga')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
-                  Đặt Lớp Ngay &rarr;
-                </button>
-              </div>
-            </div>
-          </div>
+                <!-- Image Header -->
+                <div class="relative h-52 overflow-hidden bg-slate-900">
+                  <img 
+                    src="${item.image}" 
+                    alt="${item.title}"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" 
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
+                  <!-- Tag -->
+                  <span class="absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 backdrop-blur-md shadow-xs">
+                    ${item.tag}
+                  </span>
+                  <!-- Badge -->
+                  <span class="absolute bottom-3 left-3.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white shadow-xs">
+                    ${item.badge}
+                  </span>
+                  <span class="absolute bottom-3 right-3.5 text-xs font-black text-amber-300 drop-shadow-sm">
+                    ${item.rating}
+                  </span>
+                </div>
 
-          <!-- 2. Boxing -->
-          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
-            <div class="relative h-48 overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&auto=format&fit=crop&q=80" 
-                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
-                alt="Boxing Arena"
-              />
-              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-rose-800 backdrop-blur-xs shadow-xs">
-                Combat Arena
-              </span>
-              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-rose-600 text-white shadow-xs">
-                🔥 Đốt 800kcal
-              </span>
-            </div>
-            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
-              <div>
-                <h3 class="font-black text-base text-slate-900 group-hover:text-rose-600 transition">Boxing & KickFit Rực Lửa</h3>
-                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                  Rèn luyện phản xạ tự vệ, giải tỏa áp lực cực đỉnh và đốt mỡ toàn thân cùng dàn HLV Cựu VĐV đội tuyển quốc gia.
-                </p>
+                <!-- Body -->
+                <div class="p-6 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <h3 class="font-black text-base text-slate-900 group-hover:text-indigo-600 transition">
+                      ${item.title}
+                    </h3>
+                  </div>
+                  <p class="text-xs text-slate-500 leading-relaxed">
+                    ${item.desc}
+                  </p>
+                </div>
               </div>
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[11px] text-slate-400 font-semibold">Cường độ cao</span>
-                <button type="button" onclick="quickExploreCategory('Boxing')" class="text-xs font-bold text-rose-600 hover:text-rose-800 transition">
-                  Đặt Lớp Ngay &rarr;
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <!-- 3. Pilates -->
-          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
-            <div class="relative h-48 overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&auto=format&fit=crop&q=80" 
-                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
-                alt="Pilates Reformer"
-              />
-              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-amber-800 backdrop-blur-xs shadow-xs">
-                Máy Reformer Nhập Khẩu
-              </span>
-              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-600 text-white shadow-xs">
-                ✨ Siết Eo & Chỉnh Dáng
-              </span>
-            </div>
-            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
-              <div>
-                <h3 class="font-black text-base text-slate-900 group-hover:text-amber-600 transition">Pilates Cân Chỉnh Cột Sống</h3>
-                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                  Tập trung phục hồi cơ lõi sâu, chỉnh cong vẹo cột sống do ngồi máy tính nhiều và kiến tạo vóc dáng thanh thoát, chuẩn mẫu.
-                </p>
-              </div>
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[11px] text-slate-400 font-semibold">Phục hồi & Dáng vóc</span>
-                <button type="button" onclick="quickExploreCategory('Pilates')" class="text-xs font-bold text-amber-600 hover:text-amber-800 transition">
-                  Đặt Lớp Ngay &rarr;
+              <!-- Footer action -->
+              <div class="p-6 pt-0 border-t border-slate-100 mt-2 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-semibold">${item.level}</span>
+                <button 
+                  type="button" 
+                  onclick="quickExploreCategory('${item.category}')" 
+                  class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition flex items-center space-x-1"
+                >
+                  <span>Xem Lớp</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
             </div>
-          </div>
-
-          <!-- 4. Gym & Strength -->
-          <div class="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col">
-            <div class="relative h-48 overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&auto=format&fit=crop&q=80" 
-                class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
-                alt="Fitness Gym Area"
-              />
-              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-indigo-800 backdrop-blur-xs shadow-xs">
-                Sàn Gym 1.200m²
-              </span>
-              <span class="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white shadow-xs">
-                TechnoGym Live
-              </span>
-            </div>
-            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
-              <div>
-                <h3 class="font-black text-base text-slate-900 group-hover:text-indigo-600 transition">Gym & Sức Mạnh Thể Lực</h3>
-                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                  Dàn máy khối, khu tạ tự do chuẩn Olympic, máy cardio màn hình tương tác thông minh hỗ trợ kết nối dữ liệu buổi tập cá nhân.
-                </p>
-              </div>
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[11px] text-slate-400 font-semibold">Tự do & Có HLV</span>
-                <button type="button" onclick="switchTab('member-packages')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
-                  Xem Gói Tập &rarr;
-                </button>
-              </div>
-            </div>
-          </div>
+          `).join('')}
         </div>
       </section>
 
-      <!-- 4. APP ECOSYSTEM WALKTHROUGH (HỆ SINH THÁI ỨNG DỤNG SỐ HÓA 4.0) -->
-      <section class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-12 text-white relative overflow-hidden shadow-2xl">
-        <div class="relative z-10 max-w-3xl">
-          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-3">
+      <!-- ================================================================= -->
+      <!-- 5. APP ECOSYSTEM WALKTHROUGH (HỆ SINH THÁI ỨNG DỤNG SỐ HÓA 4.0) -->
+      <!-- ================================================================= -->
+      <section class="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 rounded-3xl p-8 sm:p-14 text-white relative overflow-hidden shadow-2xl border border-slate-800">
+        <!-- Background accents -->
+        <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-3xl space-y-3">
+          <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 text-indigo-300 text-xs font-bold uppercase tracking-wider">
             <span>📱</span>
-            <span>Ứng Dụng Hội Viên Toàn Diện</span>
+            <span>Ứng Dụng Hội Viên Số Hóa Toàn Diện</span>
           </div>
           <h2 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-            Một Ứng Dụng Thông Minh.<br />
+            Một Nền Tảng Thông Minh.<br />
             Trọn Vẹn Mọi Tiện Ích Thể Thao.
           </h2>
-          <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
-            Quên đi thẻ nhựa hay thủ tục giấy tờ phiền hà. Toàn bộ hành trình tập luyện từ cổng soát vé, đặt lớp học đến biểu đồ chỉ số cơ thể được điều khiển ngay trong lòng bàn tay bạn.
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl font-normal">
+            Loại bỏ hoàn toàn thẻ nhựa và thủ tục giấy tờ. Mọi hoạt động từ check-in không chạm, xem lịch lớp, theo dõi hồ sơ sức khỏe và thanh toán trực tuyến diễn ra mượt mà ngay trên thiết bị của bạn.
           </p>
         </div>
 
-        <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-5 mt-8 sm:mt-10">
-          <!-- Feature 1 -->
-          <div class="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition space-y-3">
-            <div class="w-12 h-12 rounded-2xl bg-indigo-500/30 border border-indigo-400/40 text-indigo-300 flex items-center justify-center font-black text-2xl">
-              📲
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+          ${GYM_LANDING_DATA.features.map(f => `
+            <div class="p-7 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-300 flex flex-col justify-between space-y-4">
+              <div class="space-y-3">
+                <div class="inline-block px-2.5 py-0.5 rounded-full bg-indigo-400/20 text-indigo-300 text-[10px] font-bold uppercase">
+                  ${f.badge}
+                </div>
+                <h3 class="font-extrabold text-base text-white">${f.title}</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-normal">${f.desc}</p>
+              </div>
+              <div class="pt-2">
+                <button 
+                  type="button" 
+                  onclick="navigateToMemberPage('${f.actionTab}')" 
+                  class="text-xs font-bold text-cyan-300 hover:text-white transition flex items-center space-x-1.5"
+                >
+                  <span>${f.actionText}</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
             </div>
-            <h3 class="font-bold text-base text-white">Thẻ Số & Check-in QR</h3>
-            <p class="text-xs text-slate-300 leading-relaxed">
-              Mã QR động qua cổng Turnstile tự động trong 0.5s. Tích hợp lịch sử ra vào và xuất hóa đơn điện tử minh bạch.
-            </p>
-            <div class="pt-2">
-              <button type="button" onclick="navigateToMemberPage('member-pass')" class="text-xs font-bold text-indigo-300 hover:text-indigo-200 transition">
-                Xem Thẻ Điện Tử &rarr;
-              </button>
-            </div>
-          </div>
-
-          <!-- Feature 2 -->
-          <div class="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition space-y-3">
-            <div class="w-12 h-12 rounded-2xl bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-black text-2xl">
-              📅
-            </div>
-            <h3 class="font-bold text-base text-white">Đặt Chỗ & Quản Lý Lịch</h3>
-            <p class="text-xs text-slate-300 leading-relaxed">
-              Xem sơ đồ chỗ lớp học trước 7 ngày, chọn huấn luyện viên yêu thích và nhận thông báo nhắc giờ tập tự động.
-            </p>
-            <div class="pt-2">
-              <button type="button" onclick="switchTab('member-classes')" class="text-xs font-bold text-emerald-300 hover:text-emerald-200 transition">
-                Khám Phá Lớp Học &rarr;
-              </button>
-            </div>
-          </div>
-
-          <!-- Feature 3 -->
-          <div class="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition space-y-3">
-            <div class="w-12 h-12 rounded-2xl bg-amber-500/30 border border-amber-400/40 text-amber-300 flex items-center justify-center font-black text-2xl">
-              📊
-            </div>
-            <h3 class="font-bold text-base text-white">Đo InBody & Giáo Án Riêng</h3>
-            <p class="text-xs text-slate-300 leading-relaxed">
-              Theo dõi biểu đồ cân nặng, cơ, mỡ, BMI định kỳ và tiếp nhận giáo án bài tập cá nhân do HLV trực tiếp phân công.
-            </p>
-            <div class="pt-2">
-              <button type="button" onclick="navigateToMemberPage('member-fitness')" class="text-xs font-bold text-amber-300 hover:text-amber-200 transition">
-                Xem Thể Trạng Của Tôi &rarr;
-              </button>
-            </div>
-          </div>
+          `).join('')}
         </div>
       </section>
 
-
-      <!-- 6. POPULAR PACKAGES PREVIEW (CÁC GÓI TẬP BÁN CHẠY NHẤT) -->
-      <section class="space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div>
-            <div class="text-[11px] font-black uppercase tracking-wider text-indigo-600">Đăng Ký Linh Hoạt</div>
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+      <!-- ================================================================= -->
+      <!-- 6. POPULAR PACKAGES PREVIEW (CÁC GÓI HỘI VIÊN ĐƯỢC TIN CHỌN) -->
+      <!-- ================================================================= -->
+      <section class="space-y-8">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div class="max-w-2xl">
+            <div class="text-xs font-black uppercase tracking-wider text-indigo-600">Đăng Ký Linh Hoạt</div>
+            <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mt-1.5">
               Các Gói Hội Viên Được Tin Chọn
             </h2>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">
-              Thanh toán an toàn qua VNPay QR hoặc thẻ Visa/Mastercard/Napas, kích hoạt gói tức thì.
+            <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
+              Minh bạch chi phí, không phí ẩn. Thanh toán bảo mật qua VNPay QR, Visa, Mastercard và kích hoạt thẻ tức thì.
             </p>
           </div>
-          <button type="button" onclick="switchTab('member-packages')" class="inline-flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+          <button 
+            type="button" 
+            onclick="switchTab('member-packages')" 
+            class="inline-flex items-center space-x-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition self-start sm:self-auto"
+          >
             <span>Xem tất cả gói &rarr;</span>
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
           ${pkgs.slice(0, 3).map(pkg => `
-            <div class="rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 relative ${
+            <div class="rounded-3xl p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
               pkg.popular 
-                ? 'bg-gradient-to-b from-indigo-900 to-slate-900 text-white shadow-xl ring-2 ring-indigo-500 scale-[1.02]' 
-                : 'bg-white text-slate-900 border border-slate-200 shadow-xs hover:shadow-lg'
+                ? 'bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 text-white shadow-2xl ring-2 ring-indigo-500 scale-[1.02]' 
+                : 'bg-white text-slate-900 border border-slate-200/90 shadow-xs hover:shadow-xl'
             }">
               ${pkg.popular ? `
-                <div class="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-sm">
-                  ★ Phổ Biến Nhất
+                <div class="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-md">
+                  ★ Khuyên Dùng Nhiều Nhất
                 </div>
               ` : ''}
 
               <div>
-                <h3 class="text-lg font-black tracking-tight">${pkg.name}</h3>
-                <p class="text-xs ${pkg.popular ? 'text-slate-300' : 'text-slate-500'} mt-1">${pkg.description}</p>
-                <div class="mt-4 pb-4 border-b ${pkg.popular ? 'border-white/10' : 'border-slate-100'}">
-                  <div class="text-2xl sm:text-3xl font-black">${(pkg.price || 0).toLocaleString()} <span class="text-xs font-normal ${pkg.popular ? 'text-slate-300' : 'text-slate-500'}">VND</span></div>
-                  <div class="text-[11px] ${pkg.popular ? 'text-indigo-300' : 'text-slate-400'} font-semibold mt-0.5">Thời hạn: ${pkg.durationDays || 30} Ngày Sử Dụng</div>
+                <h3 class="text-xl font-extrabold tracking-tight">${pkg.name}</h3>
+                <p class="text-xs ${pkg.popular ? 'text-slate-300' : 'text-slate-500'} mt-1.5 leading-relaxed">${pkg.description}</p>
+                
+                <div class="mt-6 pb-6 border-b ${pkg.popular ? 'border-white/10' : 'border-slate-100'}">
+                  <div class="text-3xl sm:text-4xl font-black">
+                    ${(pkg.price || 0).toLocaleString()} <span class="text-sm font-semibold ${pkg.popular ? 'text-slate-300' : 'text-slate-500'}">VND</span>
+                  </div>
+                  <div class="text-xs ${pkg.popular ? 'text-cyan-300' : 'text-slate-500'} font-semibold mt-1">
+                    Thời hạn: ${pkg.durationDays || 30} Ngày Sử Dụng
+                  </div>
                 </div>
-                <div class="py-4 space-y-2.5">
-                  ${(pkg.features || []).slice(0, 4).map(f => `
-                    <div class="flex items-start space-x-2 text-xs">
-                      <span class="${pkg.popular ? 'text-amber-400' : 'text-indigo-600'} font-bold flex-shrink-0">✓</span>
-                      <span class="${pkg.popular ? 'text-slate-200' : 'text-slate-600'}">${f}</span>
+
+                <div class="py-6 space-y-3">
+                  ${(pkg.features || []).slice(0, 5).map(f => `
+                    <div class="flex items-start space-x-2.5 text-xs sm:text-sm">
+                      <span class="${pkg.popular ? 'text-amber-400 font-black' : 'text-indigo-600 font-bold'} flex-shrink-0">✓</span>
+                      <span class="${pkg.popular ? 'text-slate-200' : 'text-slate-700'}">${f}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -2921,7 +3129,7 @@ function renderMemberLandingHome() {
                 <button 
                   type="button" 
                   onclick="openCheckoutModal('${pkg.id}')" 
-                  class="w-full py-3 rounded-2xl font-bold text-xs transition shadow-sm ${
+                  class="w-full py-3.5 rounded-2xl font-bold text-xs sm:text-sm transition shadow-md ${
                     pkg.popular 
                       ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
                       : 'bg-slate-900 hover:bg-slate-800 text-white'
@@ -2935,38 +3143,40 @@ function renderMemberLandingHome() {
         </div>
       </section>
 
-
-
-      <!-- 8. FINAL CALL TO ACTION (CHÂN TRANG KÊU GỌI HÀNH ĐỘNG) -->
-      <section class="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-700 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div class="max-w-xl space-y-2">
-          <div class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider">
+      <!-- ================================================================= -->
+      <!-- 7. FINAL CALL TO ACTION (KÊU GỌI HÀNH ĐỘNG CUỐI TRANG) -->
+      <!-- ================================================================= -->
+      <section class="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 rounded-3xl p-8 sm:p-14 text-white shadow-2xl relative overflow-hidden border border-indigo-900/50 flex flex-col lg:flex-row items-center justify-between gap-8">
+        <div class="max-w-2xl space-y-3 text-center lg:text-left">
+          <div class="inline-block px-3.5 py-1 rounded-full bg-white/10 text-cyan-300 text-xs font-bold uppercase tracking-wider">
             Bắt Đầu Ngay Hôm Nay
           </div>
-          <h2 class="text-2xl sm:text-4xl font-black tracking-tight">
-            Sẵn Sàng Nâng Tầm Thể Chất Cùng Sports Center?
+          <h2 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+            Sẵn Sàng Nâng Tầm Thể Chất Cùng Sport Center?
           </h2>
-          <p class="text-indigo-100 text-xs sm:text-sm leading-relaxed">
-            Đăng ký gói thẻ ngay hôm nay để nhận buổi đo InBody 770 miễn phí và tư vấn lộ trình 1-1 cùng Master Coach.
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
+            Đăng ký tài khoản hội viên ngay hôm nay để nhận buổi đo InBody 770 chuyên sâu miễn phí và tư vấn thiết lập mục tiêu thể hình 1-1 cùng huấn luyện viên.
           </p>
         </div>
-        <div class="flex flex-col sm:flex-row items-center gap-3 flex-shrink-0 w-full sm:w-auto">
+        <div class="flex flex-col sm:flex-row items-center gap-3.5 flex-shrink-0 w-full sm:w-auto">
           <button 
             type="button" 
             onclick="switchTab('member-classes')" 
-            class="w-full sm:w-auto px-6 py-3.5 bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs sm:text-sm rounded-2xl shadow-md transition"
+            class="w-full sm:w-auto px-7 py-4 bg-white text-slate-900 hover:bg-slate-100 font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center space-x-2"
           >
-            Khám Phá Lớp Học &rarr;
+            <span>Khám Phá Lớp Học</span>
+            <span>&rarr;</span>
           </button>
           <button 
             type="button" 
             onclick="switchTab('member-packages')" 
-            class="w-full sm:w-auto px-6 py-3.5 bg-indigo-900/60 hover:bg-indigo-900/80 text-white border border-white/20 font-bold text-xs sm:text-sm rounded-2xl transition"
+            class="w-full sm:w-auto px-7 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition shadow-lg flex items-center justify-center"
           >
-            Xem Bảng Giá Gói
+            Xem Bảng Giá Gói Tập
           </button>
         </div>
       </section>
+
     </div>
   `;
 }

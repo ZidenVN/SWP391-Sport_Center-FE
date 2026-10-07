@@ -109,7 +109,7 @@ if (!guestHtml.includes('Khám Phá Trung Tâm') && !guestHtml.includes('Đăng 
 global.appState.isViewingAuthScreen = true;
 let authHtml = global.renderAuthScreen();
 console.log('2. Auth Screen HTML length:', authHtml.length);
-if (!authHtml.includes('Hệ Thống Quản Lý Trung Tâm Thể Thao') && !authHtml.includes('Đăng Nhập')) {
+if (!authHtml.includes('Sport Center') && !authHtml.includes('Đăng Nhập')) {
   throw new Error('Auth Screen content missing!');
 }
 
@@ -134,7 +134,7 @@ global.closeCheckoutModal();
 global.quickLoginAs('RECEPTIONIST');
 let receptionHtml = global.renderReceptionistWebApp();
 console.log('5. Receptionist Kiosk HTML length:', receptionHtml.length);
-if (!receptionHtml.includes('TURNSTILE') && !receptionHtml.includes('BÁN GÓI POS')) {
+if (!receptionHtml.includes('Turnstile') && !receptionHtml.includes('Bán Gói POS')) {
   throw new Error('Receptionist kiosk content missing!');
 }
 

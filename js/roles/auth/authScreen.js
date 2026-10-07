@@ -236,7 +236,7 @@ function renderLoginForm() {
   return `
     <div style="display:flex;flex-direction:column;">
 
-      <form onsubmit="return handleFormLogin(event)" style="display:flex;flex-direction:column;gap:14px;">
+      <form novalidate onsubmit="return handleFormLogin(event)" style="display:flex;flex-direction:column;gap:12px;">
 
         <!-- Email input -->
         <div>
@@ -245,12 +245,14 @@ function renderLoginForm() {
             <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;display:flex;align-items:center;">
               <svg class="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </span>
-            <input type="email" id="login-email" required value="trang.pham@gmail.com"
+            <input type="email" id="login-email"
               placeholder="Nhập email của bạn"
               class="auth-input-field"
+              oninput="clearFieldError('login-email')"
               style="width:100%;padding:0 14px 0 42px;outline:none;transition:border-color 0.15s, box-shadow 0.15s;"
             />
           </div>
+          <div id="error-login-email" class="field-error-msg"></div>
         </div>
 
         <!-- Password input -->
@@ -260,9 +262,10 @@ function renderLoginForm() {
             <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;display:flex;align-items:center;">
               <svg class="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </span>
-            <input type="password" id="login-password" required value="123"
+            <input type="password" id="login-password"
               placeholder="Nhập mật khẩu"
               class="auth-input-field"
+              oninput="clearFieldError('login-password')"
               style="width:100%;padding:0 42px 0 42px;outline:none;transition:border-color 0.15s, box-shadow 0.15s;"
             />
             <button type="button" onclick="(function(){const i=document.getElementById('login-password');i.type=i.type==='password'?'text':'password';})()"
@@ -270,6 +273,7 @@ function renderLoginForm() {
               <svg class="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
+          <div id="error-login-password" class="field-error-msg"></div>
         </div>
 
         <!-- Remember + Forgot -->
@@ -478,72 +482,50 @@ function renderForgotPasswordForm() {
 }
 
 
-function selectAuthRole(role) {
-  const roles = ['MEMBER', 'RECEPTIONIST', 'COACH', 'MANAGER'];
-  roles.forEach(r => {
-    const btn = document.getElementById('role-btn-' + r);
-    if (!btn) return;
-    if (r === role) {
-      btn.style.background = 'linear-gradient(160deg, #4C86F7, #1D4ED8)';
-      btn.style.borderColor = '#4C86F7';
-      btn.style.boxShadow = '0 10px 22px -8px rgba(47, 107, 240, 0.75)';
-      btn.onmouseover = null;
-      btn.onmouseout = null;
-      btn.querySelectorAll('*').forEach(el => {
-        el.style.color = '#fff';
-        if (el.tagName && (el.tagName.toLowerCase() === 'svg' || el.tagName.toLowerCase() === 'path' || el.tagName.toLowerCase() === 'rect' || el.tagName.toLowerCase() === 'line' || el.tagName.toLowerCase() === 'circle')) {
-          el.style.stroke = '#fff';
-        }
-      });
-    } else {
-      btn.style.background = '#FFFFFF';
-      btn.style.borderColor = '#DFE6F2';
-      btn.style.boxShadow = '0 1px 3px rgba(15, 67, 160, 0.04)';
-      btn.onmouseover = function() {
-        this.style.background = '#F6FAFF';
-        this.style.borderColor = '#2F6BF0';
-      };
-      btn.onmouseout = function() {
-        this.style.background = '#FFFFFF';
-        this.style.borderColor = '#DFE6F2';
-      };
-      btn.querySelectorAll('*').forEach(el => {
-        el.style.color = '#0A1F44';
-        if (el.tagName && (el.tagName.toLowerCase() === 'svg' || el.tagName.toLowerCase() === 'path' || el.tagName.toLowerCase() === 'rect' || el.tagName.toLowerCase() === 'line' || el.tagName.toLowerCase() === 'circle')) {
-          el.style.stroke = '#0A1F44';
-        }
-      });
-      const icon = btn.querySelector('.role-icon');
-      if (icon) {
-        icon.style.color = '#0A1F44';
-        icon.style.stroke = '#0A1F44';
-      }
-      const name = btn.querySelector('.role-name');
-      if (name) name.style.color = '#0A1F44';
-    }
-  });
-
-  const emailInput = document.getElementById('login-email');
-  const passInput = document.getElementById('login-password');
-  if (emailInput && passInput) {
-    if (role === 'MEMBER') emailInput.value = 'trang.pham@gmail.com';
-    else if (role === 'RECEPTIONIST') emailInput.value = 'letan@sportscenter.vn';
-    else if (role === 'COACH') emailInput.value = 'coach@sportscenter.vn';
-    else if (role === 'MANAGER') emailInput.value = 'admin@sportscenter.vn';
-    passInput.value = '123';
-  }
+function clearAllLoginErrors() {
+  clearFieldError('login-email');
+  clearFieldError('login-password');
 }
 
 async function handleFormLogin(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+  clearAllLoginErrors();
 
   const emailInput = document.getElementById('login-email');
   const passInput = document.getElementById('login-password');
   const email = (emailInput?.value || '').trim();
   const password = passInput?.value || '';
 
-  if (!email || !password) {
-    showToast('Thiếu thông tin', 'Vui lòng nhập đầy đủ Email và Mật khẩu', 'error');
+  let hasError = false;
+  let firstErrorInput = null;
+
+  // 1. Kiểm tra Email
+  if (!email) {
+    setFieldError('login-email', 'Vui lòng nhập email.');
+    hasError = true;
+    if (!firstErrorInput) firstErrorInput = emailInput;
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setFieldError('login-email', 'Vui lòng nhập email hợp lệ.');
+      hasError = true;
+      if (!firstErrorInput) firstErrorInput = emailInput;
+    }
+  }
+
+  // 2. Kiểm tra Mật khẩu
+  if (!password) {
+    setFieldError('login-password', 'Vui lòng nhập mật khẩu.');
+    hasError = true;
+    if (!firstErrorInput) firstErrorInput = passInput;
+  }
+
+  // Nếu có lỗi, không gọi API đăng nhập
+  if (hasError) {
+    if (firstErrorInput && typeof firstErrorInput.focus === 'function') {
+      firstErrorInput.focus();
+    }
     return false;
   }
 
@@ -990,5 +972,4 @@ if (_targetGlobal) {
   if (typeof handleSendOtpBtn !== 'undefined') _targetGlobal.handleSendOtpBtn = handleSendOtpBtn;
   if (typeof handleVerifyAndResetPassword !== 'undefined') _targetGlobal.handleVerifyAndResetPassword = handleVerifyAndResetPassword;
   if (typeof handleGoogleLogin !== 'undefined') _targetGlobal.handleGoogleLogin = handleGoogleLogin;
-  if (typeof selectAuthRole !== 'undefined') _targetGlobal.selectAuthRole = selectAuthRole;
 }
