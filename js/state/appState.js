@@ -9,6 +9,8 @@ let appState = {
   otpSent: false,
   activeFilterCategory: 'ALL',
   memberSearchKeyword: '',
+  memberClassSort: 'TIME_ASC', // 'TIME_ASC' | 'SEATS_DESC' | 'NAME_ASC'
+  quickViewClass: null,
   selectedClassForBooking: null,
   selectedPackageForCheckout: null,
   receptionMode: 'GATE', // 'GATE' | 'POS' | 'LOOKUP' | 'SHIFT' | 'TICKETS'
