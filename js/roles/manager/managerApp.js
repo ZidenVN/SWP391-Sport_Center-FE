@@ -768,9 +768,16 @@ function renderRenewMemberModal() {
 function initChartsIfNeeded() {
   if (appState.currentRole !== 'MANAGER' || appState.currentTab !== 'dashboard') return;
 
-  setTimeout(() => {
+  const tryRender = (retries = 5) => {
     const canvas = document.getElementById('revenueChart');
-    if (!canvas || typeof canvas.getContext !== 'function' || typeof Chart === 'undefined') return;
+    if (!canvas || typeof canvas.getContext !== 'function') return;
+
+    if (typeof Chart === 'undefined') {
+      if (retries > 0) {
+        setTimeout(() => tryRender(retries - 1), 150);
+      }
+      return;
+    }
 
     if (window.activeRevenueChartInstance) {
       window.activeRevenueChartInstance.destroy();
@@ -809,7 +816,9 @@ function initChartsIfNeeded() {
         }
       }
     });
-  }, 100);
+  };
+
+  setTimeout(tryRender, 60);
 }
 
 

@@ -32,6 +32,10 @@ export function normalizePackage(pkg) {
 }
 
 export async function syncPackagesWithBackend(force = false) {
+  // If packages already loaded and not forced to refresh, return immediate cache to avoid network latency
+  if (!force && typeof appState !== 'undefined' && appState.packagesLoadedFromApi && appState.data?.packages?.length) {
+    return appState.data.packages;
+  }
   try {
     const apiPackages = await packageApi.getAll();
     if (Array.isArray(apiPackages)) {

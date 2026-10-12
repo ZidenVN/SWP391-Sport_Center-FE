@@ -1,5 +1,5 @@
 /* Custom Styles for Sports Center Management System */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+/* Note: Google Fonts Plus Jakarta Sans is preloaded in index.html for fast parallel rendering */
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;

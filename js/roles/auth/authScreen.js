@@ -510,18 +510,27 @@ async function handleFormLogin(e) {
 
     if (authService && typeof authService.login === 'function') {
       responseData = await authService.login(loginPayload);
+    } else if (window.api && window.api.client && typeof window.api.client.post === 'function') {
+      responseData = await window.api.client.post('/auth/login', loginPayload);
     } else {
       const baseUrl = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
-      const res = await fetch(`${baseUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginPayload)
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `Đăng nhập thất bại (Mã lỗi: ${res.status})`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const res = await fetch(`${baseUrl}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loginPayload),
+          signal: controller.signal
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(text || `Đăng nhập thất bại (Mã lỗi: ${res.status})`);
+        }
+        responseData = await res.json();
+      } finally {
+        clearTimeout(timer);
       }
-      responseData = await res.json();
     }
 
     console.log('[Auth] Đăng nhập thành công từ API:', responseData);
@@ -634,16 +643,16 @@ async function handleFormLogin(e) {
     console.error('[Auth] Lỗi đăng nhập:', err);
     let errMsg = err.message || 'Sai Email hoặc Mật khẩu!';
 
-    // Fallback: nếu Backend chưa bật, cho phép đăng nhập offline bằng tài khoản demo để trải nghiệm không bị gián đoạn
-    if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
+    // Fallback: nếu Backend phản hồi quá chậm (timeout), hoặc chưa bật, cho phép đăng nhập offline bằng tài khoản demo để trải nghiệm không bị gián đoạn
+    if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError') || errMsg.includes('Timeout') || err.name === 'TimeoutError' || err.name === 'AbortError') {
       const acc = (appState.data && appState.data.demoAccounts) ? appState.data.demoAccounts.find(a => a.email.toLowerCase() === email.toLowerCase()) : null;
       if (acc) {
         quickLoginAs(acc.role);
-        showToast('Chế độ Demo Offline', `Máy chủ Backend chưa bật. Đã đăng nhập tạm tài khoản mẫu ${acc.name}!`, 'info');
+        showToast('Chế độ Demo Offline', `Máy chủ Backend phản hồi chậm hoặc chưa bật. Đã đăng nhập tạm tài khoản mẫu ${acc.name}!`, 'info');
         return false;
       } else {
         const apiBase = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
-        errMsg = `Không thể kết nối đến máy chủ (${apiBase}). Vui lòng kiểm tra lại dịch vụ Backend Spring Boot!`;
+        errMsg = `Không thể kết nối đến máy chủ (${apiBase}). Vui lòng kiểm tra lại dịch vụ Backend!`;
       }
     }
 
@@ -811,22 +820,31 @@ async function handleFormRegister(e) {
 
     if (authService && typeof authService.register === 'function') {
       responseData = await authService.register(registerPayload);
+    } else if (window.api && window.api.client && typeof window.api.client.post === 'function') {
+      responseData = await window.api.client.post('/auth/register', registerPayload);
     } else {
-      // Fallback gọi fetch trực tiếp tới API endpoint từ env
+      // Fallback gọi fetch trực tiếp tới API endpoint từ env với timeout 8s
       const baseUrl = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
-      const res = await fetch(`${baseUrl}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(registerPayload)
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        const msg = (data && (data.message || data.error || data.detail)) || `Đăng ký thất bại (Mã lỗi: ${res.status})`;
-        throw new Error(msg);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const res = await fetch(`${baseUrl}/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(registerPayload),
+          signal: controller.signal
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          const msg = (data && (data.message || data.error || data.detail)) || `Đăng ký thất bại (Mã lỗi: ${res.status})`;
+          throw new Error(msg);
+        }
+        responseData = data;
+      } finally {
+        clearTimeout(timer);
       }
-      responseData = data;
     }
 
     console.log('[Auth] Đăng ký thành công từ API:', responseData);
@@ -886,9 +904,9 @@ async function handleFormRegister(e) {
   } catch (err) {
     console.error('[Auth] Lỗi đăng ký:', err);
     let errMsg = err.message || 'Đăng ký không thành công!';
-    if (err.message && err.message.includes('Failed to fetch')) {
+    if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Timeout') || err.name === 'TimeoutError' || err.name === 'AbortError')) {
       const apiBase = (typeof window !== 'undefined' && window.api && window.api.client) ? window.api.client.getBaseUrl() : 'http://localhost:8080/api/v1';
-      errMsg = `Không thể kết nối đến máy chủ (${apiBase}). Vui lòng kiểm tra lại dịch vụ Backend đang chạy!`;
+      errMsg = `Không thể kết nối hoặc máy chủ phản hồi quá chậm (${apiBase}). Vui lòng kiểm tra lại dịch vụ Backend!`;
     }
     showToast('Đăng ký thất bại', errMsg, 'error');
   } finally {

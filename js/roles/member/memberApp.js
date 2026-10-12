@@ -503,6 +503,7 @@ function handleHomeSearch(e) {
 }
 
 function renderMemberLandingHome() {
+  const info = (typeof GYM_MEMBER_LANDING_DATA !== 'undefined' && GYM_MEMBER_LANDING_DATA.info) ? GYM_MEMBER_LANDING_DATA.info : {};
   const rawPkgs = (appState.data && appState.data.packages) ? appState.data.packages : [];
   const pkgs = rawPkgs
     .map(p => (typeof normalizePackage === 'function' ? normalizePackage(p) : p))
@@ -519,6 +520,8 @@ function renderMemberLandingHome() {
             src="/assets/images/gym-bg.jpg" 
             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&auto=format&fit=crop&q=80';"
             alt="Sport Center Gym Floor" 
+            fetchpriority="high"
+            decoding="async"
             class="w-full h-full object-cover object-center filter brightness-[0.75] contrast-[1.05] scale-100 hover:scale-105 transition-transform duration-1000 ease-out"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/60"></div>
@@ -650,6 +653,8 @@ function renderMemberLandingHome() {
                   <img 
                     src="${item.image}" 
                     alt="${item.title}"
+                    loading="lazy"
+                    decoding="async"
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out" 
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
@@ -743,7 +748,7 @@ function renderMemberLandingHome() {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div class="bg-white rounded-3xl border border-slate-200/90 p-6 flex items-center space-x-4 shadow-xs hover-lift transition-all duration-200">
-            <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&auto=format&fit=crop&q=80" alt="Coach Trần Hoàng Nam" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
+            <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&auto=format&fit=crop&q=80" alt="Coach Trần Hoàng Nam" loading="lazy" decoding="async" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
             <div>
               <div class="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md inline-block">HLV Boxing & Thể Lực</div>
               <h3 class="font-extrabold text-slate-900 text-base mt-1">Trần Hoàng Nam</h3>
@@ -752,7 +757,7 @@ function renderMemberLandingHome() {
           </div>
 
           <div class="bg-white rounded-3xl border border-slate-200/90 p-6 flex items-center space-x-4 shadow-xs hover-lift transition-all duration-200">
-            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" alt="Coach Nguyễn Hà My" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" alt="Coach Nguyễn Hà My" loading="lazy" decoding="async" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
             <div>
               <div class="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md inline-block">HLV Yoga & Pilates</div>
               <h3 class="font-extrabold text-slate-900 text-base mt-1">Nguyễn Hà My</h3>
@@ -761,7 +766,7 @@ function renderMemberLandingHome() {
           </div>
 
           <div class="bg-white rounded-3xl border border-slate-200/90 p-6 flex items-center space-x-4 shadow-xs hover-lift transition-all duration-200">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="Coach Lê Quốc Huy" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="Coach Lê Quốc Huy" loading="lazy" decoding="async" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
             <div>
               <div class="text-[10px] font-black uppercase tracking-wider text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md inline-block">HLV Gym & Thể Hình</div>
               <h3 class="font-extrabold text-slate-900 text-base mt-1">Lê Quốc Huy</h3>
@@ -1077,6 +1082,8 @@ function renderMemberClassDiscovery() {
                   <div class="h-44 w-full relative overflow-hidden bg-slate-900 aspect-video">
                     <img 
                       src="${c.image}" 
+                      loading="lazy"
+                      decoding="async"
                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out" 
                       alt="${c.title}" 
                     />
@@ -1283,7 +1290,7 @@ function _unused_old_renderMemberMySchedule() {
             return `
               <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="flex items-center space-x-4">
-                  <img src="${c.image}" class="w-16 h-16 rounded-xl object-cover border border-slate-200" />
+                  <img src="${c.image}" loading="lazy" decoding="async" class="w-16 h-16 rounded-xl object-cover border border-slate-200" />
                   <div>
                     <div class="inline-block px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase mb-1">${c.category}</div>
                     <h3 class="font-extrabold text-sm text-slate-900">${c.title}</h3>
@@ -1804,7 +1811,7 @@ function renderMemberQuickViewModal() {
       <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 transform transition-all duration-200 scale-100 flex flex-col">
         <!-- Modal Image Banner -->
         <div class="relative h-56 w-full bg-slate-900 overflow-hidden">
-          <img src="${c.image}" alt="${c.title}" class="w-full h-full object-cover" />
+          <img src="${c.image}" alt="${c.title}" loading="lazy" decoding="async" class="w-full h-full object-cover" />
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
           
           <!-- Category & Status Badge -->

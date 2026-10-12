@@ -59,9 +59,13 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Bootstrap Application
+// Bootstrap Application: Render immediately if DOM container is ready
 if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
+  const root = document.getElementById('app-root');
+  if (root && typeof window.renderApp === 'function') {
+    // Immediate render to eliminate loading spinner delay
+    window.renderApp();
+  } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof window.renderApp === 'function') {
         window.renderApp();
