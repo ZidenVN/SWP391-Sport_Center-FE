@@ -133,8 +133,7 @@ global.closeCheckoutModal();
 // 5. Receptionist Kiosk
 global.quickLoginAs('RECEPTIONIST');
 let receptionHtml = global.renderReceptionistWebApp();
-console.log('5. Receptionist Kiosk HTML length:', receptionHtml.length);
-if (!receptionHtml.includes('Turnstile') && !receptionHtml.includes('Bán Gói POS')) {
+if (!receptionHtml.toUpperCase().includes('TURNSTILE') && !receptionHtml.toUpperCase().includes('BÁN GÓI POS')) {
   throw new Error('Receptionist kiosk content missing!');
 }
 

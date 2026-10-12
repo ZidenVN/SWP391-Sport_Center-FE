@@ -287,10 +287,8 @@ function renderLoginForm() {
           </button>
         </div>
 
-        <!-- Submit button -->
-        <button type="submit" id="login-submit-btn" class="auth-btn-primary"
-          style="width:100%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.1px;margin-top:4px;">
-          <span>Đăng nhập</span>
+        <button type="submit" id="login-submit-btn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition flex items-center justify-center space-x-2">
+          <span>Đăng Nhập Vào Hệ Thống</span>
         </button>
 
         <!-- Divider -->
@@ -482,50 +480,16 @@ function renderForgotPasswordForm() {
 }
 
 
-function clearAllLoginErrors() {
-  clearFieldError('login-email');
-  clearFieldError('login-password');
-}
-
 async function handleFormLogin(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
-
-  clearAllLoginErrors();
 
   const emailInput = document.getElementById('login-email');
   const passInput = document.getElementById('login-password');
   const email = (emailInput?.value || '').trim();
   const password = passInput?.value || '';
 
-  let hasError = false;
-  let firstErrorInput = null;
-
-  // 1. Kiểm tra Email
-  if (!email) {
-    setFieldError('login-email', 'Vui lòng nhập email.');
-    hasError = true;
-    if (!firstErrorInput) firstErrorInput = emailInput;
-  } else {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setFieldError('login-email', 'Vui lòng nhập email hợp lệ.');
-      hasError = true;
-      if (!firstErrorInput) firstErrorInput = emailInput;
-    }
-  }
-
-  // 2. Kiểm tra Mật khẩu
-  if (!password) {
-    setFieldError('login-password', 'Vui lòng nhập mật khẩu.');
-    hasError = true;
-    if (!firstErrorInput) firstErrorInput = passInput;
-  }
-
-  // Nếu có lỗi, không gọi API đăng nhập
-  if (hasError) {
-    if (firstErrorInput && typeof firstErrorInput.focus === 'function') {
-      firstErrorInput.focus();
-    }
+  if (!email || !password) {
+    showToast('Thiếu thông tin', 'Vui lòng nhập đầy đủ Email và Mật khẩu', 'error');
     return false;
   }
 

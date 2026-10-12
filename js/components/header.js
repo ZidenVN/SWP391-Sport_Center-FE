@@ -165,9 +165,27 @@ function renderUserAvatarDropdown(role) {
   const currentTab = appState.currentTab;
 
   const user = getResolvedCurrentUserProfile();
+  const curr = appState.currentUser;
   const members = (appState.data && appState.data.members) ? appState.data.members : [];
-  const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
-  const member = role === 'MEMBER' ? (resolveMember(rawMember) || user) : user;
+  let rawMember = null;
+  if (curr && (curr.email || curr.id)) {
+    rawMember = members.find(m => 
+      (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase()) ||
+      (curr.id && (m.id === curr.id || m.memberId === curr.id))
+    );
+  }
+  if (!rawMember) {
+    rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
+  }
+  const resolved = resolveMember(rawMember) || {};
+  const member = role === 'MEMBER' ? ({
+    id: curr?.id || resolved.id || user.id,
+    name: curr?.name || resolved.name || user.name,
+    email: curr?.email || resolved.email || user.email,
+    avatar: curr?.avatar || resolved.avatar || user.avatar,
+    status: rawMember?.status || resolved.status || user.status || 'ACTIVE',
+    activePackage: resolved.activePackage || user.activePackage || 'Gói Hội Viên'
+  }) : user;
 
   const isDarkHeader = role === 'RECEPTIONIST' || role === 'MANAGER';
 

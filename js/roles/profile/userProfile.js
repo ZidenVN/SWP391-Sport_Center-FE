@@ -17,45 +17,71 @@ const USER_AVATAR_PRESETS = [
 
 function getResolvedCurrentUserProfile() {
   const role = appState.currentRole || 'MEMBER';
+  const curr = appState.currentUser || {};
+
   if (role === 'MEMBER') {
     const members = (appState.data && appState.data.members) ? appState.data.members : [];
-    const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0] || {};
+    let rawMember = null;
+    if (curr.email || curr.id) {
+      rawMember = members.find(m => 
+        (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase()) ||
+        (curr.id && (m.id === curr.id || m.memberId === curr.id))
+      );
+    }
+    if (!rawMember) {
+      rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0] || {};
+    }
     const resolved = resolveMember(rawMember) || {};
+
+    const displayName = curr.name || resolved.name || 'Hội viên';
+    let fName = curr.firstName;
+    let lName = curr.lastName;
+    if (!fName && !lName) {
+      const parts = displayName.split(' ');
+      if (parts.length > 1) {
+        lName = parts[0];
+        fName = parts.slice(1).join(' ');
+      } else {
+        fName = displayName;
+        lName = '';
+      }
+    }
+
     return {
-      id: resolved.id || 'MEM101',
-      name: resolved.name || 'Phạm Thu Trang',
-      lastName: resolved.lastName || 'Phạm',
-      firstName: resolved.firstName || 'Thu Trang',
-      email: resolved.email || 'trang.pham@gmail.com',
-      phone: resolved.phone || '0912345678',
-      gender: rawMember.gender || 'Nữ',
+      id: curr.id || resolved.id || 'MEM101',
+      name: displayName,
+      lastName: lName || resolved.lastName || '',
+      firstName: fName || resolved.firstName || '',
+      email: curr.email || resolved.email || 'member@sportscenter.vn',
+      phone: curr.phone || resolved.phone || '0912345678',
+      gender: curr.gender || rawMember.gender || 'Nam',
       dob: rawMember.dob || '1998-05-18',
       address: rawMember.address || 'Khu Công Nghệ Cao Hòa Lạc, Hà Nội',
-      trainingGoal: resolved.trainingGoal || 'Giảm mỡ, tăng cơ săn chắc & dẻo dai',
-      emergencyContact: rawMember.emergencyContact || 'Nguyễn Văn A (Người thân) - 0988112233',
-      avatar: appState.userProfileDraftAvatar || resolved.avatar || USER_AVATAR_PRESETS[0].url,
+      trainingGoal: rawMember.trainingGoal || resolved.trainingGoal || 'Rèn luyện sức khỏe & Thể lực',
+      emergencyContact: rawMember.emergencyContact || 'Người thân - 0988112233',
+      avatar: appState.userProfileDraftAvatar || curr.avatar || resolved.avatar || USER_AVATAR_PRESETS[0].url,
       role: 'MEMBER',
       roleLabel: 'Hội Viên Chính Thức',
-      status: resolved.status || 'ACTIVE',
-      activePackage: resolved.activePackage || 'Standard Gym & Cardio',
+      status: rawMember.status || resolved.status || 'ACTIVE',
+      activePackage: resolved.activePackage || 'Gói Hội Viên',
       startDate: resolved.startDate || '2026-08-01',
       endDate: resolved.endDate || '2026-11-01',
       inbody: resolved.inbody || { weight: 52, height: 162, bmi: 19.8, bodyFat: 21.5 }
     };
   } else if (role === 'COACH') {
     return {
-      id: 'COACH01',
-      name: 'Trần Hoàng Nam',
-      lastName: 'Trần',
-      firstName: 'Hoàng Nam',
-      email: 'coach.nam@sportscenter.vn',
-      phone: '0918765432',
-      gender: 'Nam',
+      id: curr.id || 'COACH01',
+      name: curr.name || 'Trần Hoàng Nam',
+      lastName: curr.lastName || 'Trần',
+      firstName: curr.firstName || 'Hoàng Nam',
+      email: curr.email || 'coach.nam@sportscenter.vn',
+      phone: curr.phone || '0918765432',
+      gender: curr.gender || 'Nam',
       dob: '1992-08-20',
       address: 'Quận Cầu Giấy, Hà Nội',
       trainingGoal: 'Chuyên gia huấn luyện Boxing, Thể lực & Yoga phục hồi',
       emergencyContact: 'Trần Thị B - 0977223344',
-      avatar: appState.userProfileDraftAvatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80',
+      avatar: appState.userProfileDraftAvatar || curr.avatar || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&auto=format&fit=crop&q=80',
       role: 'COACH',
       roleLabel: 'Huấn Luyện Viên Trưởng (Head Coach)',
       status: 'ACTIVE',
@@ -65,18 +91,18 @@ function getResolvedCurrentUserProfile() {
     };
   } else if (role === 'RECEPTIONIST') {
     return {
-      id: 'REC01',
-      name: 'Lê Ngọc Lễ Tân',
-      lastName: 'Lê',
-      firstName: 'Ngọc',
-      email: 'letan@sportscenter.vn',
-      phone: '0901234567',
-      gender: 'Nữ',
+      id: curr.id || 'REC01',
+      name: curr.name || 'Lê Ngọc Lễ Tân',
+      lastName: curr.lastName || 'Lê',
+      firstName: curr.firstName || 'Ngọc',
+      email: curr.email || 'letan@sportscenter.vn',
+      phone: curr.phone || '0901234567',
+      gender: curr.gender || 'Nữ',
       dob: '1999-11-05',
       address: 'Quận Nam Từ Liêm, Hà Nội',
       trainingGoal: 'Điều phối vận hành quầy dịch vụ, cổng Turnstile & hỗ trợ hội viên',
       emergencyContact: 'Lê Văn C - 0966334455',
-      avatar: appState.userProfileDraftAvatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+      avatar: appState.userProfileDraftAvatar || curr.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
       role: 'RECEPTIONIST',
       roleLabel: 'Chuyên Viên Lễ Tân & Điều Phối Kiosk',
       status: 'ACTIVE',
@@ -86,18 +112,18 @@ function getResolvedCurrentUserProfile() {
     };
   } else {
     return {
-      id: 'MGR01',
-      name: 'Nguyễn Văn Quản Lý',
-      lastName: 'Nguyễn',
-      firstName: 'Văn Quản Lý',
-      email: 'manager@sportscenter.vn',
-      phone: '0919998888',
-      gender: 'Nam',
+      id: curr.id || 'MGR01',
+      name: curr.name || 'Nguyễn Văn Quản Lý',
+      lastName: curr.lastName || 'Nguyễn',
+      firstName: curr.firstName || 'Văn Quản Lý',
+      email: curr.email || 'manager@sportscenter.vn',
+      phone: curr.phone || '0919998888',
+      gender: curr.gender || 'Nam',
       dob: '1988-03-12',
       address: 'Tòa nhà FPT, Phố Duy Tân, Hà Nội',
       trainingGoal: 'Giám đốc Vận hành & Quản trị Hệ thống Trung tâm Thể thao',
       emergencyContact: 'Nguyễn Thị D - 0911223344',
-      avatar: appState.userProfileDraftAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      avatar: appState.userProfileDraftAvatar || curr.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       role: 'MANAGER',
       roleLabel: 'Tổng Quản Lý Trung Tâm (Center Director)',
       status: 'ACTIVE',

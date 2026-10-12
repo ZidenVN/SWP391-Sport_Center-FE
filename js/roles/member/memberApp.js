@@ -8,16 +8,29 @@
 function renderMemberWebApp() {
   const currentTab = appState.currentTab;
   const isAuth = appState.isAuthenticated;
+  const curr = appState.currentUser;
   const members = (appState.data && appState.data.members) ? appState.data.members : [];
-  const rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
-  const member = resolveMember(rawMember) || {
-    id: 'MEM101',
-    name: 'Phạm Thu Trang',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    status: 'ACTIVE',
-    activePackage: 'VIP All-Access Pass',
-    phone: '0912345678',
-    endDate: '2026-11-01'
+  let rawMember = null;
+  if (curr && (curr.email || curr.id)) {
+    rawMember = members.find(m => 
+      (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase()) ||
+      (curr.id && (m.id === curr.id || m.memberId === curr.id))
+    );
+  }
+  if (!rawMember) {
+    rawMember = members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || members[0];
+  }
+  const resolved = resolveMember(rawMember) || {};
+  const member = {
+    id: curr?.id || resolved.id || 'MEM101',
+    name: curr?.name || resolved.name || 'Hội viên',
+    email: curr?.email || resolved.email || '',
+    phone: curr?.phone || resolved.phone || '',
+    gender: curr?.gender || rawMember?.gender || 'Nam',
+    avatar: curr?.avatar || resolved.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    status: rawMember?.status || resolved.status || 'ACTIVE',
+    activePackage: resolved.activePackage || 'Gói Hội Viên',
+    endDate: resolved.endDate || '2026-11-01'
   };
 
   const myBookedCount = isAuth ? ((appState.data?.classes || []).filter(c => c.attendees && c.attendees.some(a => a.id === member.id)).length) : 0;
@@ -490,54 +503,10 @@ function handleHomeSearch(e) {
 }
 
 function renderMemberLandingHome() {
-  const pkgs = [
-    {
-      id: 'PKG_BASIC',
-      name: 'Gói Basic',
-      description: 'Lựa chọn cơ bản dành cho học viên tập luyện tự do tại khu vực Gym.',
-      price: 350000,
-      durationDays: 30,
-      popular: false,
-      features: [
-        'Truy cập khu vực máy Gym & Cardio',
-        'Sử dụng thiết bị tập luyện cơ bản',
-        'Theo dõi lịch tập trên hệ thống',
-        'Tủ đồ cá nhân & phòng tắm nóng lạnh'
-      ]
-    },
-    {
-      id: 'PKG_STANDARD',
-      name: 'Gói Standard',
-      description: 'Gói tập phổ biến kết hợp Gym và tham gia các lớp học nhóm năng động.',
-      price: 650000,
-      durationDays: 30,
-      popular: true,
-      features: [
-        'Toàn quyền khu vực Gym & Cardio',
-        'Tham gia lớp Yoga, Boxing, Zumba',
-        'Đặt lịch lớp học trực tuyến trên web',
-        'Theo dõi lịch sử tập luyện chi tiết',
-        'Hướng dẫn sử dụng thiết bị ban đầu'
-      ]
-    },
-    {
-      id: 'PKG_PREMIUM',
-      name: 'Gói Premium',
-      description: 'Gói tập toàn diện với quyền ưu tiên đặt chỗ và tư vấn tập luyện.',
-      price: 1200000,
-      durationDays: 30,
-      popular: false,
-      features: [
-        'Tập luyện không giới hạn Gym & Lớp học',
-        'Ưu tiên đặt chỗ lớp trước trên hệ thống',
-        'Hỗ trợ tư vấn lộ trình tập luyện 1-1',
-        'Theo dõi và đánh giá chỉ số thể trạng',
-        'Tủ đồ VIP & tiện ích phòng tắm riêng'
-      ]
-    }
-  ];
-
-  const info = GYM_MEMBER_LANDING_DATA.info;
+  const rawPkgs = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const pkgs = rawPkgs
+    .map(p => (typeof normalizePackage === 'function' ? normalizePackage(p) : p))
+    .filter(p => p && (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
 
   return `
     <div class="space-y-16 sm:space-y-20 animate-fade-in pb-8 overflow-x-hidden">
@@ -862,8 +831,8 @@ function renderMemberLandingHome() {
               <div class="pt-4">
                 <button 
                   type="button" 
-                  onclick="openCheckoutModal('${pkg.id}')" 
-                  class="w-full py-3.5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-200 shadow-md ${
+                  onclick="openCheckoutModal('${pkg.packageId || pkg.id}')" 
+                  class="w-full py-3 rounded-2xl font-bold text-xs transition shadow-sm ${
                     pkg.popular 
                       ? 'bg-blue-600 hover:bg-blue-500 text-white hover-lift-sm' 
                       : 'bg-slate-900 hover:bg-slate-800 text-white hover-lift-sm'
@@ -1195,7 +1164,11 @@ function renderMemberClassDiscovery() {
 }
 
 function renderMemberPackageCatalog() {
-  const packages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  const rawPackages = (appState.data && appState.data.packages) ? appState.data.packages : [];
+  // Member CHỈ nhìn thấy các gói đang ACTIVE
+  const packages = rawPackages
+    .map(pkg => (typeof normalizePackage === 'function' ? normalizePackage(pkg) : pkg))
+    .filter(pkg => pkg && (pkg.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
 
   return `
     <div class="space-y-8 animate-fade-in pb-8">
@@ -1204,53 +1177,62 @@ function renderMemberPackageCatalog() {
           Bảng Giá Minh Bạch
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Chọn Gói Thẻ Hội Viên Phù Hợp</h2>
-        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
-          Đăng ký hoặc gia hạn trực tuyến tức thì. Hệ thống hỗ trợ thanh toán bảo mật qua VNPay QR, Visa, Mastercard hoặc thanh toán tại quầy lễ tân.
+        <p class="text-xs sm:text-sm text-slate-500 mt-2">
+          Đăng ký hoặc gia hạn trực tuyến tức thì. Hệ thống hỗ trợ thanh toán chuyển khoản và bảo mật tự động.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        ${packages.map(pkg => `
-          <div class="bg-white rounded-3xl border ${pkg.popular ? 'border-blue-600 ring-2 ring-blue-600/20 shadow-xl' : 'border-slate-200/90 shadow-xs hover:shadow-lg'} p-6 sm:p-7 flex flex-col justify-between relative transition-all duration-300">
-            ${pkg.popular ? `
-              <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-sm">
-                ★ Phổ Biến Nhất
+      ${packages.length === 0 ? `
+        <div class="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-md mx-auto shadow-xs">
+          <div class="text-4xl mb-3">&#x1f4e6;</div>
+          <h3 class="font-extrabold text-slate-900 text-base">Hiện Chưa Có Gói Tập Đang Mở Bán</h3>
+          <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            Các gói tập hiện tại đang được trung tâm cập nhật. Vui lòng quay lại sau hoặc liên hệ quầy lễ tân để được hỗ trợ!
+          </p>
+        </div>
+      ` : `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          ${packages.map(pkg => `
+            <div class="bg-white rounded-2xl border ${pkg.popular ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-md' : 'border-slate-200 shadow-xs'} p-6 flex flex-col justify-between relative hover:shadow-lg transition">
+              ${pkg.popular ? `
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded-full shadow-xs">
+                  Gói Phổ Biến Nhất
+                </div>
+              ` : ''}
+
+              <div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">${pkg.durationDays || 30} Ngày Sử Dụng</div>
+                <h3 class="text-lg font-black text-slate-900 mt-1">${pkg.name}</h3>
+                <p class="text-xs text-slate-500 mt-2 min-h-[36px] line-clamp-3">${pkg.description || 'Truy cập đầy đủ dịch vụ trung tâm thể thao.'}</p>
+
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                  <div class="text-2xl font-black text-slate-900">${(Number(pkg.price || 0)).toLocaleString()} <span class="text-xs font-normal text-slate-500">VND</span></div>
+                </div>
+
+                <div class="mt-5 space-y-2 text-xs text-slate-600">
+                  <div class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-2">Quyền lợi gói:</div>
+                  ${(pkg.features || [
+                    'Tập luyện tự do toàn bộ máy Gym & Cardio',
+                    'Tủ đồ thông minh & phòng tắm nóng lạnh',
+                    'Nước uống lọc tinh khiết miễn phí'
+                  ]).map(f => `
+                    <div class="flex items-start space-x-2">
+                      <span class="text-indigo-600 font-bold">&check;</span>
+                      <span>${f}</span>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
-            ` : ''}
 
-            <div>
-              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${pkg.durationDays} Ngày Sử Dụng</div>
-              <h3 class="text-lg font-black text-slate-900 mt-1">${pkg.name}</h3>
-              <p class="text-xs text-slate-500 mt-1.5 min-h-[36px] leading-relaxed">${pkg.description}</p>
-
-              <div class="mt-4 pt-4 border-t border-slate-100">
-                <div class="text-2xl sm:text-3xl font-black text-slate-900">${(pkg.price).toLocaleString()} <span class="text-xs font-normal text-slate-500">VND</span></div>
-              </div>
-
-              <div class="mt-5 space-y-2.5 text-xs text-slate-600">
-                <div class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-2">Quyền lợi gói:</div>
-                ${(pkg.features || []).map(f => `
-                  <div class="flex items-start space-x-2">
-                    <span class="text-blue-600 font-bold flex-shrink-0">&check;</span>
-                    <span>${f}</span>
-                  </div>
-                `).join('')}
+              <div class="mt-8 pt-4 border-t border-slate-100">
+                <button type="button" onclick="openCheckoutModal('${pkg.packageId || pkg.id}')" class="w-full py-2.5 ${pkg.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'} rounded-xl font-bold text-xs transition shadow-xs">
+                  Đăng Ký Gói Này
+                </button>
               </div>
             </div>
-
-            <div class="mt-8 pt-4 border-t border-slate-100">
-              <button 
-                type="button" 
-                onclick="openCheckoutModal('${pkg.id}')" 
-                class="w-full py-3 ${pkg.popular ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' : 'bg-slate-900 hover:bg-slate-800 text-white'} rounded-2xl font-bold text-xs transition shadow-xs flex items-center justify-center space-x-1"
-              >
-                <span>Đăng Ký Gói Này</span>
-                <span>&rarr;</span>
-              </button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
+          `).join('')}
+        </div>
+      `}
     </div>
   `;
 }
