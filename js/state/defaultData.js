@@ -160,11 +160,21 @@ const DEFAULT_DATA = {
     },
     {
       id: 'COACH_03',
-      name: 'Lý Kim Ngân',
-      email: 'kimngan.ly@sportscenter.vn',
+      name: 'Lê Quốc Huy',
+      email: 'quochuy.le@sportscenter.vn',
+      phone: '0933445566',
+      specialty: 'Gym & Thể Hình Khoa Học',
+      experience: '6 năm giảng dạy',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      activeClassesCount: 3
+    },
+    {
+      id: 'COACH_04',
+      name: 'Đặng Kim Ngân',
+      email: 'kimngan.dang@sportscenter.vn',
       phone: '0911223344',
-      specialty: 'Pilates Reformer & Phục hồi chức năng',
-      experience: '6 năm giảng dạy quốc tế',
+      specialty: 'Pilates Reformer & Cân Chỉnh Tư Thế',
+      experience: '5 năm giảng dạy quốc tế',
       avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
       activeClassesCount: 2
     }

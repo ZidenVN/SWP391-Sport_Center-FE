@@ -4,13 +4,14 @@ import { packageApi } from './packageApi.js';
 export { packageApi };
 
 export const memberApi = {
+  getProfile: () => apiClient.get('/members/me'),
+  updateProfile: (profileData) => apiClient.put('/members/me', profileData),
   getClasses: (params) => apiClient.get('/classes', params),
   getPackages: () => packageApi.getAll(),
   bookClass: (classId) => apiClient.post('/member/bookings', { classId }),
   cancelBooking: (classId) => apiClient.delete(`/member/bookings/${classId}`),
   checkoutPackage: (payload) => apiClient.post('/member/checkout', payload),
   getFitnessStats: (memberId) => apiClient.get(`/member/fitness/${memberId}`),
-  updateProfile: (profileData) => apiClient.put('/member/profile', profileData),
   createSupportTicket: (ticket) => apiClient.post('/member/tickets', ticket)
 };
 

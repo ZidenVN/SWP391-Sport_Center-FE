@@ -504,8 +504,8 @@ function selectUserProfileAvatar(url) {
   renderApp();
 }
 
-function handleSaveUserProfile(e) {
-  if (e) e.preventDefault();
+async function handleSaveUserProfile(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
   const lastName = (document.getElementById('profile-form-lastname')?.value || '').trim();
   const firstName = (document.getElementById('profile-form-firstname')?.value || '').trim();
   const phone = (document.getElementById('profile-form-phone')?.value || '').trim();
@@ -517,44 +517,120 @@ function handleSaveUserProfile(e) {
   const emergency = (document.getElementById('profile-form-emergency')?.value || '').trim();
   const customAvatar = (document.getElementById('profile-form-avatar')?.value || '').trim();
 
+  if (!lastName) {
+    showToast('Thiếu thông tin', 'Vui lòng nhập Họ của bạn.', 'error');
+    return false;
+  }
   if (!firstName) {
     showToast('Thiếu thông tin', 'Vui lòng nhập Tên của bạn.', 'error');
     return false;
   }
+  if (!phone) {
+    showToast('Thiếu thông tin', 'Vui lòng nhập Số điện thoại của bạn.', 'error');
+    return false;
+  }
 
-  const role = appState.currentRole || 'MEMBER';
+  const role = appState.currentRole || (appState.currentUser && appState.currentUser.role) || 'MEMBER';
+  const curr = appState.currentUser || {};
   const fullName = `${lastName} ${firstName}`.trim();
   const finalAvatar = customAvatar || appState.userProfileDraftAvatar;
 
-  if (role === 'MEMBER') {
-    const rawMember = (appState.data && appState.data.members) ? (appState.data.members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || appState.data.members[0]) : null;
-    if (rawMember) {
-      rawMember.name = fullName;
-      rawMember.lastName = lastName;
-      rawMember.firstName = firstName;
-      if (phone) rawMember.phone = phone;
-      if (email) rawMember.email = email;
-      rawMember.gender = gender;
-      rawMember.dob = dob;
-      rawMember.address = address;
-      if (goal) rawMember.trainingGoal = goal;
-      rawMember.emergencyContact = emergency;
-      if (finalAvatar) rawMember.avatar = finalAvatar;
+  // Find member in local database
+  let rawMember = null;
+  if (appState.data && appState.data.members) {
+    rawMember = appState.data.members.find(m =>
+      (curr.id && (m.id === curr.id || m.memberId === curr.id)) ||
+      (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase())
+    ) || appState.data.members.find(m => m.id === 'MEM101' || m.memberId === 'MEM101') || appState.data.members[0];
+  }
+
+  // Attempt backend API call if authenticated with real token
+  let backendUpdated = null;
+  const isDemo = typeof localStorage !== 'undefined' && localStorage.getItem('is_demo_session') === 'true';
+  const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('token');
+
+  if (role === 'MEMBER' && hasToken && !isDemo && window.api && window.api.member && typeof window.api.member.updateProfile === 'function') {
+    try {
+      const profilePayload = {
+        firstName: firstName,
+        lastName: lastName,
+        gender: gender,
+        phone: phone,
+        trainingGoal: goal || 'Rèn luyện sức khỏe & Thể lực'
+      };
+      backendUpdated = await window.api.member.updateProfile(profilePayload);
+      console.log('[userProfile] Updated profile successfully via backend API:', backendUpdated);
+    } catch (err) {
+      console.warn('[userProfile] Backend API update failed:', err);
+      if (err.status === 400 && err.message && err.message.includes('PHONE_ALREADY_TAKEN')) {
+        showToast('Trùng số điện thoại', 'Số điện thoại này đã được tài khoản khác sử dụng!', 'error');
+        return false;
+      }
+      if (err.status === 401) {
+        showToast('Hết phiên làm việc', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'warning');
+        if (typeof handleLogout === 'function') handleLogout();
+        return false;
+      }
+      // For network error / timeout / server 500: DO NOT LOG OUT! Fall back gracefully
+      if (err.status === 408 || err.name === 'TimeoutError' || err.message?.includes('Timeout') || err.message?.includes('Failed to fetch')) {
+        showToast('Đang chạy Offline', 'Máy chủ Backend chưa kết nối được. Thông tin đã được lưu tạm trên trình duyệt!', 'info');
+      } else {
+        showToast('Lưu nội bộ', 'Đã lưu thông tin hồ sơ trên trình duyệt.', 'info');
+      }
     }
   }
 
-  if (appState.currentUser) {
-    appState.currentUser.name = fullName;
-    if (email) appState.currentUser.email = email;
-    if (finalAvatar) appState.currentUser.avatar = finalAvatar;
+  // CRITICAL: Preserve all authentication and identification fields (id, role, email, token)
+  const updatedUser = {
+    ...curr,
+    id: curr.id || (backendUpdated && backendUpdated.memberId ? ('MEM' + backendUpdated.memberId) : 'MEM101'),
+    role: role,
+    email: curr.email || (backendUpdated && backendUpdated.email) || email,
+    firstName: (backendUpdated && backendUpdated.firstName) || firstName,
+    lastName: (backendUpdated && backendUpdated.lastName) || lastName,
+    name: `${(backendUpdated && backendUpdated.lastName) || lastName} ${(backendUpdated && backendUpdated.firstName) || firstName}`.trim(),
+    phone: (backendUpdated && backendUpdated.phone) || phone,
+    gender: (backendUpdated && backendUpdated.gender) || gender,
+    dob: dob || curr.dob || '1998-05-18',
+    address: address || curr.address || '',
+    trainingGoal: (backendUpdated && backendUpdated.trainingGoal) || goal || curr.trainingGoal || '',
+    emergencyContact: emergency || curr.emergencyContact || '',
+    avatar: finalAvatar || curr.avatar || (rawMember && rawMember.avatar) || USER_AVATAR_PRESETS[0].url
+  };
+
+  appState.currentUser = updatedUser;
+
+  // Sync member in appState.data.members
+  if (rawMember) {
+    rawMember.name = updatedUser.name;
+    rawMember.lastName = updatedUser.lastName;
+    rawMember.firstName = updatedUser.firstName;
+    rawMember.phone = updatedUser.phone;
+    if (updatedUser.email) rawMember.email = updatedUser.email;
+    rawMember.gender = updatedUser.gender;
+    rawMember.dob = updatedUser.dob;
+    rawMember.address = updatedUser.address;
+    rawMember.trainingGoal = updatedUser.trainingGoal;
+    rawMember.emergencyContact = updatedUser.emergencyContact;
+    if (updatedUser.avatar) rawMember.avatar = updatedUser.avatar;
+  }
+
+  // Synchronize state with persistent storage
+  if (typeof saveSession === 'function') {
+    saveSession({ user: updatedUser, role: role });
+  } else if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      localStorage.setItem('currentRole', role);
+    } catch (e) {}
   }
 
   if (typeof recordAuditLog === 'function') {
-    recordAuditLog('UPDATE_PROFILE', 'Members', `Người dùng cập nhật thông tin hồ sơ cá nhân: ${fullName}`, appState.currentUser?.id || 'MEM101');
+    recordAuditLog('UPDATE_PROFILE', 'Members', `Người dùng cập nhật thông tin hồ sơ cá nhân: ${updatedUser.name}`, updatedUser.id || 'MEM101');
   }
 
   appState.userProfileDraftAvatar = null;
-  showToast('Cập nhật thành công', `Đã lưu hồ sơ cá nhân cho ${fullName}!`, 'success');
+  showToast('Cập nhật thành công', `Đã lưu hồ sơ cá nhân cho ${updatedUser.name}!`, 'success');
   renderApp();
   return false;
 }

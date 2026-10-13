@@ -57,23 +57,82 @@ if (typeof window !== 'undefined') {
     coach: coachApi,
     manager: managerApi
   };
+
+  window.handleSessionExpired = () => {
+    if (typeof window.showToast === 'function') {
+      window.showToast('Hết phiên đăng nhập', 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!', 'warning');
+    }
+    if (typeof window.handleLogout === 'function') {
+      window.handleLogout();
+    }
+  };
 }
 
-// Bootstrap Application: Render immediately if DOM container is ready
+// Background token validation and profile sync with Backend
+function syncAuthSessionWithBackend() {
+  if (typeof window === 'undefined' || !window.appState || !window.appState.isAuthenticated) return;
+  const isDemo = typeof localStorage !== 'undefined' && localStorage.getItem('is_demo_session') === 'true';
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  if (isDemo || !token || window.appState.currentRole !== 'MEMBER') return;
+
+  if (window.api && window.api.member && typeof window.api.member.getProfile === 'function') {
+    window.api.member.getProfile().then(profile => {
+      if (profile && window.appState && window.appState.currentUser) {
+        const curr = window.appState.currentUser;
+        const updated = {
+          ...curr,
+          firstName: profile.firstName || curr.firstName,
+          lastName: profile.lastName || curr.lastName,
+          name: `${profile.lastName || curr.lastName || ''} ${profile.firstName || curr.firstName || ''}`.trim() || curr.name,
+          phone: profile.phone || curr.phone,
+          gender: profile.gender || curr.gender,
+          trainingGoal: profile.trainingGoal || curr.trainingGoal
+        };
+        window.appState.currentUser = updated;
+        if (typeof window.saveSession === 'function') {
+          window.saveSession({ user: updated });
+        }
+        if (typeof window.renderApp === 'function') {
+          window.renderApp();
+        }
+      }
+    }).catch(err => {
+      if (err && err.status === 401) {
+        console.warn('[Bootstrap] Token expired on backend:', err.message);
+        if (typeof window.handleSessionExpired === 'function') {
+          window.handleSessionExpired();
+        }
+      } else {
+        console.log('[Bootstrap] Backend sync skipped or unavailable:', err?.message);
+      }
+    });
+  }
+}
+
+// Bootstrap Application: Restore session first, then render immediately
 if (typeof document !== 'undefined') {
+  if (typeof window !== 'undefined' && typeof window.restoreSession === 'function') {
+    window.restoreSession();
+  }
+
   const root = document.getElementById('app-root');
   if (root && typeof window.renderApp === 'function') {
-    // Immediate render to eliminate loading spinner delay
     window.renderApp();
+    syncAuthSessionWithBackend();
   } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+      if (typeof window.restoreSession === 'function') {
+        window.restoreSession();
+      }
       if (typeof window.renderApp === 'function') {
         window.renderApp();
+        syncAuthSessionWithBackend();
       }
     });
   } else {
     if (typeof window.renderApp === 'function') {
       window.renderApp();
+      syncAuthSessionWithBackend();
     }
   }
 }

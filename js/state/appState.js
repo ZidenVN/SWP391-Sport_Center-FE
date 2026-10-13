@@ -89,8 +89,11 @@ function showToast(title, message, type) {
   `;
   toastContainer.appendChild(toast);
   setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 300);
+    if (toast.style) toast.style.opacity = '0';
+    setTimeout(() => {
+      if (typeof toast.remove === 'function') toast.remove();
+      else if (toast.parentElement && typeof toast.parentElement.removeChild === 'function') toast.parentElement.removeChild(toast);
+    }, 300);
   }, 3500);
 }
 
@@ -110,12 +113,172 @@ function closeLoginScreen() {
   renderApp();
 }
 
-function quickLoginAs(role) {
-  const acc = (appState.data && appState.data.demoAccounts) ? appState.data.demoAccounts.find(a => a.role === role) : null;
+function parseJwtPayload(token) {
+  if (!token || typeof token !== 'string') return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      (typeof atob === 'function' ? atob(base64) : (typeof Buffer !== 'undefined' ? Buffer.from(base64, 'base64').toString('binary') : ''))
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
+function isJwtExpired(token) {
+  const payload = parseJwtPayload(token);
+  if (!payload || !payload.exp) return false;
+  return payload.exp * 1000 <= Date.now();
+}
+
+function saveSession(sessionData) {
+  if (!sessionData) return;
+  const { token, user, role, tab, isDemo } = sessionData;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      if (token) localStorage.setItem('token', token);
+      if (isDemo !== undefined) localStorage.setItem('is_demo_session', isDemo ? 'true' : 'false');
+      if (user) {
+        const mergedUser = { ...(appState.currentUser || {}), ...user };
+        localStorage.setItem('currentUser', JSON.stringify(mergedUser));
+        appState.currentUser = mergedUser;
+      }
+      if (role) {
+        localStorage.setItem('currentRole', role);
+        appState.currentRole = role;
+      }
+      if (tab) {
+        localStorage.setItem('currentTab', tab);
+        appState.currentTab = tab;
+      }
+    } catch (err) {
+      console.warn('[saveSession] Failed to write to localStorage:', err);
+    }
+  } else if (user) {
+    appState.currentUser = { ...(appState.currentUser || {}), ...user };
+  }
+
+  if (role) appState.currentRole = role;
+  if (tab) appState.currentTab = tab;
   appState.isAuthenticated = true;
   appState.isViewingAuthScreen = false;
-  appState.currentRole = role;
-  appState.currentUser = {
+}
+
+function clearSession() {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentRole');
+      localStorage.removeItem('currentTab');
+      localStorage.removeItem('is_demo_session');
+    } catch (e) {}
+  }
+  appState.isAuthenticated = false;
+  appState.isViewingAuthScreen = false;
+  appState.currentUser = null;
+  appState.currentRole = 'MEMBER';
+  appState.currentTab = 'member-home';
+  appState.authTab = 'login';
+}
+
+function restoreSession() {
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    const token = localStorage.getItem('token');
+    const storedUserStr = localStorage.getItem('currentUser');
+    const storedRole = localStorage.getItem('currentRole');
+    const storedTab = localStorage.getItem('currentTab');
+    const isDemo = localStorage.getItem('is_demo_session') === 'true';
+
+    if (!token && !storedUserStr) {
+      return false;
+    }
+
+    // Check JWT expiry if not a demo token
+    if (token && !isDemo && isJwtExpired(token)) {
+      console.warn('[restoreSession] JWT token has expired on client. Clearing session.');
+      clearSession();
+      return false;
+    }
+
+    let user = null;
+    if (storedUserStr) {
+      try {
+        user = JSON.parse(storedUserStr);
+      } catch (e) {
+        console.warn('[restoreSession] Stored user parsing error:', e);
+      }
+    }
+
+    if (!user && !token) {
+      clearSession();
+      return false;
+    }
+
+    const resolvedRole = storedRole || (user && user.role) || 'MEMBER';
+
+    appState.isAuthenticated = true;
+    appState.isViewingAuthScreen = false;
+    appState.currentUser = user || {
+      id: resolvedRole === 'MEMBER' ? 'MEM101' : 'USR_' + resolvedRole,
+      name: 'Hội viên',
+      role: resolvedRole
+    };
+    appState.currentRole = resolvedRole;
+
+    if (storedTab) {
+      appState.currentTab = storedTab;
+    } else {
+      if (resolvedRole === 'MEMBER') appState.currentTab = 'member-home';
+      else if (resolvedRole === 'RECEPTIONIST') {
+        appState.currentTab = 'reception-kiosk';
+        appState.receptionMode = 'GATE';
+      } else if (resolvedRole === 'COACH') {
+        appState.currentTab = 'coach-hub';
+        appState.coachActiveTab = 'TODAY';
+      } else if (resolvedRole === 'MANAGER') {
+        appState.currentTab = 'dashboard';
+      }
+    }
+
+    // Sync member object in data.members
+    if (resolvedRole === 'MEMBER' && appState.currentUser && appState.data && appState.data.members) {
+      const curr = appState.currentUser;
+      const matched = appState.data.members.find(m =>
+        (curr.id && (m.id === curr.id || m.memberId === curr.id)) ||
+        (curr.email && m.email && m.email.toLowerCase() === curr.email.toLowerCase())
+      );
+      if (matched) {
+        if (curr.name) matched.name = curr.name;
+        if (curr.firstName) matched.firstName = curr.firstName;
+        if (curr.lastName) matched.lastName = curr.lastName;
+        if (curr.phone) matched.phone = curr.phone;
+        if (curr.gender) matched.gender = curr.gender;
+        if (curr.dob) matched.dob = curr.dob;
+        if (curr.address) matched.address = curr.address;
+        if (curr.trainingGoal) matched.trainingGoal = curr.trainingGoal;
+        if (curr.avatar) matched.avatar = curr.avatar;
+      }
+    }
+
+    return true;
+  } catch (err) {
+    console.error('[restoreSession] Error during restoration:', err);
+    return false;
+  }
+}
+
+function quickLoginAs(role) {
+  const acc = (appState.data && appState.data.demoAccounts) ? appState.data.demoAccounts.find(a => a.role === role) : null;
+  const user = {
     id: role === 'MEMBER' ? 'MEM101' : 'USR_' + role,
     name: acc ? acc.name : (role === 'MANAGER' ? 'Nguyễn Văn Quản Lý' : (role === 'RECEPTIONIST' ? 'Lê Ngọc Lễ Tân' : (role === 'COACH' ? 'Trần Hoàng Nam' : 'Phạm Thu Trang'))),
     email: acc ? acc.email : `${role.toLowerCase()}@sportscenter.vn`,
@@ -123,20 +286,29 @@ function quickLoginAs(role) {
     avatar: acc ? acc.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
   };
 
+  let targetTab = 'member-home';
+  if (role === 'MEMBER') targetTab = 'member-home';
+  else if (role === 'RECEPTIONIST') {
+    targetTab = 'reception-kiosk';
+    appState.receptionMode = 'GATE';
+  } else if (role === 'COACH') {
+    targetTab = 'coach-hub';
+    appState.coachActiveTab = 'TODAY';
+  } else if (role === 'MANAGER') {
+    targetTab = 'dashboard';
+  }
+
+  saveSession({
+    token: 'mock-jwt-' + role.toLowerCase(),
+    user: user,
+    role: role,
+    tab: targetTab,
+    isDemo: true
+  });
+
   appState.selectedClassForBooking = null;
   appState.selectedPackageForCheckout = null;
   appState.managerActiveModal = null;
-
-  if (role === 'MEMBER') appState.currentTab = 'member-home';
-  else if (role === 'RECEPTIONIST') {
-    appState.currentTab = 'reception-kiosk';
-    appState.receptionMode = 'GATE';
-  }
-  else if (role === 'COACH') {
-    appState.currentTab = 'coach-hub';
-    appState.coachActiveTab = 'TODAY';
-  }
-  else if (role === 'MANAGER') appState.currentTab = 'dashboard';
 
   renderApp();
 }
@@ -148,6 +320,11 @@ function switchTab(tabName) {
     return;
   }
   appState.currentTab = tabName;
+  if (appState.isAuthenticated && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem('currentTab', tabName);
+    } catch (e) {}
+  }
   renderApp();
 
   // Auto-sync packages with backend when visiting packages tab
@@ -159,15 +336,7 @@ function switchTab(tabName) {
 }
 
 function handleLogout() {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('token');
-  }
-  appState.isAuthenticated = false;
-  appState.isViewingAuthScreen = false;
-  appState.currentUser = null;
-  appState.currentRole = 'MEMBER';
-  appState.currentTab = 'member-home';
-  appState.authTab = 'login';
+  clearSession();
   renderApp();
 }
 
@@ -181,6 +350,9 @@ function getRoleLabel(role) {
   }
 }
 
+// Immediate initial session check on module load
+restoreSession();
+
 // Attach to global for browser onclick compatibility and test runners
 const _targetGlobal = (typeof window !== "undefined") ? window : (typeof globalThis !== "undefined" ? globalThis : null);
 if (_targetGlobal) {
@@ -193,4 +365,8 @@ if (_targetGlobal) {
   if (typeof switchTab !== 'undefined') _targetGlobal.switchTab = switchTab;
   if (typeof handleLogout !== 'undefined') _targetGlobal.handleLogout = handleLogout;
   if (typeof getRoleLabel !== 'undefined') _targetGlobal.getRoleLabel = getRoleLabel;
+  if (typeof saveSession !== 'undefined') _targetGlobal.saveSession = saveSession;
+  if (typeof restoreSession !== 'undefined') _targetGlobal.restoreSession = restoreSession;
+  if (typeof clearSession !== 'undefined') _targetGlobal.clearSession = clearSession;
 }
+

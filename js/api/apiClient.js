@@ -71,6 +71,39 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_M
   }
 }
 
+function getAuthHeaders(customHeaders = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...customHeaders
+  };
+  if (typeof localStorage !== 'undefined') {
+    const token = localStorage.getItem('token');
+    const isDemo = localStorage.getItem('is_demo_session') === 'true';
+    if (token && (!isDemo || token.startsWith('eyJ'))) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+}
+
+function handleApiError(res, data, endpoint) {
+  const errMsg = (data && (data.message || data.error || data.detail)) || `HTTP error! status: ${res.status}`;
+  const error = new Error(errMsg);
+  error.status = res.status;
+  error.data = data;
+  error.endpoint = endpoint;
+
+  // Check 401 Unauthorized on protected routes (excluding login and register)
+  if (res.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+    console.warn(`[apiClient] 401 Unauthorized on ${endpoint}.`);
+    if (typeof window !== 'undefined' && typeof window.handleSessionExpired === 'function') {
+      window.handleSessionExpired();
+    }
+  }
+  // 403 Forbidden, 500, etc. MUST NOT clear session or trigger logout
+  return error;
+}
+
 export const apiClient = {
   getBaseUrl: getApiBaseUrl,
 
@@ -78,17 +111,11 @@ export const apiClient = {
     const fullUrl = buildUrl(endpoint, params);
     try {
       const res = await fetchWithTimeout(fullUrl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-          'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders()
       }, timeoutMs);
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const error = new Error((data && (data.message || data.error)) || `HTTP error! status: ${res.status}`);
-        error.status = res.status;
-        error.data = data;
-        throw error;
+        throw handleApiError(res, data, endpoint);
       }
       return data;
     } catch (err) {
@@ -102,18 +129,12 @@ export const apiClient = {
     try {
       const res = await fetchWithTimeout(fullUrl, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(body)
       }, timeoutMs);
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const error = new Error((data && (data.message || data.error || data.detail)) || `HTTP error! status: ${res.status}`);
-        error.status = res.status;
-        error.data = data;
-        throw error;
+        throw handleApiError(res, data, endpoint);
       }
       return data;
     } catch (err) {
@@ -127,18 +148,12 @@ export const apiClient = {
     try {
       const res = await fetchWithTimeout(fullUrl, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(body)
       }, timeoutMs);
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const error = new Error((data && (data.message || data.error || data.detail)) || `HTTP error! status: ${res.status}`);
-        error.status = res.status;
-        error.data = data;
-        throw error;
+        throw handleApiError(res, data, endpoint);
       }
       return data;
     } catch (err) {
@@ -152,17 +167,11 @@ export const apiClient = {
     try {
       const res = await fetchWithTimeout(fullUrl, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-          'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders()
       }, timeoutMs);
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const error = new Error((data && (data.message || data.error)) || `HTTP error! status: ${res.status}`);
-        error.status = res.status;
-        error.data = data;
-        throw error;
+        throw handleApiError(res, data, endpoint);
       }
       return data;
     } catch (err) {

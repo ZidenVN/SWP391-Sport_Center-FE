@@ -387,24 +387,24 @@ function renderRegisterForm() {
           <div id="error-reg-email" class="field-error-msg"></div>
         </div>
 
-        <!-- Password row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;">
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#0f172a;letter-spacing:0.2px;margin-bottom:4px;text-transform:uppercase;">Mật khẩu <span style="color:#ef4444;">*</span></label>
-            <input type="password" id="reg-password" placeholder="Tối thiểu 6 ký tự"
-              class="auth-input-field"
-              oninput="clearFieldError('reg-password')"
-              style="width:100%;height:40px;padding:0 12px;outline:none;" />
-            <div id="error-reg-password" class="field-error-msg"></div>
-          </div>
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#0f172a;letter-spacing:0.2px;margin-bottom:4px;text-transform:uppercase;">Xác nhận Mật Khẩu <span style="color:#ef4444;">*</span></label>
-            <input type="password" id="reg-confirm-password" placeholder="Nhập lại mật khẩu"
-              class="auth-input-field"
-              oninput="clearFieldError('reg-confirm-password')"
-              style="width:100%;height:40px;padding:0 12px;outline:none;" />
-            <div id="error-reg-confirm-password" class="field-error-msg"></div>
-          </div>
+        <!-- Password -->
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#0f172a;letter-spacing:0.2px;margin-bottom:4px;text-transform:uppercase;">Mật khẩu <span style="color:#ef4444;">*</span></label>
+          <input type="password" id="reg-password" placeholder="Tối thiểu 6 ký tự"
+            class="auth-input-field"
+            oninput="clearFieldError('reg-password')"
+            style="width:100%;height:40px;padding:0 12px;outline:none;" />
+          <div id="error-reg-password" class="field-error-msg"></div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#0f172a;letter-spacing:0.2px;margin-bottom:4px;text-transform:uppercase;">Xác nhận Mật Khẩu <span style="color:#ef4444;">*</span></label>
+          <input type="password" id="reg-confirm-password" placeholder="Nhập lại mật khẩu"
+            class="auth-input-field"
+            oninput="clearFieldError('reg-confirm-password')"
+            style="width:100%;height:40px;padding:0 12px;outline:none;" />
+          <div id="error-reg-confirm-password" class="field-error-msg"></div>
         </div>
 
         <!-- Submit -->
@@ -609,11 +609,8 @@ async function handleFormLogin(e) {
       }
     }
 
-    // 3. Cập nhật State ứng dụng
-    appState.isAuthenticated = true;
-    appState.isViewingAuthScreen = false;
-    appState.currentRole = userRole;
-    appState.currentUser = {
+    // 3. Cập nhật State ứng dụng & Đồng bộ Session Storage
+    const targetUser = {
       id: memberId,
       name: userName,
       email: email,
@@ -624,16 +621,38 @@ async function handleFormLogin(e) {
     };
 
     // 4. Điều hướng vào đúng màn hình theo Role
+    let targetTab = 'member-home';
     if (userRole === 'MANAGER') {
-      appState.currentTab = 'dashboard';
+      targetTab = 'dashboard';
     } else if (userRole === 'COACH') {
-      appState.currentTab = 'coach-hub';
+      targetTab = 'coach-hub';
       appState.coachActiveTab = 'TODAY';
     } else if (userRole === 'RECEPTIONIST') {
-      appState.currentTab = 'reception-kiosk';
+      targetTab = 'reception-kiosk';
       appState.receptionMode = 'GATE';
     } else {
-      appState.currentTab = 'member-home';
+      targetTab = 'member-home';
+    }
+
+    if (typeof saveSession === 'function') {
+      saveSession({
+        token: responseData ? responseData.token : null,
+        user: targetUser,
+        role: userRole,
+        tab: targetTab,
+        isDemo: false
+      });
+    } else {
+      appState.isAuthenticated = true;
+      appState.isViewingAuthScreen = false;
+      appState.currentRole = userRole;
+      appState.currentUser = targetUser;
+      appState.currentTab = targetTab;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('currentUser', JSON.stringify(targetUser));
+        localStorage.setItem('currentRole', userRole);
+        localStorage.setItem('currentTab', targetTab);
+      }
     }
 
     renderApp();

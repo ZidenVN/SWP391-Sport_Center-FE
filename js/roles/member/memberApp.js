@@ -53,10 +53,13 @@ function renderMemberWebApp() {
               </div>
             </div>
 
-            <!-- Desktop Nav Menu: Lớp Học / Gói Hội Viên -->
+            <!-- Desktop Nav Menu: Lớp Học / Huấn Luyện Viên / Gói Hội Viên -->
             <nav class="hidden md:flex items-center space-x-1">
               <button type="button" onclick="switchTab('member-classes')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${currentTab === 'member-classes' ? 'bg-blue-50 text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Lớp Học
+              </button>
+              <button type="button" onclick="scrollToCoachSection()" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                Huấn Luyện Viên
               </button>
               <button type="button" onclick="switchTab('member-packages')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${currentTab === 'member-packages' ? 'bg-blue-50 text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Gói Hội Viên
@@ -103,6 +106,9 @@ function renderMemberWebApp() {
         <div id="mobile-menu-drawer" class="hidden md:hidden border-t border-slate-100 bg-white/98 backdrop-blur-md px-4 py-4 space-y-2 shadow-lg animate-fade-in">
           <button type="button" onclick="switchTab('member-classes'); toggleMobileMenu(false);" class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold ${currentTab === 'member-classes' ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}">
             Lớp Học
+          </button>
+          <button type="button" onclick="scrollToCoachSection(); toggleMobileMenu(false);" class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50">
+            Huấn Luyện Viên
           </button>
           <button type="button" onclick="switchTab('member-packages'); toggleMobileMenu(false);" class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold ${currentTab === 'member-packages' ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}">
             Gói Hội Viên
@@ -253,6 +259,12 @@ function renderMemberWebApp() {
       <!-- Member Quick View Modal (If Open) -->
       ${appState.quickViewClass ? renderMemberQuickViewModal() : ''}
 
+      <!-- Member Discipline Detail Modal (If Open) -->
+      ${appState.selectedDiscipline ? renderDisciplineDetailModal() : ''}
+
+      <!-- Member Coach Detail Modal (If Open) -->
+      ${appState.selectedCoach ? renderCoachDetailModal() : ''}
+
       <!-- Member Package Checkout Modal (If Open) -->
       ${(appState.checkoutFlow?.isOpen || appState.selectedPackageForCheckout) ? renderMemberCheckoutModal() : ''}
 
@@ -277,12 +289,7 @@ function renderMemberWebApp() {
               <p class="text-xs text-slate-400 leading-relaxed font-normal">
                 Hệ thống quản lý trung tâm thể thao hỗ trợ hội viên tra cứu lịch tập, đặt chỗ lớp học, quản lý gói thẻ và theo dõi tiến trình rèn luyện trực tuyến.
               </p>
-              <div class="pt-1 flex items-center space-x-3 text-xs text-slate-400">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] text-amber-300 font-bold">
-                  ★ 4.8 / 5.0
-                </span>
-                <span>Hơn 500 học viên tham gia</span>
-              </div>
+              
             </div>
 
             <!-- Quick Links -->
@@ -364,11 +371,7 @@ function renderMemberWebApp() {
             <div>
               &copy; 2026 Sport Center Management System. All rights reserved.
             </div>
-            <div class="flex items-center space-x-4">
-              <span>SWP391 FA26 Topic 04</span>
-              <span>&bull;</span>
-              <span>FPT University</span>
-            </div>
+          
           </div>
         </div>
       </footer>
@@ -399,9 +402,8 @@ const GYM_MEMBER_LANDING_DATA = {
       id: 'gym',
       category: 'Gym',
       title: 'Gym & Thể Lực',
-      tag: 'Khu Vực Gym',
+      tag: 'Gym',
       badge: 'Rèn Luyện Sức Bền',
-      rating: '4.8 ★',
       level: 'Cơ bản & Nâng cao',
       desc: 'Trang bị máy tập đa dạng hỗ trợ tập luyện sức mạnh, tăng cường thể lực và cải thiện vóc dáng săn chắc.',
       image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80'
@@ -410,9 +412,8 @@ const GYM_MEMBER_LANDING_DATA = {
       id: 'yoga',
       category: 'Yoga',
       title: 'Yoga Phục Hồi & Dẻo Dai',
-      tag: 'Studio Yoga',
+      tag: 'Yoga',
       badge: 'Thư Giãn Thân Tâm',
-      rating: '4.9 ★',
       level: 'Mọi trình độ',
       desc: 'Tập trung điều hòa nhịp thở, tăng tính linh hoạt cơ khớp và giải tỏa căng thẳng sau giờ học tập, làm việc.',
       image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800&auto=format&fit=crop&q=80'
@@ -421,10 +422,9 @@ const GYM_MEMBER_LANDING_DATA = {
       id: 'boxing',
       category: 'Boxing',
       title: 'Boxing Cơ Bản',
-      tag: 'Phòng Boxing',
+      tag: 'Boxing',
       badge: 'Phản Xạ & Tim Mạch',
-      rating: '4.8 ★',
-      level: 'Cường độ vừa & cao',
+      level: 'Cơ bản & Nâng cao',
       desc: 'Rèn luyện phản xạ nhanh nhạy, kỹ thuật đấm cơ bản và giải phóng năng lượng hiệu quả cùng huấn luyện viên.',
       image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&auto=format&fit=crop&q=80'
     },
@@ -432,12 +432,57 @@ const GYM_MEMBER_LANDING_DATA = {
       id: 'pilates',
       category: 'Pilates',
       title: 'Pilates Cải Thiện Tư Thế',
-      tag: 'Studio Pilates',
+      tag: 'Pilates',
       badge: 'Cơ Trọng Tâm',
-      rating: '4.8 ★',
       level: 'Cơ bản',
       desc: 'Bài tập tác động nhóm cơ lõi sâu, hỗ trợ cân chỉnh tư thế cột sống và duy trì độ linh hoạt của cơ thể.',
       image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop&q=80'
+    }
+  ],
+  coaches: [
+    {
+      id: 'coach-nam',
+      name: 'Trần Hoàng Nam',
+      roleTitle: 'HLV Boxing & Thể Lực',
+      specialtyBadge: 'Boxing & Kickfit',
+      exp: '7+ Năm KN',
+      cert: 'Chứng chỉ NASM CPT',
+      category: 'Boxing',
+      desc: 'Nhiều năm kinh nghiệm giảng dạy Boxing & Kickfit, tối ưu hóa phản xạ tự vệ và thể lực đối kháng.',
+      image: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=500&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'coach-my',
+      name: 'Nguyễn Hà My',
+      roleTitle: 'HLV Yoga & Phục Hồi',
+      specialtyBadge: 'Yoga & Dẻo Dai',
+      exp: '5+ Năm KN',
+      cert: 'Yoga Alliance RYT-500',
+      category: 'Yoga',
+      desc: 'Chuyên về phục hồi dẻo dai, điều hòa nhịp thở và giải tỏa căng thẳng toàn diện với các bài tập chuyên sâu.',
+      image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'coach-huy',
+      name: 'Lê Quốc Huy',
+      roleTitle: 'HLV Gym & Thể Hình',
+      specialtyBadge: 'Gym & Sức Mạnh',
+      exp: '6+ Năm KN',
+      cert: 'Chứng chỉ ACE Fitness',
+      category: 'Gym',
+      desc: 'Tư vấn phương pháp tập luyện cơ bắp an toàn, hiệu quả, cá nhân hóa lộ trình tăng cơ giảm mỡ chuẩn khoa học.',
+      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'coach-ngan',
+      name: 'Đặng Kim Ngân',
+      roleTitle: 'HLV Pilates & Dáng Vóc',
+      specialtyBadge: 'Pilates Reformer',
+      exp: '5+ Năm KN',
+      cert: 'Stott Pilates Certified',
+      category: 'Pilates',
+      desc: 'Chuyên sâu cân chỉnh cột sống, phục hồi chức năng cơ khớp và điêu khắc đường cong vóc dáng thon gọn săn chắc.',
+      image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop&q=80'
     }
   ],
   features: [
@@ -502,6 +547,19 @@ function handleHomeSearch(e) {
   return false;
 }
 
+function scrollToCoachSection() {
+  if (appState.currentTab !== 'member-home') {
+    switchTab('member-home');
+    setTimeout(() => {
+      const el = document.getElementById('coach-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  } else {
+    const el = document.getElementById('coach-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 function renderMemberLandingHome() {
   const info = (typeof GYM_MEMBER_LANDING_DATA !== 'undefined' && GYM_MEMBER_LANDING_DATA.info) ? GYM_MEMBER_LANDING_DATA.info : {};
   const rawPkgs = (appState.data && appState.data.packages) ? appState.data.packages : [];
@@ -535,9 +593,7 @@ function renderMemberLandingHome() {
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span>${info.badge}</span>
           </div>
-          <div class="hidden sm:flex items-center space-x-4 text-xs text-slate-300 font-medium">
-            <span class="flex items-center gap-1.5"><span class="text-amber-400">★</span> Đánh giá 4.8/5 từ hơn 500 học viên</span>
-          </div>
+        
         </div>
 
         <!-- Hero Main Content -->
@@ -573,56 +629,6 @@ function renderMemberLandingHome() {
         </div>
       </section>
 
-      <!-- 2. QUICK INFO SECTION -->
-      <section class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div class="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover-lift transition-all duration-200 flex items-start space-x-4">
-          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl flex-shrink-0">
-            📍
-          </div>
-          <div>
-            <div class="text-[11px] font-black uppercase tracking-wider text-blue-600">Địa Điểm Trung Tâm</div>
-            <div class="font-extrabold text-slate-900 text-sm mt-0.5">${info.address}</div>
-            <div class="text-xs text-slate-500 mt-1">Khuôn viên trường Đại học FPT TP.HCM</div>
-          </div>
-        </div>
-
-        <div class="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover-lift transition-all duration-200 flex items-start space-x-4">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl flex-shrink-0">
-            ⏰
-          </div>
-          <div>
-            <div class="text-[11px] font-black uppercase tracking-wider text-emerald-600">Giờ Mở Cửa</div>
-            <div class="font-extrabold text-slate-900 text-sm mt-0.5">${info.hours}</div>
-            <div class="text-xs text-slate-500 mt-1">Phục vụ học viên tất cả các ngày trong tuần</div>
-          </div>
-        </div>
-
-        <div class="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover-lift transition-all duration-200 flex items-start space-x-4">
-          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xl flex-shrink-0">
-            📞
-          </div>
-          <div>
-            <div class="text-[11px] font-black uppercase tracking-wider text-amber-600">Hotline Hỗ Trợ</div>
-            <div class="font-extrabold text-slate-900 text-sm mt-0.5">Hotline: ${info.hotline}</div>
-            <div class="text-xs text-slate-500 mt-1">Hỗ trợ thông tin tài khoản và đăng ký gói</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. STATISTICS BAR (Số liệu demo hợp lý cho đồ án) -->
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        ${GYM_MEMBER_LANDING_DATA.stats.map(s => `
-          <div class="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover-lift transition-all duration-300 relative overflow-hidden group">
-            <div class="text-3xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r ${s.color} bg-clip-text text-transparent tracking-tight">
-              ${s.value}
-            </div>
-            <div class="text-xs sm:text-sm font-extrabold text-slate-900 mt-2">${s.label}</div>
-            <div class="text-[11px] sm:text-xs text-slate-500 mt-1 leading-relaxed">${s.sub}</div>
-            <div class="w-8 h-1 bg-gradient-to-r ${s.color} rounded-full mt-3 group-hover:w-16 transition-all duration-300"></div>
-          </div>
-        `).join('')}
-      </section>
-
       <!-- 4. FEATURED CLASSES & DISCIPLINES (Gym, Yoga, Boxing, Pilates) -->
       <section class="space-y-8">
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -640,55 +646,54 @@ function renderMemberLandingHome() {
             onclick="switchTab('member-classes')" 
             class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all duration-200 self-start sm:self-auto shadow-2xs hover-lift-sm"
           >
-            <span>Xem Lịch Lớp Học</span>
+            <span>Xem Lớp Học</span>
             <span>&rarr;</span>
           </button>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           ${GYM_MEMBER_LANDING_DATA.classes.map(item => `
-            <div class="group bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover-lift transition-all duration-300 flex flex-col justify-between h-full">
-              <div>
-                <div class="relative h-52 overflow-hidden bg-slate-900">
-                  <img 
-                    src="${item.image}" 
-                    alt="${item.title}"
-                    loading="lazy"
-                    decoding="async"
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out" 
-                  />
-                  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
-                  <span class="absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 backdrop-blur-md shadow-xs">
-                    ${item.tag}
-                  </span>
-                  <span class="absolute bottom-3 left-3.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-blue-600 text-white shadow-xs">
-                    ${item.badge}
-                  </span>
-                  <span class="absolute bottom-3 right-3.5 text-xs font-black text-amber-300 drop-shadow-sm">
-                    ${item.rating}
-                  </span>
-                </div>
+            <div 
+              onclick="openDisciplineDetail('${item.id}')"
+              class="group relative h-96 sm:h-[420px] rounded-3xl overflow-hidden shadow-xs hover:shadow-xl hover-lift transition-all duration-300 flex flex-col justify-between p-5 cursor-pointer border border-slate-200/80 bg-slate-950"
+            >
+              <!-- Hình ảnh tràn toàn bộ thẻ card -->
+              <img 
+                src="${item.image}" 
+                alt="${item.title}"
+                loading="lazy"
+                decoding="async"
+                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" 
+              />
+              <!-- Gradient Overlay bảo đảm tương phản sắc nét -->
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-slate-950/20"></div>
 
-                <div class="p-6 space-y-3">
-                  <h3 class="font-black text-base text-slate-900 group-hover:text-blue-600 transition-colors duration-200">
-                    ${item.title}
-                  </h3>
-                  <p class="text-xs text-slate-500 leading-relaxed font-normal">
-                    ${item.desc}
-                  </p>
-                </div>
+              <!-- Top Tags -->
+              <div class="relative z-10 flex items-center justify-between gap-2">
+                <span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/90 backdrop-blur-md text-slate-900 shadow-sm flex-shrink-0">
+                  ${item.tag}
+                </span>
+                <span class="px-3 py-1 rounded-full text-[11px] font-black bg-blue-600/90 backdrop-blur-md text-white shadow-sm truncate">
+                  ${item.badge}
+                </span>
               </div>
 
-              <div class="p-6 pt-0 border-t border-slate-100 mt-2 flex items-center justify-between">
-                <span class="text-[11px] text-slate-400 font-semibold">${item.level}</span>
-                <button 
-                  type="button" 
-                  onclick="quickExploreCategory('${item.category}')" 
-                  class="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors duration-200 flex items-center space-x-1"
-                >
-                  <span>Xem chi tiết</span>
-                  <span class="group-hover:translate-x-1 transition-transform duration-200">&rarr;</span>
-                </button>
+              <!-- Bottom Content -->
+              <div class="relative z-10 space-y-3">
+                <h3 class="font-black text-xl text-white tracking-tight drop-shadow-sm group-hover:text-blue-300 transition-colors duration-200">
+                  ${item.title}
+                </h3>
+                <div class="pt-2 flex items-center justify-between gap-2 border-t border-white/20">
+                  <span class="text-xs font-semibold text-slate-300 truncate" title="${item.level}">${item.level}</span>
+                  <button 
+                    type="button" 
+                    onclick="event.stopPropagation(); openDisciplineDetail('${item.id}')" 
+                    class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white text-white hover:text-slate-950 text-xs font-bold whitespace-nowrap flex-shrink-0 backdrop-blur-md border border-white/30 transition-all duration-200 shadow-xs hover-lift-sm"
+                  >
+                    <span>Xem chi tiết</span>
+                    <span class="transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>
+                  </button>
+                </div>
               </div>
             </div>
           `).join('')}
@@ -696,7 +701,7 @@ function renderMemberLandingHome() {
       </section>
 
       <!-- 5. SYSTEM FEATURES (Giới thiệu các chức năng cốt lõi của hệ thống Sport Center) -->
-      <section class="space-y-8">
+      <section class="features-system-section rounded-3xl p-6 sm:p-10 lg:p-12 space-y-8">
         <div class="max-w-2xl">
           <div class="text-xs font-black uppercase tracking-wider text-blue-600">Tính Năng Phần Mềm</div>
           <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mt-1.5">
@@ -736,43 +741,67 @@ function renderMemberLandingHome() {
       <section id="coach-section" class="space-y-8 scroll-mt-24">
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div class="max-w-2xl">
-            <div class="text-xs font-black uppercase tracking-wider text-blue-600">Đội Ngũ HLV</div>
+            <div class="text-xs font-black uppercase tracking-wider text-blue-600">Đội Ngũ Chuyên Gia</div>
             <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mt-1.5">
               Đội Ngũ Huấn Luyện Viên
             </h2>
             <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
-              Đội ngũ huấn luyện viên giàu kinh nghiệm, tận tình hướng dẫn kỹ thuật và đồng hành cùng học viên trong suốt quá trình tập luyện.
+              Các huấn luyện viên giàu kinh nghiệm, đạt chứng chỉ quốc tế và luôn tận tâm đồng hành trên từng chặng đường rèn luyện của học viên.
             </p>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div class="bg-white rounded-3xl border border-slate-200/90 p-6 flex items-center space-x-4 shadow-xs hover-lift transition-all duration-200">
-            <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&auto=format&fit=crop&q=80" alt="Coach Trần Hoàng Nam" loading="lazy" decoding="async" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
-            <div>
-              <div class="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md inline-block">HLV Boxing & Thể Lực</div>
-              <h3 class="font-extrabold text-slate-900 text-base mt-1">Trần Hoàng Nam</h3>
-              <p class="text-xs text-slate-500 mt-0.5">Nhiều năm kinh nghiệm giảng dạy Boxing & Kickfit</p>
-            </div>
-          </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          ${(GYM_MEMBER_LANDING_DATA.coaches || []).map(c => `
+            <div 
+              onclick="openCoachDetail('${c.id}')"
+              class="group relative h-96 sm:h-[420px] rounded-3xl overflow-hidden shadow-xs hover:shadow-xl hover-lift transition-all duration-300 flex flex-col justify-between p-5 cursor-pointer border border-slate-200/80 bg-slate-950"
+            >
+              <!-- Hình ảnh tràn toàn bộ thẻ card -->
+              <img 
+                src="${c.image}" 
+                alt="${c.name}" 
+                loading="lazy" 
+                decoding="async" 
+                class="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out" 
+              />
+              <!-- Gradient Overlay bảo đảm tương phản sắc nét -->
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-slate-950/20"></div>
 
-          <div class="bg-white rounded-3xl border border-slate-200/90 p-6 flex items-center space-x-4 shadow-xs hover-lift transition-all duration-200">
-            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" alt="Coach Nguyễn Hà My" loading="lazy" decoding="async" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
-            <div>
-              <div class="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md inline-block">HLV Yoga & Pilates</div>
-              <h3 class="font-extrabold text-slate-900 text-base mt-1">Nguyễn Hà My</h3>
-              <p class="text-xs text-slate-500 mt-0.5">Chuyên về phục hồi dẻo dai và điều chỉnh tư thế</p>
-            </div>
-          </div>
+              <!-- Top Tags -->
+              <div class="relative z-10 flex items-center justify-between gap-2">
+                <span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/90 backdrop-blur-md text-slate-900 shadow-sm flex-shrink-0">
+                  ${c.specialtyBadge}
+                </span>
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-black bg-blue-600/90 backdrop-blur-md text-white shadow-sm flex-shrink-0">
+                  ${c.exp}
+                </span>
+              </div>
 
-          <div class="bg-white rounded-3xl border border-slate-200/90 p-6 flex items-center space-x-4 shadow-xs hover-lift transition-all duration-200">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="Coach Lê Quốc Huy" loading="lazy" decoding="async" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 flex-shrink-0" />
-            <div>
-              <div class="text-[10px] font-black uppercase tracking-wider text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md inline-block">HLV Gym & Thể Hình</div>
-              <h3 class="font-extrabold text-slate-900 text-base mt-1">Lê Quốc Huy</h3>
-              <p class="text-xs text-slate-500 mt-0.5">Tư vấn phương pháp tập luyện cơ bắp an toàn, hiệu quả</p>
+              <!-- Bottom Content -->
+              <div class="relative z-10 space-y-3">
+                <div>
+                  <div class="text-[11px] font-black uppercase tracking-wider text-cyan-300 drop-shadow-sm">
+                    ${c.roleTitle}
+                  </div>
+                  <h3 class="font-black text-xl text-white tracking-tight drop-shadow-sm group-hover:text-blue-300 transition-colors duration-200 mt-0.5">
+                    ${c.name}
+                  </h3>
+                </div>
+                <div class="pt-2 flex items-center justify-between gap-2 border-t border-white/20">
+                  <span class="text-xs font-semibold text-slate-300 truncate" title="${c.cert}">${c.cert}</span>
+                  <button 
+                    type="button" 
+                    onclick="event.stopPropagation(); openCoachDetail('${c.id}')" 
+                    class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white text-white hover:text-slate-950 text-xs font-bold whitespace-nowrap flex-shrink-0 backdrop-blur-md border border-white/30 transition-all duration-200 shadow-xs hover-lift-sm"
+                  >
+                    <span>Xem chi tiết</span>
+                    <span class="transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          `).join('')}
         </div>
       </section>
 
@@ -797,37 +826,39 @@ function renderMemberLandingHome() {
           </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-          ${pkgs.map(pkg => `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch pt-4">
+          ${pkgs.slice(0, 3).map(pkg => {
+            const isVip = (pkg.id === 'PKG02' || (pkg.name && pkg.name.toLowerCase().includes('vip')));
+            return `
             <div class="rounded-3xl p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
-              pkg.popular 
-                ? 'bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white shadow-2xl ring-2 ring-indigo-500/80 hover-lift' 
+              isVip 
+                ? 'bg-blue-50/30 text-slate-900 border-2 border-blue-600 shadow-xl shadow-blue-500/10 lg:-translate-y-2 hover-lift' 
                 : 'bg-white text-slate-900 border border-slate-200/90 shadow-xs hover-lift'
             }">
-              ${pkg.popular ? `
-                <div class="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-md">
-                  ★ PHỔ BIẾN NHẤT
+              ${isVip ? `
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white font-black text-[11px] uppercase tracking-wider shadow-md flex items-center space-x-1 whitespace-nowrap z-10">
+                  <span>⭐ PHỔ BIẾN</span>
                 </div>
               ` : ''}
 
               <div>
-                <div class="text-[11px] font-bold ${pkg.popular ? 'text-indigo-300' : 'text-slate-400'} uppercase tracking-wider">
+                <div class="text-[11px] font-bold ${isVip ? 'text-blue-600' : 'text-slate-400'} uppercase tracking-wider">
                   Thời hạn: ${pkg.durationDays || 30} Ngày
                 </div>
-                <h3 class="text-xl font-extrabold tracking-tight mt-1">${pkg.name}</h3>
-                <p class="text-xs ${pkg.popular ? 'text-slate-300' : 'text-slate-500'} mt-1.5 leading-relaxed">${pkg.description}</p>
+                <h3 class="text-xl font-extrabold tracking-tight mt-1 text-slate-900">${pkg.name}</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">${pkg.description}</p>
                 
-                <div class="mt-6 pb-6 border-b ${pkg.popular ? 'border-white/10' : 'border-slate-100'}">
-                  <div class="text-3xl sm:text-4xl font-black">
-                    ${(pkg.price || 0).toLocaleString()} <span class="text-sm font-semibold ${pkg.popular ? 'text-slate-300' : 'text-slate-500'}">VND</span>
+                <div class="mt-6 pb-6 border-b border-slate-100">
+                  <div class="text-3xl sm:text-4xl font-black text-slate-900">
+                    ${(pkg.price || 0).toLocaleString()} <span class="text-sm font-semibold text-slate-500">VND</span>
                   </div>
                 </div>
 
                 <div class="py-6 space-y-3">
                   ${(pkg.features || []).map(f => `
                     <div class="flex items-start space-x-2.5 text-xs sm:text-sm">
-                      <span class="${pkg.popular ? 'text-amber-400 font-black' : 'text-blue-600 font-bold'} flex-shrink-0">✓</span>
-                      <span class="${pkg.popular ? 'text-slate-200' : 'text-slate-700'}">${f}</span>
+                      <span class="${isVip ? 'text-blue-600 font-black' : 'text-blue-600 font-bold'} flex-shrink-0">✓</span>
+                      <span class="text-slate-700">${f}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -838,8 +869,8 @@ function renderMemberLandingHome() {
                   type="button" 
                   onclick="openCheckoutModal('${pkg.packageId || pkg.id}')" 
                   class="w-full py-3 rounded-2xl font-bold text-xs transition shadow-sm ${
-                    pkg.popular 
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white hover-lift-sm' 
+                    isVip 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white hover-lift-sm shadow-blue-500/25' 
                       : 'bg-slate-900 hover:bg-slate-800 text-white hover-lift-sm'
                   }"
                 >
@@ -847,12 +878,13 @@ function renderMemberLandingHome() {
                 </button>
               </div>
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       </section>
 
       <!-- 8. FINAL CALL TO ACTION (CTA & Dòng ghi chú demo) -->
-      <section class="bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 rounded-3xl p-8 sm:p-14 text-white shadow-2xl relative overflow-hidden border border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-8">
+      <section class="bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 rounded-3xl p-8 sm:p-14 text-white relative overflow-hidden border border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-8">
         <!-- Subtle Glow Accent -->
         <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -904,9 +936,7 @@ function renderMemberLandingHome() {
       </section>
 
       <!-- Dòng ghi chú nhỏ mang tính minh họa đồ án -->
-      <div class="text-center text-[11px] text-slate-400 pt-1">
-        * Thông tin trên trang mang tính minh họa cho mục đích demo đồ án Sport Center Management System.
-      </div>
+ 
 
     </div>
   `;
@@ -965,17 +995,6 @@ function renderMemberClassDiscovery() {
             <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal max-w-xl">
               Chủ động đặt trước vị trí tại các studio đẳng cấp cùng Master Coach hàng đầu. Toàn quyền tham gia các bộ môn Yoga, Boxing, Zumba và Pilates trong gói thẻ hội viên.
             </p>
-          </div>
-
-          <!-- Premium Stat Badge -->
-          <div class="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl flex-shrink-0 self-start lg:self-auto">
-            <div class="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-black text-lg">
-              ⚡
-            </div>
-            <div>
-              <div class="text-sm font-black text-white">120+ Lớp Học/Tuần</div>
-              <div class="text-[11px] text-slate-400">Master Coach Chuẩn Quốc Tế</div>
-            </div>
           </div>
         </div>
       </div>
@@ -1788,6 +1807,235 @@ function closeClassQuickView() {
   renderApp();
 }
 
+function openDisciplineDetail(id) {
+  const list = (typeof GYM_MEMBER_LANDING_DATA !== 'undefined' && GYM_MEMBER_LANDING_DATA.classes) ? GYM_MEMBER_LANDING_DATA.classes : [];
+  const item = list.find(c => c.id === id);
+  if (!item) return;
+  appState.selectedDiscipline = item;
+  renderApp();
+}
+
+function closeDisciplineDetail() {
+  appState.selectedDiscipline = null;
+  renderApp();
+}
+
+function renderDisciplineDetailModal() {
+  const item = appState.selectedDiscipline;
+  if (!item) return '';
+
+  return `
+    <div class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in" onclick="if(event.target === this) closeDisciplineDetail()">
+      <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
+        <!-- Modal Image Banner -->
+        <div class="relative h-52 sm:h-56 w-full bg-slate-900 overflow-hidden flex-shrink-0">
+          <img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async" class="w-full h-full object-cover" />
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent"></div>
+          
+          <span class="absolute top-4 left-4 px-3.5 py-1 rounded-full text-xs font-bold bg-white/95 text-slate-900 backdrop-blur-md shadow-xs">
+            ${item.tag}
+          </span>
+          <span class="absolute top-4 right-14 px-3 py-1 rounded-full text-xs font-black bg-blue-600 text-white shadow-xs">
+            ${item.badge}
+          </span>
+
+          <button 
+            type="button" 
+            onclick="closeDisciplineDetail()" 
+            class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center text-sm font-bold transition backdrop-blur-xs"
+            aria-label="Đóng"
+          >
+            ✕
+          </button>
+
+          <div class="absolute bottom-4 left-4 right-4 text-white">
+            <h3 class="text-2xl font-black drop-shadow-md">${item.title}</h3>
+          </div>
+        </div>
+
+        <!-- Modal Body: Table of Specifications / Information -->
+        <div class="p-6 overflow-y-auto space-y-4">
+          <!-- Description Block -->
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-blue-600 mb-1.5">Giới Thiệu Bộ Môn</div>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              ${item.desc}
+            </p>
+          </div>
+
+          <!-- Structured Information Table -->
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Bảng Thông Tin Chi Tiết</div>
+            <div class="overflow-hidden rounded-2xl border border-slate-200">
+              <table class="w-full text-left text-xs border-collapse">
+                <tbody>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50 w-2/5">Tên bộ môn</td>
+                    <td class="py-3 px-4 font-extrabold text-slate-900">${item.title}</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50">Phân loại / Studio</td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${item.category}</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50">Mục tiêu rèn luyện</td>
+                    <td class="py-3 px-4 font-bold text-blue-600">${item.badge}</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50">Trình độ phù hợp</td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${item.level}</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50 align-top">Mô tả tóm tắt</td>
+                    <td class="py-3 px-4 text-slate-700 leading-relaxed font-normal">${item.desc}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="pt-2 flex items-center gap-3">
+            <button 
+              type="button" 
+              onclick="closeDisciplineDetail()" 
+              class="flex-1 py-3 border border-slate-200 hover:bg-slate-100 rounded-2xl text-xs font-bold text-slate-700 transition text-center"
+            >
+              Đóng
+            </button>
+            <button 
+              type="button" 
+              onclick="closeDisciplineDetail(); quickExploreCategory('${item.category}')" 
+              class="flex-1 py-3 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition text-center shadow-md hover-lift-sm flex items-center justify-center space-x-1.5"
+            >
+              <span>Xem Lớp Học ${item.category}</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openCoachDetail(id) {
+  const list = (typeof GYM_MEMBER_LANDING_DATA !== 'undefined' && GYM_MEMBER_LANDING_DATA.coaches) ? GYM_MEMBER_LANDING_DATA.coaches : [];
+  const item = list.find(c => c.id === id);
+  if (!item) return;
+  appState.selectedCoach = item;
+  renderApp();
+}
+
+function closeCoachDetail() {
+  appState.selectedCoach = null;
+  renderApp();
+}
+
+function renderCoachDetailModal() {
+  const c = appState.selectedCoach;
+  if (!c) return '';
+
+  return `
+    <div class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in" onclick="if(event.target === this) closeCoachDetail()">
+      <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
+        <!-- Modal Image Banner -->
+        <div class="relative h-60 sm:h-64 w-full bg-slate-950 overflow-hidden flex-shrink-0">
+          <img src="${c.image}" alt="${c.name}" loading="lazy" decoding="async" class="w-full h-full object-cover object-top" />
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/30 to-transparent"></div>
+          
+          <span class="absolute top-4 left-4 px-3.5 py-1 rounded-full text-xs font-bold bg-white/95 text-slate-900 backdrop-blur-md shadow-xs">
+            ${c.specialtyBadge}
+          </span>
+          <span class="absolute top-4 right-14 px-3 py-1 rounded-full text-xs font-black bg-blue-600 text-white shadow-xs">
+            ${c.exp}
+          </span>
+
+          <button 
+            type="button" 
+            onclick="closeCoachDetail()" 
+            class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center text-sm font-bold transition backdrop-blur-xs"
+            aria-label="Đóng"
+          >
+            ✕
+          </button>
+
+          <div class="absolute bottom-4 left-4 right-4 text-white">
+            <div class="text-[11px] font-black uppercase tracking-wider text-cyan-300 drop-shadow-sm">
+              ${c.roleTitle}
+            </div>
+            <h3 class="text-2xl font-black drop-shadow-md mt-0.5">${c.name}</h3>
+          </div>
+        </div>
+
+        <!-- Modal Body: Table of Specifications / Information -->
+        <div class="p-6 overflow-y-auto space-y-4">
+          <!-- Bio / Description Block -->
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-blue-600 mb-1.5">Giới Thiệu Huấn Luyện Viên</div>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              ${c.desc}
+            </p>
+          </div>
+
+          <!-- Structured Information Table -->
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Hồ Sơ Huấn Luyện Viên</div>
+            <div class="overflow-hidden rounded-2xl border border-slate-200">
+              <table class="w-full text-left text-xs border-collapse">
+                <tbody>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50 w-2/5">Họ và tên HLV</td>
+                    <td class="py-3 px-4 font-extrabold text-slate-900">${c.name}</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50">Chức danh chuyên môn</td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${c.roleTitle}</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50">Bộ môn phụ trách</td>
+                    <td class="py-3 px-4 font-bold text-blue-600">${c.specialtyBadge} (${c.category})</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50">Kinh nghiệm huấn luyện</td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${c.exp}</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50">Chứng chỉ chuyên môn</td>
+                    <td class="py-3 px-4 font-bold text-emerald-600">${c.cert}</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-4 font-bold text-slate-500 bg-slate-50/50 align-top">Thế mạnh & Phong cách</td>
+                    <td class="py-3 px-4 text-slate-700 leading-relaxed font-normal">${c.desc}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="pt-2 flex items-center gap-3">
+            <button 
+              type="button" 
+              onclick="closeCoachDetail()" 
+              class="flex-1 py-3 border border-slate-200 hover:bg-slate-100 rounded-2xl text-xs font-bold text-slate-700 transition text-center"
+            >
+              Đóng
+            </button>
+            <button 
+              type="button" 
+              onclick="closeCoachDetail(); quickExploreCategory('${c.category}')" 
+              class="flex-1 py-3 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition text-center shadow-md hover-lift-sm flex items-center justify-center space-x-1.5"
+            >
+              <span>Xem Lớp Của HLV ${c.name}</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderMemberQuickViewModal() {
   const c = appState.quickViewClass;
   if (!c) return '';
@@ -1920,6 +2168,13 @@ if (_targetGlobal) {
   if (typeof closeBookingModal !== 'undefined') _targetGlobal.closeBookingModal = closeBookingModal;
   if (typeof confirmBooking !== 'undefined') _targetGlobal.confirmBooking = confirmBooking;
   if (typeof cancelMemberBooking !== 'undefined') _targetGlobal.cancelMemberBooking = cancelMemberBooking;
+  if (typeof openDisciplineDetail !== 'undefined') _targetGlobal.openDisciplineDetail = openDisciplineDetail;
+  if (typeof closeDisciplineDetail !== 'undefined') _targetGlobal.closeDisciplineDetail = closeDisciplineDetail;
+  if (typeof renderDisciplineDetailModal !== 'undefined') _targetGlobal.renderDisciplineDetailModal = renderDisciplineDetailModal;
+  if (typeof openCoachDetail !== 'undefined') _targetGlobal.openCoachDetail = openCoachDetail;
+  if (typeof closeCoachDetail !== 'undefined') _targetGlobal.closeCoachDetail = closeCoachDetail;
+  if (typeof renderCoachDetailModal !== 'undefined') _targetGlobal.renderCoachDetailModal = renderCoachDetailModal;
+  if (typeof scrollToCoachSection !== 'undefined') _targetGlobal.scrollToCoachSection = scrollToCoachSection;
 }
 
 

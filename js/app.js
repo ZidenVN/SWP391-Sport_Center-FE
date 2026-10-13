@@ -1456,9 +1456,7 @@ function renderAuthScreen() {
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
           Hệ Thống Quản Lý Trung Tâm Thể Thao
         </h1>
-        <p class="text-xs text-slate-500 font-medium mt-1">
-          SWP391 FA26 Topic 04 &bull; GVHD: MinhTTH5
-        </p>
+     
       </div>
 
       <!-- Back to Landing Home button -->
@@ -1485,9 +1483,7 @@ function renderAuthScreen() {
         ${currentTab === 'login' ? renderLoginForm() : (currentTab === 'register' ? renderRegisterForm() : renderForgotPasswordForm())}
       </div>
 
-      <div class="mt-6 text-center text-xs text-slate-400">
-        FPT University &bull; Software Development Project (SWP391)
-      </div>
+   
     </div>
   `;
 }
@@ -2446,6 +2442,9 @@ function renderMemberWebApp() {
               <button type="button" onclick="switchTab('member-classes')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentTab === 'member-classes' ? 'bg-blue-50 text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Khám Phá Lớp Học
               </button>
+              <button type="button" onclick="scrollToCoachSection()" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                Huấn Luyện Viên
+              </button>
               <button type="button" onclick="switchTab('member-packages')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentTab === 'member-packages' ? 'bg-blue-50 text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}">
                 Gói Hội Viên
               </button>
@@ -2481,6 +2480,7 @@ function renderMemberWebApp() {
         <div class="md:hidden flex border-t border-slate-100 overflow-x-auto px-4 py-2 space-x-2 bg-slate-50">
           <button type="button" onclick="switchTab('member-home')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-home' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Trang chủ</button>
           <button type="button" onclick="switchTab('member-classes')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-classes' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Lớp học</button>
+          <button type="button" onclick="scrollToCoachSection()" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200">Huấn Luyện Viên</button>
           <button type="button" onclick="switchTab('member-packages')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-packages' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Gói tập</button>
           ${isAuth ? `
             <button type="button" onclick="switchTab('member-schedule')" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold ${currentTab === 'member-schedule' ? 'bg-indigo-600 text-white' : 'text-slate-600 bg-white border border-slate-200'}">Lịch (${myBookedCount})</button>
@@ -2616,9 +2616,9 @@ function renderMemberWebApp() {
               &copy; 2026 Sport Center Management System. All rights reserved.
             </div>
             <div class="flex items-center space-x-4">
-              <span>SWP391 FA26 Topic 04</span>
+            
               <span>&bull;</span>
-              <span>FPT University</span>
+             
             </div>
           </div>
         </div>
@@ -2655,7 +2655,6 @@ const GYM_LANDING_DATA = {
       title: 'Yoga Thân - Tâm - Trí',
       tag: 'Studio Yên Tĩnh',
       badge: 'Thư Giãn & Cân Bằng',
-      rating: '4.9 ★',
       level: 'Mọi trình độ',
       desc: 'Cân bằng hơi thở, tăng tính dẻo dai và thanh lọc tâm trí với sàn gỗ sồi tự nhiên cùng tinh dầu thảo mộc cao cấp.',
       image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800&auto=format&fit=crop&q=80',
@@ -2667,7 +2666,6 @@ const GYM_LANDING_DATA = {
       title: 'Boxing & KickFit Rực Lửa',
       tag: 'Combat Arena',
       badge: 'Đốt 800+ Kcal',
-      rating: '5.0 ★',
       level: 'Cường độ cao',
       desc: 'Giải tỏa stress tột đỉnh, tăng tốc phản xạ tự vệ và đốt mỡ cùng sàn đấu chuyên nghiệp chuẩn thi đấu Olympic.',
       image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&auto=format&fit=crop&q=80',
@@ -2679,7 +2677,6 @@ const GYM_LANDING_DATA = {
       title: 'Pilates Chỉnh Dáng & Cột Sống',
       tag: 'Máy Reformer',
       badge: 'Siết Eo & Cân Chỉnh',
-      rating: '4.9 ★',
       level: 'Căn bản & Nâng cao',
       desc: 'Kích hoạt nhóm cơ lõi sâu, chỉnh cong vẹo cột sống do ngồi văn phòng và điêu khắc đường cong mềm mại săn chắc.',
       image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop&q=80',
@@ -2691,7 +2688,6 @@ const GYM_LANDING_DATA = {
       title: 'Gym & Sức Mạnh Thể Lực',
       tag: 'Sàn Gym 1.200m²',
       badge: 'TechnoGym AI 2026',
-      rating: '5.0 ★',
       level: 'Tự do & Có HLV',
       desc: 'Hệ thống máy khối, dàn rack Olympic chuyên nghiệp kết nối máy đo nhịp tim thông minh phân tích chuyển động tức thì.',
       image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80',
@@ -2740,6 +2736,19 @@ function handleHomeSearch(e) {
   }
   switchTab('member-classes');
   return false;
+}
+
+function scrollToCoachSection() {
+  if (appState.currentTab !== 'member-home') {
+    switchTab('member-home');
+    setTimeout(() => {
+      const el = document.getElementById('coach-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  } else {
+    const el = document.getElementById('coach-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function renderMemberLandingHome() {
@@ -2985,9 +2994,6 @@ function renderMemberLandingHome() {
                   <span class="absolute bottom-3 left-3.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white shadow-xs">
                     ${item.badge}
                   </span>
-                  <span class="absolute bottom-3 right-3.5 text-xs font-black text-amber-300 drop-shadow-sm">
-                    ${item.rating}
-                  </span>
                 </div>
 
                 <!-- Body -->
@@ -3089,37 +3095,39 @@ function renderMemberLandingHome() {
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-          ${pkgs.slice(0, 3).map(pkg => `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch pt-4">
+          ${pkgs.slice(0, 3).map(pkg => {
+            const isVip = (pkg.id === 'PKG02' || (pkg.name && pkg.name.toLowerCase().includes('vip')));
+            return `
             <div class="rounded-3xl p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
-              pkg.popular 
-                ? 'bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 text-white shadow-2xl ring-2 ring-indigo-500 scale-[1.02]' 
-                : 'bg-white text-slate-900 border border-slate-200/90 shadow-xs hover:shadow-xl'
+              isVip 
+                ? 'bg-blue-50/30 text-slate-900 border-2 border-blue-600 shadow-xl shadow-blue-500/10 md:-translate-y-2 hover-lift' 
+                : 'bg-white text-slate-900 border border-slate-200/90 shadow-xs hover-lift'
             }">
-              ${pkg.popular ? `
-                <div class="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-md">
-                  ★ Khuyên Dùng Nhiều Nhất
+              ${isVip ? `
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white font-black text-[11px] uppercase tracking-wider shadow-md flex items-center space-x-1 whitespace-nowrap z-10">
+                  <span>⭐ BEST SELLER</span>
                 </div>
               ` : ''}
 
               <div>
-                <h3 class="text-xl font-extrabold tracking-tight">${pkg.name}</h3>
-                <p class="text-xs ${pkg.popular ? 'text-slate-300' : 'text-slate-500'} mt-1.5 leading-relaxed">${pkg.description}</p>
+                <div class="text-[11px] font-bold ${isVip ? 'text-blue-600' : 'text-slate-400'} uppercase tracking-wider">
+                  Thời hạn: ${pkg.durationDays || 30} Ngày
+                </div>
+                <h3 class="text-xl font-extrabold tracking-tight mt-1 text-slate-900">${pkg.name}</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">${pkg.description}</p>
                 
-                <div class="mt-6 pb-6 border-b ${pkg.popular ? 'border-white/10' : 'border-slate-100'}">
-                  <div class="text-3xl sm:text-4xl font-black">
-                    ${(pkg.price || 0).toLocaleString()} <span class="text-sm font-semibold ${pkg.popular ? 'text-slate-300' : 'text-slate-500'}">VND</span>
-                  </div>
-                  <div class="text-xs ${pkg.popular ? 'text-cyan-300' : 'text-slate-500'} font-semibold mt-1">
-                    Thời hạn: ${pkg.durationDays || 30} Ngày Sử Dụng
+                <div class="mt-6 pb-6 border-b border-slate-100">
+                  <div class="text-3xl sm:text-4xl font-black text-slate-900">
+                    ${(pkg.price || 0).toLocaleString()} <span class="text-sm font-semibold text-slate-500">VND</span>
                   </div>
                 </div>
 
                 <div class="py-6 space-y-3">
                   ${(pkg.features || []).slice(0, 5).map(f => `
                     <div class="flex items-start space-x-2.5 text-xs sm:text-sm">
-                      <span class="${pkg.popular ? 'text-amber-400 font-black' : 'text-indigo-600 font-bold'} flex-shrink-0">✓</span>
-                      <span class="${pkg.popular ? 'text-slate-200' : 'text-slate-700'}">${f}</span>
+                      <span class="${isVip ? 'text-blue-600 font-black' : 'text-blue-600 font-bold'} flex-shrink-0">✓</span>
+                      <span class="text-slate-700">${f}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -3129,24 +3137,25 @@ function renderMemberLandingHome() {
                 <button 
                   type="button" 
                   onclick="openCheckoutModal('${pkg.id}')" 
-                  class="w-full py-3.5 rounded-2xl font-bold text-xs sm:text-sm transition shadow-md ${
-                    pkg.popular 
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
-                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  class="w-full py-3 rounded-2xl font-bold text-xs transition shadow-sm ${
+                    isVip 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white hover-lift-sm shadow-blue-500/25' 
+                      : 'bg-slate-900 hover:bg-slate-800 text-white hover-lift-sm'
                   }"
                 >
                   Đăng Ký Gói Này &rarr;
                 </button>
               </div>
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       </section>
 
       <!-- ================================================================= -->
       <!-- 7. FINAL CALL TO ACTION (KÊU GỌI HÀNH ĐỘNG CUỐI TRANG) -->
       <!-- ================================================================= -->
-      <section class="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 rounded-3xl p-8 sm:p-14 text-white shadow-2xl relative overflow-hidden border border-indigo-900/50 flex flex-col lg:flex-row items-center justify-between gap-8">
+      <section class="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 rounded-3xl p-8 sm:p-14 text-white relative overflow-hidden border border-indigo-900/50 flex flex-col lg:flex-row items-center justify-between gap-8">
         <div class="max-w-2xl space-y-3 text-center lg:text-left">
           <div class="inline-block px-3.5 py-1 rounded-full bg-white/10 text-cyan-300 text-xs font-bold uppercase tracking-wider">
             Bắt Đầu Ngay Hôm Nay
@@ -5796,10 +5805,7 @@ function renderManagerWebApp() {
           </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-200 text-center">
-          <div class="text-[11px] font-semibold text-slate-800">SWP391 FA26 Topic 04</div>
-          <div class="text-[10px] text-slate-400 mt-0.5">GVHD: MinhTTH5</div>
-        </div>
+    
       </aside>
 
       <!-- Main Admin Content Area -->
@@ -7322,6 +7328,7 @@ if (typeof window !== 'undefined') {
   window.renderMemberLandingHome = renderMemberLandingHome;
   window.quickExploreCategory = quickExploreCategory;
   window.handleHomeSearch = handleHomeSearch;
+  window.scrollToCoachSection = scrollToCoachSection;
   window.openLoginScreen = openLoginScreen;
   window.closeLoginScreen = closeLoginScreen;
 }
