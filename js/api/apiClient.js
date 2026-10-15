@@ -162,6 +162,31 @@ export const apiClient = {
     }
   },
 
+  async patch(endpoint, body = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+    const fullUrl = buildUrl(endpoint);
+    try {
+      const res = await fetchWithTimeout(fullUrl, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(body)
+      }, timeoutMs);
+      const text = await res.text();
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : text;
+      } catch (e) {
+        data = text;
+      }
+      if (!res.ok) {
+        throw handleApiError(res, typeof data === 'object' ? data : { message: data }, endpoint);
+      }
+      return data;
+    } catch (err) {
+      console.warn(`[apiClient.patch] ${endpoint} error:`, err.message);
+      throw err;
+    }
+  },
+
   async delete(endpoint, timeoutMs = DEFAULT_TIMEOUT_MS) {
     const fullUrl = buildUrl(endpoint);
     try {

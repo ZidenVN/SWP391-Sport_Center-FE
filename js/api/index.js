@@ -1,7 +1,8 @@
 import { apiClient } from './apiClient.js';
 import { packageApi } from './packageApi.js';
+import { userApi } from './userApi.js';
 
-export { packageApi };
+export { packageApi, userApi };
 
 export const memberApi = {
   getProfile: () => apiClient.get('/members/me'),
