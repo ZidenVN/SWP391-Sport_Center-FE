@@ -44,7 +44,8 @@ import './roles/root.js';
 // 6. Backend API Client & Services
 import { apiClient } from './api/apiClient.js';
 import { authApi } from './api/authApi.js';
-import { memberApi, receptionApi, coachApi, managerApi, packageApi } from './api/index.js';
+import { memberApi, receptionApi, coachApi, managerApi, packageApi, userApi } from './api/index.js';
+import { syncUsersWithBackend } from './api/userApi.js';
 
 // Expose API services on window for integration and debugging
 if (typeof window !== 'undefined') {
@@ -52,11 +53,14 @@ if (typeof window !== 'undefined') {
     client: apiClient,
     auth: authApi,
     package: packageApi,
+    user: userApi,
     member: memberApi,
     reception: receptionApi,
     coach: coachApi,
     manager: managerApi
   };
+  window.userApi = userApi;
+  window.syncUsersWithBackend = syncUsersWithBackend;
 
   window.handleSessionExpired = () => {
     if (typeof window.showToast === 'function') {

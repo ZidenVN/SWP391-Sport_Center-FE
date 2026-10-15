@@ -33,10 +33,17 @@ let appState = {
   calendarMonth: 8, // September 2026 (0-indexed)
   selectedCalendarDate: '2026-09-19',
   selectedSessionDetail: null,
-  managerActiveModal: null, // null | 'CREATE_PACKAGE' | 'CREATE_CLASS' | 'RENEW_MEMBER'
+  managerActiveModal: null, // null | 'CREATE_PACKAGE' | 'CREATE_CLASS' | 'RENEW_MEMBER' | 'EDIT_USER' | 'ASSIGN_ROLE'
   managerSelectedMemberForRenew: null,
+  managerSelectedUserForEdit: null,
+  managerSelectedUserForRole: null,
   managerMemberSearch: '',
+  managerMemberFilterRole: 'ALL',
+  managerMemberFilterStatus: 'ALL',
   managerAuditSearch: '',
+  backendUsers: [],
+  usersLoadedFromApi: false,
+  availableRoles: [],
   showNotificationDropdown: false,
   showUserDropdown: false,
   supportTicketModalOpen: false,
