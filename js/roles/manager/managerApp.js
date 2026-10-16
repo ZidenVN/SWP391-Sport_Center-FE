@@ -47,7 +47,23 @@ import {
   renderCreateClassModal, 
   handleCreateClassSubmit 
 } from './features/managerClasses.js';
-import { renderManagerStaff } from './features/managerStaff.js';
+import { 
+  renderManagerStaff,
+  refreshManagerCoachesFromApi,
+  setManagerCoachSearch,
+  setManagerCoachFilterSpecialty,
+  openCreateCoachModal,
+  openCoachDetailModal,
+  openEditCoachModal,
+  openDeleteCoachModal,
+  renderCoachDetailModal,
+  renderCreateCoachModal,
+  renderEditCoachModal,
+  renderDeleteCoachModal,
+  handleCreateCoachSubmit,
+  handleEditCoachSubmit,
+  confirmDeleteCoach
+} from './features/managerStaff.js';
 import { renderManagerFinances } from './features/managerFinances.js';
 import { renderManagerAuditLogs, setManagerAuditSearch } from './features/managerAudit.js';
 
@@ -63,6 +79,9 @@ export function closeManagerModal() {
   appState.managerSelectedPackageForDelete = null;
   appState.managerSelectedUserForEdit = null;
   appState.managerSelectedUserForRole = null;
+  appState.managerSelectedCoachForDetail = null;
+  appState.managerSelectedCoachForEdit = null;
+  appState.managerSelectedCoachForDelete = null;
   renderApp();
 }
 
@@ -161,6 +180,10 @@ export function renderManagerWebApp() {
       ${appState.managerActiveModal === 'RENEW_MEMBER' ? renderRenewMemberModal() : ''}
       ${appState.managerActiveModal === 'EDIT_USER' ? renderEditUserModal() : ''}
       ${appState.managerActiveModal === 'ASSIGN_ROLE' ? renderAssignRoleModal() : ''}
+      ${appState.managerActiveModal === 'DETAIL_COACH' ? renderCoachDetailModal() : ''}
+      ${appState.managerActiveModal === 'CREATE_COACH' ? renderCreateCoachModal() : ''}
+      ${appState.managerActiveModal === 'EDIT_COACH' ? renderEditCoachModal() : ''}
+      ${appState.managerActiveModal === 'DELETE_COACH' ? renderDeleteCoachModal() : ''}
     </div>
   `;
 }
@@ -172,6 +195,20 @@ if (_targetGlobal) {
   _targetGlobal.getManagerTabTitle = getManagerTabTitle;
   _targetGlobal.openManagerModal = openManagerModal;
   _targetGlobal.closeManagerModal = closeManagerModal;
+  _targetGlobal.refreshManagerCoachesFromApi = refreshManagerCoachesFromApi;
+  _targetGlobal.setManagerCoachSearch = setManagerCoachSearch;
+  _targetGlobal.setManagerCoachFilterSpecialty = setManagerCoachFilterSpecialty;
+  _targetGlobal.openCreateCoachModal = openCreateCoachModal;
+  _targetGlobal.openCoachDetailModal = openCoachDetailModal;
+  _targetGlobal.openEditCoachModal = openEditCoachModal;
+  _targetGlobal.openDeleteCoachModal = openDeleteCoachModal;
+  _targetGlobal.renderCoachDetailModal = renderCoachDetailModal;
+  _targetGlobal.renderCreateCoachModal = renderCreateCoachModal;
+  _targetGlobal.renderEditCoachModal = renderEditCoachModal;
+  _targetGlobal.renderDeleteCoachModal = renderDeleteCoachModal;
+  _targetGlobal.handleCreateCoachSubmit = handleCreateCoachSubmit;
+  _targetGlobal.handleEditCoachSubmit = handleEditCoachSubmit;
+  _targetGlobal.confirmDeleteCoach = confirmDeleteCoach;
 }
 
 export {
@@ -208,6 +245,20 @@ export {
   renderCreateClassModal,
   handleCreateClassSubmit,
   renderManagerStaff,
+  refreshManagerCoachesFromApi,
+  setManagerCoachSearch,
+  setManagerCoachFilterSpecialty,
+  openCreateCoachModal,
+  openCoachDetailModal,
+  openEditCoachModal,
+  openDeleteCoachModal,
+  renderCoachDetailModal,
+  renderCreateCoachModal,
+  renderEditCoachModal,
+  renderDeleteCoachModal,
+  handleCreateCoachSubmit,
+  handleEditCoachSubmit,
+  confirmDeleteCoach,
   renderManagerFinances,
   renderManagerAuditLogs,
   setManagerAuditSearch

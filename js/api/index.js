@@ -1,8 +1,9 @@
 import { apiClient } from './apiClient.js';
 import { packageApi } from './packageApi.js';
 import { userApi } from './userApi.js';
+import { coachApi, syncCoachesWithBackend, normalizeCoach } from './coachApi.js';
 
-export { packageApi, userApi };
+export { packageApi, userApi, coachApi, syncCoachesWithBackend, normalizeCoach };
 
 export const memberApi = {
   getProfile: () => apiClient.get('/members/me'),
@@ -23,13 +24,6 @@ export const receptionApi = {
   renewMember: (payload) => apiClient.post('/reception/members/renew', payload),
   resolveTicket: (ticketId, reply) => apiClient.put(`/reception/tickets/${ticketId}/resolve`, { reply }),
   rejectTicket: (ticketId, reason) => apiClient.put(`/reception/tickets/${ticketId}/reject`, { reason })
-};
-
-export const coachApi = {
-  getTodaySchedule: (coachId) => apiClient.get(`/coach/schedule/today/${coachId}`),
-  getStudents: (coachId) => apiClient.get(`/coach/students/${coachId}`),
-  markAttendance: (classId, studentId, attended) => apiClient.post('/coach/attendance', { classId, studentId, attended }),
-  assignWorkoutPlan: (payload) => apiClient.post('/coach/workout-plans', payload)
 };
 
 export const managerApi = {
