@@ -301,16 +301,6 @@ export function renderManagerStaff() {
         <div>
           <div class="flex items-center space-x-2">
             <h3 class="font-extrabold text-base text-slate-900 tracking-tight">Quản Lý Đội Ngũ Huấn Luyện Viên</h3>
-            ${isRealBackend ? `
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Dữ Liệu Thật (Backend)
-              </span>
-            ` : `
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                Chế độ Tạm Thời (Mock)
-              </span>
-            `}
           </div>
           <div class="text-xs text-slate-500 mt-1">
             Xem danh sách HLV theo bảng, bấm <strong>Chi Tiết</strong> để xem đầy đủ hồ sơ, cập nhật thông tin hoặc khóa tài khoản.
@@ -423,7 +413,7 @@ export function renderManagerStaff() {
 
                     <!-- Specialty -->
                     <td class="py-3.5 px-4">
-                      <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100/80">
+                      <span class="px-2.5 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-blue-950 border border-blue-200">
                         ${co.specialty}
                       </span>
                     </td>
@@ -441,7 +431,7 @@ export function renderManagerStaff() {
                     <!-- Status Badge -->
                     <td class="py-3.5 px-4 text-center">
                       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                        isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        isActive ? 'bg-emerald-50 text-emerald-950 border border-emerald-300' : 'bg-rose-50 text-rose-950 border border-rose-300'
                       }">
                         ${isActive ? 'Hoạt Động' : 'Đã Khóa'}
                       </span>
@@ -452,7 +442,7 @@ export function renderManagerStaff() {
                       <button 
                         type="button" 
                         onclick="openCoachDetailModal('${co.coachId || co.id}')" 
-                        class="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition mx-auto shadow-2xs hover:scale-105"
+                        class="px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-950 border border-blue-200 text-xs font-black transition mx-auto shadow-2xs hover:scale-105"
                         title="Xem chi tiết, chỉnh sửa hoặc khóa tài khoản"
                       >
                         Chi Tiết

@@ -30,7 +30,7 @@ export function renderManagerFinances() {
               <tr class="hover:bg-slate-50/70 transition">
                 <td class="py-3 px-4 font-bold text-slate-900">${inv.id}</td>
                 <td class="py-3 px-4 text-slate-800 font-semibold">${inv.memberName}</td>
-                <td class="py-3 px-4 text-indigo-700">${inv.packageName}</td>
+                <td class="py-3 px-4 font-bold text-slate-900">${inv.packageName}</td>
                 <td class="py-3 px-4 font-bold text-slate-900">${(inv.amount).toLocaleString()} đ</td>
                 <td class="py-3 px-4 text-slate-600">${inv.paymentMethod}</td>
                 <td class="py-3 px-4 text-slate-500">${inv.date}</td>

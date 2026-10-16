@@ -50,16 +50,6 @@ export function renderManagerPackages() {
         <div>
           <div class="flex items-center space-x-3">
             <h2 class="text-xl font-black text-slate-900 tracking-tight">Danh Mục Gói Tập & Dịch Vụ</h2>
-            ${appState.packagesLoadedFromApi ? `
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Dữ Liệu Thật (Backend)
-              </span>
-            ` : `
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                Chế độ Tạm Thời (Mock)
-              </span>
-            `}
           </div>
           <p class="text-xs text-slate-500 mt-1">Quản lý các gói thẻ tập, đơn giá niêm yết, thời hạn sử dụng và quyền lợi đi kèm.</p>
         </div>
@@ -78,7 +68,7 @@ export function renderManagerPackages() {
 
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div class="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl">
-          <button type="button" onclick="setManagerPackageFilter('ALL')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${filter === 'ALL' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+          <button type="button" onclick="setManagerPackageFilter('ALL')" class="px-3 py-1.5 rounded-lg text-xs font-black transition ${filter === 'ALL' ? 'bg-white text-blue-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
             Tất Cả (${totalCount})
           </button>
           <button type="button" onclick="setManagerPackageFilter('ACTIVE')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${filter === 'ACTIVE' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">

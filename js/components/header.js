@@ -187,7 +187,8 @@ function renderUserAvatarDropdown(role) {
     activePackage: resolved.activePackage || user.activePackage || 'Gói Hội Viên'
   }) : user;
 
-  const isDarkHeader = role === 'RECEPTIONIST' || role === 'MANAGER';
+  // Manager header is bg-white, only Receptionist has a dark bg-slate-900 header
+  const isDarkHeader = role === 'RECEPTIONIST';
 
   return `
     <div class="relative inline-block text-left">

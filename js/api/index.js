@@ -1,9 +1,19 @@
 import { apiClient } from './apiClient.js';
-import { packageApi } from './packageApi.js';
-import { userApi } from './userApi.js';
+import { packageApi, syncPackagesWithBackend, normalizePackage } from './packageApi.js';
+import { userApi, syncUsersWithBackend, normalizeUser } from './userApi.js';
 import { coachApi, syncCoachesWithBackend, normalizeCoach } from './coachApi.js';
+import { classApi, roomApi, subjectApi, syncClassesWithBackend, normalizeSportClass } from './classApi.js';
+import { auditApi, syncAuditLogsWithBackend, normalizeAuditLog } from './auditApi.js';
+import { reportApi, syncDashboardWithBackend } from './reportApi.js';
 
-export { packageApi, userApi, coachApi, syncCoachesWithBackend, normalizeCoach };
+export { 
+  packageApi, syncPackagesWithBackend, normalizePackage,
+  userApi, syncUsersWithBackend, normalizeUser,
+  coachApi, syncCoachesWithBackend, normalizeCoach,
+  classApi, roomApi, subjectApi, syncClassesWithBackend, normalizeSportClass,
+  auditApi, syncAuditLogsWithBackend, normalizeAuditLog,
+  reportApi, syncDashboardWithBackend
+};
 
 export const memberApi = {
   getProfile: () => apiClient.get('/members/me'),

@@ -10,7 +10,7 @@
 // - features/managerAudit.js
 // =========================================================================
 
-import { renderManagerDashboard, initChartsIfNeeded } from './features/managerDashboard.js';
+import { renderManagerDashboard, initChartsIfNeeded, refreshManagerDashboardFromApi } from './features/managerDashboard.js';
 import { 
   renderManagerMembers, 
   refreshManagerUsersFromApi,
@@ -45,7 +45,21 @@ import {
 import { 
   renderManagerClasses, 
   renderCreateClassModal, 
-  handleCreateClassSubmit 
+  handleCreateClassSubmit,
+  refreshManagerClassesFromApi,
+  openAssignCoachModal,
+  renderAssignCoachModal,
+  handleAssignCoachSubmit,
+  openDeleteClassModal,
+  renderDeleteClassModal,
+  confirmDeleteClass,
+  openCreateRoomModal,
+  renderCreateRoomModal,
+  handleCreateRoomSubmit,
+  openDeleteRoomModal,
+  renderDeleteRoomModal,
+  confirmDeleteRoom,
+  setManagerClassSubView
 } from './features/managerClasses.js';
 import { 
   renderManagerStaff,
@@ -65,7 +79,7 @@ import {
   confirmDeleteCoach
 } from './features/managerStaff.js';
 import { renderManagerFinances } from './features/managerFinances.js';
-import { renderManagerAuditLogs, setManagerAuditSearch } from './features/managerAudit.js';
+import { renderManagerAuditLogs, setManagerAuditSearch, refreshManagerAuditLogsFromApi, goToAuditPage } from './features/managerAudit.js';
 
 export function openManagerModal(modalName) {
   appState.managerActiveModal = modalName;
@@ -82,6 +96,9 @@ export function closeManagerModal() {
   appState.managerSelectedCoachForDetail = null;
   appState.managerSelectedCoachForEdit = null;
   appState.managerSelectedCoachForDelete = null;
+  appState.managerSelectedClassForCoach = null;
+  appState.managerSelectedClassForDelete = null;
+  appState.managerSelectedRoomForDelete = null;
   renderApp();
 }
 
@@ -93,7 +110,7 @@ export function getManagerTabTitle(tab) {
     case 'manager-classes': return 'Quản Lý Lớp Học & Phòng Tập';
     case 'manager-staff': return 'Quản Lý Nhân Sự & Huấn Luyện Viên';
     case 'manager-finances': return 'Sổ Cái Lịch Sử Hóa Đơn';
-    case 'manager-audit': return 'Nhật Ký Kiểm Toán & Vết Thao Tác Hệ Thống (Audit Logs)';
+    case 'manager-audit': return 'Nhật Ký Kiểm Toán & Vết Thao Tác Hệ Thống';
     default: return 'Bảng Quản Trị';
   }
 }
@@ -118,26 +135,26 @@ export function renderManagerWebApp() {
 
           <nav class="p-3.5 space-y-1">
             <div class="text-[10px] font-bold text-slate-400 uppercase px-3 mb-2 tracking-wider">Quản Trị Hệ Thống</div>
-            <button type="button" onclick="switchTab('dashboard')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+            <button type="button" onclick="switchTab('dashboard')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'dashboard' ? 'bg-blue-50 text-blue-950 font-black border border-blue-200 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold'}">
               <span>Báo Cáo Tổng Quan & KPIs</span>
             </button>
-            <button type="button" onclick="switchTab('manager-members')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-members' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+            <button type="button" onclick="switchTab('manager-members')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-members' ? 'bg-blue-50 text-blue-950 font-black border border-blue-200 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold'}">
               <span>Quản Lý Hội Viên</span>
             </button>
-            <button type="button" onclick="switchTab('manager-packages')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-packages' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+            <button type="button" onclick="switchTab('manager-packages')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-packages' ? 'bg-blue-50 text-blue-950 font-black border border-blue-200 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold'}">
               <span>Danh Mục Gói Tập</span>
             </button>
-            <button type="button" onclick="switchTab('manager-classes')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-classes' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+            <button type="button" onclick="switchTab('manager-classes')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-classes' ? 'bg-blue-50 text-blue-950 font-black border border-blue-200 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold'}">
               <span>Lớp Học & Phòng Tập</span>
             </button>
-            <button type="button" onclick="switchTab('manager-staff')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-staff' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+            <button type="button" onclick="switchTab('manager-staff')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-staff' ? 'bg-blue-50 text-blue-950 font-black border border-blue-200 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold'}">
               <span>Nhân Sự & HLV</span>
             </button>
-            <button type="button" onclick="switchTab('manager-finances')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-finances' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
+            <button type="button" onclick="switchTab('manager-finances')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-finances' ? 'bg-blue-50 text-blue-950 font-black border border-blue-200 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold'}">
               <span>Sổ Cái Hóa Đơn</span>
             </button>
-            <button type="button" onclick="switchTab('manager-audit')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-audit' ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'}">
-              <span>Nhật Ký Kiểm Toán (Audit)</span>
+            <button type="button" onclick="switchTab('manager-audit')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition ${currentTab === 'manager-audit' ? 'bg-blue-50 text-blue-950 font-black border border-blue-200 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold'}">
+              <span>Nhật Ký Kiểm Toán</span>
             </button>
           </nav>
         </div>
@@ -147,11 +164,11 @@ export function renderManagerWebApp() {
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10">
           <div class="flex items-center space-x-3">
-            <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span class="px-2.5 py-1 rounded-md text-xs font-black bg-blue-50 text-blue-950 border border-blue-200">
               Quản Lý Trung Tâm (Manager)
             </span>
             <span class="text-xs text-slate-400">/</span>
-            <span class="text-xs font-bold text-slate-800">${getManagerTabTitle(currentTab)}</span>
+            <span class="text-xs font-black text-slate-900">${getManagerTabTitle(currentTab)}</span>
           </div>
 
           <div class="flex items-center space-x-3">
@@ -177,6 +194,10 @@ export function renderManagerWebApp() {
       ${appState.managerActiveModal === 'EDIT_PACKAGE' ? renderEditPackageModal() : ''}
       ${appState.managerActiveModal === 'DELETE_PACKAGE' ? renderDeletePackageModal() : ''}
       ${appState.managerActiveModal === 'CREATE_CLASS' ? renderCreateClassModal() : ''}
+      ${appState.managerActiveModal === 'ASSIGN_COACH_MODAL' ? renderAssignCoachModal() : ''}
+      ${appState.managerActiveModal === 'DELETE_CLASS_MODAL' ? renderDeleteClassModal() : ''}
+      ${appState.managerActiveModal === 'CREATE_ROOM_MODAL' ? renderCreateRoomModal() : ''}
+      ${appState.managerActiveModal === 'DELETE_ROOM_MODAL' ? renderDeleteRoomModal() : ''}
       ${appState.managerActiveModal === 'RENEW_MEMBER' ? renderRenewMemberModal() : ''}
       ${appState.managerActiveModal === 'EDIT_USER' ? renderEditUserModal() : ''}
       ${appState.managerActiveModal === 'ASSIGN_ROLE' ? renderAssignRoleModal() : ''}
@@ -195,6 +216,23 @@ if (_targetGlobal) {
   _targetGlobal.getManagerTabTitle = getManagerTabTitle;
   _targetGlobal.openManagerModal = openManagerModal;
   _targetGlobal.closeManagerModal = closeManagerModal;
+  _targetGlobal.refreshManagerDashboardFromApi = refreshManagerDashboardFromApi;
+  _targetGlobal.refreshManagerClassesFromApi = refreshManagerClassesFromApi;
+  _targetGlobal.openAssignCoachModal = openAssignCoachModal;
+  _targetGlobal.renderAssignCoachModal = renderAssignCoachModal;
+  _targetGlobal.handleAssignCoachSubmit = handleAssignCoachSubmit;
+  _targetGlobal.openDeleteClassModal = openDeleteClassModal;
+  _targetGlobal.renderDeleteClassModal = renderDeleteClassModal;
+  _targetGlobal.confirmDeleteClass = confirmDeleteClass;
+  _targetGlobal.setManagerClassSubView = setManagerClassSubView;
+  _targetGlobal.openCreateRoomModal = openCreateRoomModal;
+  _targetGlobal.renderCreateRoomModal = renderCreateRoomModal;
+  _targetGlobal.handleCreateRoomSubmit = handleCreateRoomSubmit;
+  _targetGlobal.openDeleteRoomModal = openDeleteRoomModal;
+  _targetGlobal.renderDeleteRoomModal = renderDeleteRoomModal;
+  _targetGlobal.confirmDeleteRoom = confirmDeleteRoom;
+  _targetGlobal.refreshManagerAuditLogsFromApi = refreshManagerAuditLogsFromApi;
+  _targetGlobal.goToAuditPage = goToAuditPage;
   _targetGlobal.refreshManagerCoachesFromApi = refreshManagerCoachesFromApi;
   _targetGlobal.setManagerCoachSearch = setManagerCoachSearch;
   _targetGlobal.setManagerCoachFilterSpecialty = setManagerCoachFilterSpecialty;
@@ -214,6 +252,7 @@ if (_targetGlobal) {
 export {
   renderManagerDashboard,
   initChartsIfNeeded,
+  refreshManagerDashboardFromApi,
   renderManagerMembers,
   refreshManagerUsersFromApi,
   setManagerMemberFilterRole,
@@ -244,6 +283,20 @@ export {
   renderManagerClasses,
   renderCreateClassModal,
   handleCreateClassSubmit,
+  refreshManagerClassesFromApi,
+  openAssignCoachModal,
+  renderAssignCoachModal,
+  handleAssignCoachSubmit,
+  openDeleteClassModal,
+  renderDeleteClassModal,
+  confirmDeleteClass,
+  openCreateRoomModal,
+  renderCreateRoomModal,
+  handleCreateRoomSubmit,
+  openDeleteRoomModal,
+  renderDeleteRoomModal,
+  confirmDeleteRoom,
+  setManagerClassSubView,
   renderManagerStaff,
   refreshManagerCoachesFromApi,
   setManagerCoachSearch,
@@ -261,5 +314,7 @@ export {
   confirmDeleteCoach,
   renderManagerFinances,
   renderManagerAuditLogs,
-  setManagerAuditSearch
+  setManagerAuditSearch,
+  refreshManagerAuditLogsFromApi,
+  goToAuditPage
 };
