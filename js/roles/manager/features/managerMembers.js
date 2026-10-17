@@ -90,16 +90,6 @@ export function renderManagerMembers() {
         <div>
           <div class="flex items-center space-x-2">
             <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">Quản Lý Danh Sách Người Dùng & Hội Viên</h3>
-            ${isRealBackend ? `
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Dữ Liệu Thật (Backend)
-              </span>
-            ` : `
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                Chế độ Tạm Thời (Mock)
-              </span>
-            `}
           </div>
           <div class="text-xs text-slate-400 mt-0.5">Xem danh sách, cập nhật thông tin, cấp quyền và khóa/mở tài khoản</div>
         </div>
@@ -189,7 +179,7 @@ export function renderManagerMembers() {
                     </button>
                   </td>
                   <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
-                    <button type="button" onclick="openEditUserModal('${userIdVal}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200 transition" title="Chỉnh sửa thông tin">
+                    <button type="button" onclick="openEditUserModal('${userIdVal}')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-950 rounded-lg text-xs font-black border border-blue-200 transition shadow-2xs" title="Chỉnh sửa thông tin">
                       Chỉnh Sửa
                     </button>
                     <button type="button" onclick="openAssignRoleModal('${userIdVal}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-300 transition" title="Đổi quyền hạn người dùng">

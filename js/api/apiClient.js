@@ -43,7 +43,7 @@ function buildUrl(endpoint, params = {}) {
   return urlStr;
 }
 
-const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_TIMEOUT_MS = 30000; // 30s timeout for heavy backend queries / DB cold starts
 
 /**
  * Robust fetch wrapper with timeout support to prevent infinite loading

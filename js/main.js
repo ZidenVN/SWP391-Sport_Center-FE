@@ -46,6 +46,7 @@ import { apiClient } from './api/apiClient.js';
 import { authApi } from './api/authApi.js';
 import { memberApi, receptionApi, coachApi, managerApi, packageApi, userApi } from './api/index.js';
 import { syncUsersWithBackend } from './api/userApi.js';
+import { syncCoachesWithBackend } from './api/coachApi.js';
 
 // Expose API services on window for integration and debugging
 if (typeof window !== 'undefined') {
@@ -60,7 +61,9 @@ if (typeof window !== 'undefined') {
     manager: managerApi
   };
   window.userApi = userApi;
+  window.coachApi = coachApi;
   window.syncUsersWithBackend = syncUsersWithBackend;
+  window.syncCoachesWithBackend = syncCoachesWithBackend;
 
   window.handleSessionExpired = () => {
     if (typeof window.showToast === 'function') {
