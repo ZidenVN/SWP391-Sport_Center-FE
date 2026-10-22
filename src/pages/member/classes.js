@@ -60,9 +60,10 @@ function view(s) {
       </div>` : emptyState(s.classes.length ? 'Không có lớp phù hợp bộ lọc' : 'Hiện chưa có lớp học nào', 'calendar-x')}`;
 }
 
-export default function MemberClasses(el) {
+export default function MemberClasses(el, { query } = {}) {
   return mountPage(el, {
-    state: { keyword: '', subject: '', showAll: false },
+    // ?subject=... từ trang giới thiệu -> lọc sẵn bộ môn
+    state: { keyword: '', subject: query?.subject || '', showAll: false },
     load: async () => {
       const res = await settle({
         classes: [classApi.list, null],

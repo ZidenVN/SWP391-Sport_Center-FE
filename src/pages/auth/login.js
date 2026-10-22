@@ -1,17 +1,9 @@
 import { html, render, bindActions, readForm } from '../../core/dom.js';
-import { field, input, withBusy } from '../../core/ui.js';
 import { authApi, memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { HOME_BY_ROLE } from '../../routes.js';
-import { authLayout } from './authLayout.js';
+import { authLayout, iconInput, togglePassword } from './authLayout.js';
 import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
-
-// Chỉ điền sẵn email (không lưu mật khẩu trong code vì repo công khai)
-const DEV_ACCOUNTS = [
-  { label: 'Quản lý', email: 'admin@sportcenter.com' },
-  { label: 'Lễ tân', email: 'receptionist@sportcenter.com' },
-  { label: 'HLV', email: 'coach@sportcenter.com' }
-];
 
 // Đăng nhập + chuẩn bị session (member cần memberId cho các màn sau)
 export async function loginAndStart(email, password) {
@@ -43,26 +35,18 @@ export function goAfterLogin(navigate) {
 }
 
 export default function LoginPage(el, { navigate }) {
-  const isDev = Boolean(import.meta.env?.DEV);
-  render(el, authLayout('Đăng nhập', 'Chào mừng bạn quay lại!', html`
-    <form data-action="login" class="space-y-4" novalidate>
-      ${field('Email', input('email', { type: 'email', required: true, placeholder: 'ban@example.com', attrs: 'autocomplete="username"' }))}
-      ${field('Mật khẩu', input('password', { type: 'password', required: true, placeholder: '••••••', attrs: 'autocomplete="current-password"' }))}
-      <p id="login-error" class="hidden text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2" role="alert"></p>
-      <button type="submit" class="btn-primary w-full !py-2.5">Đăng nhập</button>
+  render(el, authLayout(html`
+    <form data-action="login" class="space-y-5" novalidate>
+      ${iconInput('email', 'mail', { label: 'Email', type: 'email', placeholder: 'ban@example.com', autocomplete: 'username' })}
+      ${iconInput('password', 'lock', { label: 'Mật khẩu', type: 'password', placeholder: '••••••••', autocomplete: 'current-password' })}
+      <p id="login-error" class="hidden text-sm text-rose-100 bg-rose-500/20 border border-rose-300/30 rounded-xl px-3 py-2" role="alert"></p>
+      <button type="submit" class="auth-primary-btn !mt-7">Đăng nhập</button>
     </form>
-    ${googleSection()}
-    <p class="text-sm text-slate-600 text-center mt-6">
-      Chưa có tài khoản? <a href="#/register" class="font-bold text-emerald-600 hover:underline">Đăng ký hội viên</a>
+    ${googleSection('hoặc tiếp tục với')}
+    <p class="text-sm text-white/65 text-center mt-7">
+      Chưa có tài khoản? <a href="#/register" class="font-bold text-white hover:underline ml-1">Đăng ký</a>
     </p>
-    ${isDev ? html`
-      <div class="mt-8 rounded-xl border border-dashed border-slate-300 p-4">
-        <div class="text-xs font-bold text-slate-500 mb-2">Tài khoản test (chỉ hiện khi chạy dev)</div>
-        <div class="flex flex-wrap gap-2">
-          ${DEV_ACCOUNTS.map(a => html`<button type="button" class="btn-secondary btn-sm" data-action="fill" data-email="${a.email}">${a.label}</button>`)}
-        </div>
-      </div>` : ''}
-  `));
+  `, { active: 'login' }));
 
   const form = el.querySelector('form');
   const errorBox = el.querySelector('#login-error');
@@ -73,11 +57,7 @@ export default function LoginPage(el, { navigate }) {
   mountGoogleButton(el, { onSuccess: () => goAfterLogin(navigate), onError: showError });
 
   return bindActions(el, {
-    fill: btn => {
-      form.email.value = btn.dataset.email;
-      form.password.value = '';
-      form.password.focus();
-    },
+    'toggle-pw': togglePassword,
     login: async () => {
       const { email, password } = readForm(form);
       errorBox.classList.add('hidden');

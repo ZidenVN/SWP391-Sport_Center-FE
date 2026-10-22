@@ -134,7 +134,9 @@ export function showFormErrors(formOrButton, err) {
     const p = document.createElement('p');
     p.className = 'field-error text-xs text-rose-600 mt-1';
     p.textContent = msg;
-    input.insertAdjacentElement('afterend', p);
+    // nhóm nút chọn (radio) / ô có icon -> báo lỗi dưới cả khối, không chèn vào giữa làm lệch icon
+    const anchor = input.closest('[role=radiogroup], [data-field-wrap]') || input;
+    anchor.insertAdjacentElement('afterend', p);
   });
 }
 

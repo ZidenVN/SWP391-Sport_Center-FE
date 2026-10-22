@@ -4,6 +4,7 @@ import { vnpayApi, memberApi } from '../../api/endpoints.js';
 import { money, date, dateTime, paymentMethodLabel } from '../../core/format.js';
 import { checkoutSteps, vnpayReason, vnpayMark } from '../../components/billing.js';
 import { openInvoice } from '../../components/invoice.js';
+import { brandMark } from '../../components/brand.js';
 
 function detailRow(label, value, testid) {
   if (value === null || value === undefined || value === '') return '';
@@ -17,7 +18,7 @@ function receipt(r, { loggedIn }) {
     <div class="max-w-xl mx-auto ${loggedIn ? '' : 'py-10 px-4'}">
       ${loggedIn ? checkoutSteps(2, { failed: !ok }) : html`
         <div class="flex items-center justify-center gap-2 mb-8">
-          <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm">SC</div>
+          ${brandMark('w-10 h-10')}
           <span class="font-extrabold tracking-tight">SPORT CENTER</span>
         </div>`}
       <div class="rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden" data-testid="payment-result" data-success="${ok}">

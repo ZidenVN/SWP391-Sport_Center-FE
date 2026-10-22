@@ -1,7 +1,8 @@
 import { html, render, bindActions, readForm } from '../../core/dom.js';
-import { field, input, select, GENDER_OPTIONS, showFormErrors, toast } from '../../core/ui.js';
+import { field, input, GENDER_OPTIONS, showFormErrors, toast } from '../../core/ui.js';
 import { authApi } from '../../api/endpoints.js';
-import { authLayout } from './authLayout.js';
+import { authLayout, iconInput, togglePassword } from './authLayout.js';
+import { darkSelect, mountDarkSelects } from '../../components/darkSelect.js';
 import { loginAndStart, goAfterLogin } from './login.js';
 import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
 
@@ -21,30 +22,32 @@ export function validateRegister(data) {
 }
 
 export default function RegisterPage(el, { navigate }) {
-  render(el, authLayout('Đăng ký hội viên', 'Tạo tài khoản để đặt lớp và mua gói tập.', html`
+  render(el, authLayout(html`
     <form data-action="register" class="space-y-4" novalidate>
       <div class="grid grid-cols-2 gap-3">
         ${field('Họ', input('firstName', { required: true, placeholder: 'Nguyễn' }))}
         ${field('Tên', input('lastName', { required: true, placeholder: 'An' }))}
       </div>
       <div class="grid grid-cols-2 gap-3">
-        ${field('Giới tính', select('gender', GENDER_OPTIONS, '', { required: true, placeholder: 'Chọn' }))}
-        ${field('Số điện thoại', input('phone', { type: 'tel', required: true, placeholder: '0912345678' }))}
+        ${darkSelect('gender', GENDER_OPTIONS, { label: 'Giới tính', placeholder: 'Chọn giới tính' })}
+        ${iconInput('phone', 'phone', { label: 'Số điện thoại', type: 'tel', placeholder: '0912345678', autocomplete: 'tel' })}
       </div>
-      ${field('Email', input('email', { type: 'email', required: true, placeholder: 'ban@example.com', attrs: 'autocomplete="email"' }))}
-      ${field('Mật khẩu', input('password', { type: 'password', required: true, placeholder: 'Tối thiểu 6 ký tự', attrs: 'autocomplete="new-password"' }))}
-      ${field('Nhập lại mật khẩu', input('confirmPassword', { type: 'password', required: true, attrs: 'autocomplete="new-password"' }))}
-      <button type="submit" class="btn-primary w-full !py-2.5">Tạo tài khoản</button>
+      ${iconInput('email', 'mail', { label: 'Email', type: 'email', placeholder: 'ban@example.com', autocomplete: 'email' })}
+      ${iconInput('password', 'lock', { label: 'Mật khẩu', type: 'password', placeholder: 'Tối thiểu 6 ký tự', autocomplete: 'new-password' })}
+      ${iconInput('confirmPassword', 'lock', { label: 'Nhập lại mật khẩu', type: 'password', placeholder: 'Nhập lại mật khẩu', autocomplete: 'new-password' })}
+      <button type="submit" class="auth-primary-btn !mt-7">Tạo tài khoản</button>
     </form>
-    ${googleSection()}
-    <p class="text-sm text-slate-600 text-center mt-6">
-      Đã có tài khoản? <a href="#/login" class="font-bold text-emerald-600 hover:underline">Đăng nhập</a>
+    ${googleSection('hoặc tiếp tục với', 'Đăng ký bằng Google')}
+    <p class="text-sm text-white/65 text-center mt-7">
+      Đã có tài khoản? <a href="#/login" class="font-bold text-white hover:underline ml-1">Đăng nhập</a>
     </p>
-  `));
+  `, { active: 'register', wide: true }));
 
   const form = el.querySelector('form');
-  mountGoogleButton(el, { text: 'signup_with', onSuccess: () => goAfterLogin(navigate), onError: message => toast(message, 'error') });
-  return bindActions(el, {
+  mountGoogleButton(el, { onSuccess: () => goAfterLogin(navigate), onError: message => toast(message, 'error') });
+  const unmountSelects = mountDarkSelects(el);
+  const unbind = bindActions(el, {
+    'toggle-pw': togglePassword,
     register: async () => {
       const data = readForm(form);
       const errors = validateRegister(data);
@@ -68,4 +71,5 @@ export default function RegisterPage(el, { navigate }) {
       }
     }
   });
+  return () => { unbind(); unmountSelects(); };
 }

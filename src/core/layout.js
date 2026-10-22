@@ -3,12 +3,11 @@ import { session } from './session.js';
 import { html, render, icon } from './dom.js';
 import { roleLabel } from './format.js';
 import { refreshNotificationBadge } from '../components/notificationBadge.js';
+import { brandMark } from '../components/brand.js';
 
 // Một bộ nhận diện thống nhất cho mọi vai trò (trước đây mỗi role một màu riêng) -> đồng bộ giao diện
 const BRAND = '#469B7E';
-const BRAND_DARK = '#2F6B55';
 const BRAND_BG = `bg-[${BRAND}]`;
-const BRAND_CHIP = `bg-[${BRAND_DARK}] ring-1 ring-white/15`;
 
 function navItems(role) {
   return ROUTES.filter(r => r.nav && r.roles?.includes(role));
@@ -34,7 +33,7 @@ function sidebar(role) {
   });
   return html`
     <div class="flex items-center gap-3 px-4 h-16 shrink-0">
-      <div class="w-9 h-9 rounded-xl ${BRAND_CHIP} text-white flex items-center justify-center font-black text-sm">SC</div>
+      ${brandMark('w-10 h-10 ring-1 ring-white/20')}
       <div>
         <div class="font-extrabold text-sm tracking-tight text-white leading-tight">SPORT CENTER</div>
         <div class="text-[11px] font-bold uppercase tracking-wider text-white/80">${roleLabel(role)}</div>

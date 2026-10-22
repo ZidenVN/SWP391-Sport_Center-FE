@@ -4,7 +4,8 @@ import { http } from './client.js';
 export const authApi = {
   login: (email, password) => http.post('/auth/login', { email, password }, { auth: false }),
   register: payload => http.post('/auth/register', payload, { auth: false }),
-  google: token => http.post('/auth/google', { token }, { auth: false })
+  // payload: { token } (ID token) hoặc { accessToken } (nút Google tự thiết kế)
+  google: payload => http.post('/auth/google', payload, { auth: false })
 };
 
 export const userApi = {
@@ -142,4 +143,10 @@ export const reportApi = {
   members: (fromDate, toDate) => http.get('/manager/reports/members', { fromDate, toDate }),
   classes: (fromDate, toDate) => http.get('/manager/reports/classes', { fromDate, toDate }),
   revenue: (fromDate, toDate) => http.get('/manager/reports/revenue', { fromDate, toDate })
+};
+
+// Dữ liệu cho trang giới thiệu khi chưa đăng nhập (BE mở GET công khai)
+export const publicApi = {
+  packages: () => http.get('/packages', undefined, { auth: false }),
+  subjects: () => http.get('/subjects', undefined, { auth: false })
 };

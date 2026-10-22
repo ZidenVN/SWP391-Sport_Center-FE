@@ -1,14 +1,19 @@
 import { html, raw } from '../core/dom.js';
 import { openModal, loading, errorState, toast } from '../core/ui.js';
 import { money, dateTime, date, paymentMethodLabel, badge } from '../core/format.js';
+import { LOGO_SRC } from './brand.js';
 
 function invoiceBody(inv) {
   return html`
     <div id="invoice-print" class="text-sm">
       <div class="flex items-start justify-between mb-5">
-        <div>
+        <div class="flex items-center gap-3">
+          <!-- hóa đơn được in ở cửa sổ riêng -> đường dẫn ảnh phải tuyệt đối -->
+          <img src="${new URL(LOGO_SRC, window.location.origin).href}" alt="Sport Center" class="w-12 h-12 rounded-[22%]" />
+          <div>
           <div class="font-black text-lg">SPORT CENTER</div>
           <div class="text-xs text-slate-500">Hóa đơn thanh toán gói tập</div>
+          </div>
         </div>
         <div class="text-right">
           <div class="font-bold" data-testid="invoice-number">${inv.invoiceNumber}</div>

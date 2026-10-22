@@ -20,6 +20,8 @@ const C = ['COACH'];
 const CM = ['CENTER_MANAGER'];
 
 export const ROUTES = [
+  // trang giới thiệu khi chưa đăng nhập; đã đăng nhập thì router tự chuyển về trang chủ theo vai trò
+  { path: '/', public: true, load: () => import('./pages/landing.js') },
   { path: '/login', public: true, load: () => import('./pages/auth/login.js') },
   { path: '/register', public: true, load: () => import('./pages/auth/register.js') },
   // hồ sơ cá nhân dùng chung cho Lễ tân/HLV/Quản lý, vào từ menu ở header (không có trong sidebar)
