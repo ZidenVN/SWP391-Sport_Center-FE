@@ -1,0 +1,24 @@
+import { configureClient } from './api/client.js';
+import { session } from './core/session.js';
+import { startRouter } from './core/router.js';
+import { toast } from './core/ui.js';
+
+configureClient({
+  getToken: () => session.token(),
+  onUnauthorized: () => {
+    if (!session.isLoggedIn()) return;
+    session.end();
+    toast('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.', 'warning');
+    window.location.hash = '#/login';
+  }
+});
+
+// VNPay redirect về http://host/payment-result?vnp_... (đường dẫn thật, không phải hash)
+// -> chuyển thành route hash của SPA, giữ nguyên query để gửi lại cho BE xác thực.
+const path = window.location.pathname;
+if (/\/payment-result\/?$/.test(path)) {
+  const base = path.replace(/payment-result\/?$/, '');
+  window.history.replaceState(null, '', `${base}#/member/payment-result${window.location.search}`);
+}
+
+startRouter();

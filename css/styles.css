@@ -64,6 +64,21 @@ body {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Đường quét chạy trên mã QR khi đang chờ thanh toán */
+@keyframes qrScan {
+  0%, 100% { transform: translateY(0); opacity: 0.2; }
+  50% { transform: translateY(250px); opacity: 0.9; }
+}
+
+.qr-scanline {
+  animation: qrScan 2.6s ease-in-out infinite;
+  box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qr-scanline { animation: none; display: none; }
+}
+
 /* Micro-interactions & Smooth Transitions */
 .transition-smooth {
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);

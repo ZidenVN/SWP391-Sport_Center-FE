@@ -3,58 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sports Center Management System - SWP391 FA26 Topic 4</title>
-  <!-- Google Fonts -->
+  <title>Sport Center - Hệ thống quản lý trung tâm thể thao</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <!-- CDN Preconnects & Scripts -->
-  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
-  <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js CDN (Deferred: only needed on Manager Dashboard) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Custom CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
   <link rel="stylesheet" href="./css/styles.css" />
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-            }
-          }
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
         }
       }
     }
   </script>
+  <style type="text/tailwindcss">
+    @layer components {
+      .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
+      .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
+      .btn-primary { @apply btn bg-indigo-600 text-white hover:bg-indigo-700; }
+      .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50; }
+      .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
+      .btn-ghost { @apply btn px-2.5 py-1.5 text-slate-600 hover:bg-slate-100; }
+      .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
+      .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500; }
+    }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
-  <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col max-w-sm w-full pointer-events-none *:pointer-events-auto"></div>
-
-  <!-- Root Application Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col max-w-sm w-[calc(100%-2.5rem)]" aria-live="polite"></div>
+  <div id="modal-root"></div>
   <div id="app-root">
-    <!-- Rendered dynamically by app.js -->
     <div class="flex items-center justify-center min-h-screen">
-      <div class="text-center space-y-3">
-        <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        <div class="text-slate-600 font-semibold text-sm">Đang tải hệ thống Quản lý Trung tâm Thể thao...</div>
-      </div>
+      <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
   </div>
-
-  <!-- Application Scripts -->
-  <script type="module" src="./js/main.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
