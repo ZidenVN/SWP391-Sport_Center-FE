@@ -3,6 +3,7 @@ import { field, input, select, GENDER_OPTIONS, showFormErrors, toast } from '../
 import { authApi } from '../../api/endpoints.js';
 import { authLayout } from './authLayout.js';
 import { loginAndStart, goAfterLogin } from './login.js';
+import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
 
 // Cùng luật với RegisterRequestDTO phía BE để báo lỗi sớm
 export function validateRegister(data) {
@@ -35,12 +36,14 @@ export default function RegisterPage(el, { navigate }) {
       ${field('Nhập lại mật khẩu', input('confirmPassword', { type: 'password', required: true, attrs: 'autocomplete="new-password"' }))}
       <button type="submit" class="btn-primary w-full !py-2.5">Tạo tài khoản</button>
     </form>
+    ${googleSection()}
     <p class="text-sm text-slate-600 text-center mt-6">
-      Đã có tài khoản? <a href="#/login" class="font-bold text-indigo-600 hover:underline">Đăng nhập</a>
+      Đã có tài khoản? <a href="#/login" class="font-bold text-emerald-600 hover:underline">Đăng nhập</a>
     </p>
   `));
 
   const form = el.querySelector('form');
+  mountGoogleButton(el, { text: 'signup_with', onSuccess: () => goAfterLogin(navigate), onError: message => toast(message, 'error') });
   return bindActions(el, {
     register: async () => {
       const data = readForm(form);

@@ -3,7 +3,7 @@ import { pageHeader, statCard, emptyState } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
-import { date, dateTime, daysUntil, weekday, timeRange, badge } from '../../core/format.js';
+import { date, dateTime, daysUntil, weekday, timeRange, badge, isPlaceholderPhone } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
 
@@ -19,17 +19,17 @@ function subscriptionCard(sub) {
   }
   const left = daysUntil(sub.endDate);
   return html`
-    <div class="card p-6 bg-gradient-to-br from-indigo-600 to-violet-600 text-white border-0" data-testid="current-subscription">
+    <div class="card p-6 bg-gradient-to-br from-emerald-600 to-teal-600 text-white border-0" data-testid="current-subscription">
       <div class="flex items-start justify-between">
         <div>
-          <div class="text-sm text-indigo-100">Gói tập hiện tại</div>
+          <div class="text-sm text-emerald-100">Gói tập hiện tại</div>
           <div class="text-2xl font-extrabold mt-1">${sub.packageName}</div>
         </div>
         <span class="px-2.5 py-1 rounded-full bg-white/20 text-xs font-bold">${left > 0 ? `Còn ${left} ngày` : 'Hết hạn hôm nay'}</span>
       </div>
       <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
-        <div><div class="text-indigo-200 text-xs">Bắt đầu</div><div class="font-semibold">${date(sub.startDate)}</div></div>
-        <div><div class="text-indigo-200 text-xs">Hết hạn</div><div class="font-semibold">${date(sub.endDate)}</div></div>
+        <div><div class="text-emerald-200 text-xs">Bắt đầu</div><div class="font-semibold">${date(sub.startDate)}</div></div>
+        <div><div class="text-emerald-200 text-xs">Hết hạn</div><div class="font-semibold">${date(sub.endDate)}</div></div>
       </div>
       <a href="#/member/packages" class="btn mt-5 bg-white/15 hover:bg-white/25 text-white">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</a>
     </div>`;
@@ -42,11 +42,17 @@ function view(s) {
   const p = s.progress;
   return html`
     ${pageHeader(`Xin chào, ${name}!`, 'Tổng quan hoạt động tập luyện của bạn')}
+    ${s.me && isPlaceholderPhone(s.me.phone) ? html`
+      <a href="#/member/profile" class="mb-5 flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sky-900 hover:bg-sky-100" data-testid="complete-profile">
+        <span class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0">${icon('user-pen', 'w-5 h-5')}</span>
+        <span class="flex-1 text-sm"><b>Hoàn thiện hồ sơ</b><br />Thêm số điện thoại để lễ tân và HLV liên hệ được với bạn.</span>
+        ${icon('chevron-right', 'w-5 h-5')}
+      </a>` : ''}
     ${expiryBanner(s.current)}
     <div class="grid lg:grid-cols-3 gap-6">
       <div class="lg:col-span-1">${subscriptionCard(s.current)}</div>
       <div class="lg:col-span-2 grid sm:grid-cols-3 gap-4 content-start">
-        ${statCard('Lớp sắp tới', upcoming.length, 'calendar-check', 'indigo')}
+        ${statCard('Lớp sắp tới', upcoming.length, 'calendar-check', 'emerald')}
         ${statCard('Buổi đã tập', p?.totalSessionAttended ?? 0, 'flame', 'orange')}
         ${statCard('Giáo án đang tập', p?.inProgressPlans ?? 0, 'clipboard-list', 'emerald')}
       </div>
@@ -56,7 +62,7 @@ function view(s) {
       <section class="card p-5">
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-bold">Lịch tập sắp tới</h2>
-          <a href="#/member/schedule" class="text-xs font-bold text-indigo-600 hover:underline">Xem tất cả</a>
+          <a href="#/member/schedule" class="text-xs font-bold text-emerald-600 hover:underline">Xem tất cả</a>
         </div>
         ${upcoming.length ? html`
           <ul class="divide-y divide-slate-100">
@@ -79,7 +85,7 @@ function view(s) {
       <section class="card p-5">
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-bold">Thông báo mới</h2>
-          <a href="#/member/notifications" class="text-xs font-bold text-indigo-600 hover:underline">Xem tất cả</a>
+          <a href="#/member/notifications" class="text-xs font-bold text-emerald-600 hover:underline">Xem tất cả</a>
         </div>
         ${notis.length ? html`
           <ul class="space-y-3">
@@ -103,7 +109,8 @@ export default function MemberHome(el) {
       current: [memberApi.currentSubscription, null],
       schedule: [memberApi.schedule, []],
       notifications: [memberApi.notifications, []],
-      progress: [memberApi.progress, null]
+      progress: [memberApi.progress, null],
+      me: [memberApi.me, null]
     }),
     view,
     actions: { 'coach-info': btn => openCoachInfo(coachFromButton(btn)) }

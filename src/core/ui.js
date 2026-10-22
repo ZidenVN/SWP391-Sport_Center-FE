@@ -176,10 +176,10 @@ export function pageHeader(title, subtitle, actions = '') {
     </div>`;
 }
 
-export function statCard(label, value, iconName, color = 'indigo', hint = '') {
+export function statCard(label, value, iconName, color = 'emerald', hint = '') {
   return html`
-    <div class="card p-5 flex items-start gap-4">
-      <div class="w-11 h-11 rounded-xl bg-${color}-50 text-${color}-600 flex items-center justify-center shrink-0">${icon(iconName, 'w-5 h-5')}</div>
+    <div class="card p-5 flex items-start gap-4 rounded-3xl">
+      <div class="w-12 h-12 rounded-2xl bg-${color}-50 text-${color}-600 flex items-center justify-center shrink-0">${icon(iconName, 'w-5 h-5')}</div>
       <div class="min-w-0">
         <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">${label}</div>
         <div class="text-2xl font-extrabold text-slate-900 mt-0.5 truncate">${value}</div>
@@ -188,14 +188,14 @@ export function statCard(label, value, iconName, color = 'indigo', hint = '') {
     </div>`;
 }
 
-// tabs: [{ id, label, count? }]
+// tabs: [{ id, label, count? }] — kiểu chip bo tròn, đồng bộ với tông bo tròn của sidebar/nút
 export function tabs(items, active, action = 'tab') {
   return html`
-    <div class="flex gap-1 border-b border-slate-200 mb-5 overflow-x-auto" role="tablist">
+    <div class="inline-flex flex-wrap gap-1 bg-slate-100 rounded-full p-1 mb-5" role="tablist">
       ${items.map(t => html`
         <button type="button" role="tab" data-action="${action}" data-tab="${t.id}" aria-selected="${t.id === active}"
-          class="px-4 py-2.5 text-sm font-bold whitespace-nowrap border-b-2 -mb-px transition-colors ${t.id === active ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
-          ${t.label}${t.count !== undefined ? html` <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full ${t.id === active ? 'bg-indigo-100' : 'bg-slate-100'}">${t.count}</span>` : ''}
+          class="px-4 py-2 text-sm font-bold whitespace-nowrap rounded-full transition-colors ${t.id === active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">
+          ${t.label}${t.count !== undefined ? html` <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full ${t.id === active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200/70'}">${t.count}</span>` : ''}
         </button>`)}
     </div>`;
 }
@@ -207,12 +207,12 @@ export function table({ columns, rows, empty = 'Chưa có dữ liệu' }) {
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
-          <tr class="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
-            ${columns.map(c => html`<th class="px-4 py-3 font-bold ${c.cls || ''}">${c.label}</th>`)}
+          <tr class="text-left text-xs uppercase tracking-wide text-slate-400 bg-slate-50/80">
+            ${columns.map(c => html`<th class="px-5 py-3 font-bold ${c.cls || ''}">${c.label}</th>`)}
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          ${rows.map(r => html`<tr class="hover:bg-slate-50/70">${r.map((cell, i) => html`<td class="px-4 py-3 align-middle ${columns[i]?.cls || ''}">${cell}</td>`)}</tr>`)}
+          ${rows.map(r => html`<tr class="hover:bg-emerald-50/40 transition-colors">${r.map((cell, i) => html`<td class="px-5 py-3.5 align-middle ${columns[i]?.cls || ''}">${cell}</td>`)}</tr>`)}
         </tbody>
       </table>
     </div>`;

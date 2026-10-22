@@ -57,7 +57,7 @@ export function openCoachInfo({ coachId, coachName, coachSpeciality }) {
 // Nút tên HLV có thể bấm để mở popup (dùng trong thẻ lớp, lịch tập)
 export function coachLink(item) {
   if (!item.coachId) return html`<span>HLV ${item.coachName}</span>`;
-  return html`<button type="button" class="font-semibold text-indigo-600 hover:underline" data-action="coach-info"
+  return html`<button type="button" class="font-semibold text-emerald-600 hover:underline" data-action="coach-info"
     data-coach-id="${item.coachId}" data-coach-name="${item.coachName}" data-coach-speciality="${item.coachSpeciality || ''}">HLV ${item.coachName}</button>`;
 }
 

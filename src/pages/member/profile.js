@@ -3,7 +3,7 @@ import { pageHeader, field, input, select, textarea, GENDER_OPTIONS, withBusy, t
 import { mountPage } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
-import { genderLabel } from '../../core/format.js';
+import { genderLabel, isPlaceholderPhone, phoneText } from '../../core/format.js';
 
 function view(s) {
   const m = s.me;
@@ -11,7 +11,7 @@ function view(s) {
     ${pageHeader('Hồ sơ cá nhân', 'Cập nhật thông tin để HLV hiểu rõ hơn về bạn')}
     <div class="grid lg:grid-cols-3 gap-6">
       <div class="card p-6 text-center h-fit">
-        <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-3xl font-black">
+        <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center text-3xl font-black">
           ${(m.firstName || '?').charAt(0).toUpperCase()}
         </div>
         <div class="font-extrabold text-lg mt-3">${m.firstName} ${m.lastName}</div>
@@ -19,7 +19,7 @@ function view(s) {
         <div class="mt-4 text-sm text-left space-y-2 border-t border-slate-100 pt-4">
           <div class="flex justify-between"><span class="text-slate-500">Mã hội viên</span><b>#${m.memberId}</b></div>
           <div class="flex justify-between"><span class="text-slate-500">Giới tính</span><b>${genderLabel(m.gender)}</b></div>
-          <div class="flex justify-between"><span class="text-slate-500">Điện thoại</span><b>${m.phone}</b></div>
+          <div class="flex justify-between"><span class="text-slate-500">Điện thoại</span><b>${phoneText(m.phone)}</b></div>
         </div>
       </div>
       <form class="card p-6 lg:col-span-2 space-y-4" data-action="save" novalidate>
@@ -27,7 +27,7 @@ function view(s) {
           ${field('Họ', input('firstName', { value: m.firstName, required: true }))}
           ${field('Tên', input('lastName', { value: m.lastName, required: true }))}
           ${field('Giới tính', select('gender', GENDER_OPTIONS, (m.gender || '').toUpperCase(), { required: true, placeholder: 'Chọn' }))}
-          ${field('Số điện thoại', input('phone', { type: 'tel', value: m.phone, required: true }))}
+          ${field('Số điện thoại', input('phone', { type: 'tel', value: isPlaceholderPhone(m.phone) ? '' : m.phone, required: true, placeholder: '0912345678' }))}
         </div>
         ${field('Email', input('email', { value: m.email, attrs: 'disabled' }), 'Email dùng để đăng nhập, không thể thay đổi')}
         ${field('Mục tiêu tập luyện', textarea('trainingGoal', m.trainingGoal === 'Chưa cập nhật' ? '' : m.trainingGoal, { placeholder: 'VD: Giảm 5kg trong 3 tháng, tăng sức bền...' }))}

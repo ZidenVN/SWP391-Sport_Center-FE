@@ -1,15 +1,14 @@
-import { ROUTES } from '../routes.js';
+import { ROUTES, PROFILE_BY_ROLE } from '../routes.js';
 import { session } from './session.js';
 import { html, render, icon } from './dom.js';
 import { roleLabel } from './format.js';
 import { refreshNotificationBadge } from '../components/notificationBadge.js';
 
-const ROLE_ACCENT = {
-  MEMBER: 'from-blue-600 to-indigo-600',
-  RECEPTIONIST: 'from-teal-500 to-emerald-600',
-  COACH: 'from-orange-500 to-rose-500',
-  CENTER_MANAGER: 'from-indigo-600 to-violet-600'
-};
+// Một bộ nhận diện thống nhất cho mọi vai trò (trước đây mỗi role một màu riêng) -> đồng bộ giao diện
+const BRAND = '#469B7E';
+const BRAND_DARK = '#2F6B55';
+const BRAND_BG = `bg-[${BRAND}]`;
+const BRAND_CHIP = `bg-[${BRAND_DARK}] ring-1 ring-white/15`;
 
 function navItems(role) {
   return ROUTES.filter(r => r.nav && r.roles?.includes(role));
@@ -18,7 +17,7 @@ function navItems(role) {
 function navLink(route) {
   return html`
     <a href="#${route.path}" data-nav="${route.path}"
-      class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+      class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold text-white/75 hover:bg-white/10 hover:text-white transition-colors">
       ${icon(route.nav.icon, 'w-4 h-4 shrink-0')}<span class="flex-1">${route.nav.label}</span>
       ${route.path === '/member/notifications' ? html`<span data-notification-count class="hidden min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center"></span>` : ''}
     </a>`;
@@ -34,17 +33,17 @@ function sidebar(role) {
     g.items.push(item);
   });
   return html`
-    <div class="flex items-center gap-3 px-5 h-16 border-b border-slate-100">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr ${ROLE_ACCENT[role] || ROLE_ACCENT.MEMBER} text-white flex items-center justify-center font-black text-sm">SC</div>
+    <div class="flex items-center gap-3 px-4 h-16 shrink-0">
+      <div class="w-9 h-9 rounded-xl ${BRAND_CHIP} text-white flex items-center justify-center font-black text-sm">SC</div>
       <div>
-        <div class="font-extrabold text-sm tracking-tight text-slate-900 leading-tight">SPORT CENTER</div>
-        <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-600">${roleLabel(role)}</div>
+        <div class="font-extrabold text-sm tracking-tight text-white leading-tight">SPORT CENTER</div>
+        <div class="text-[11px] font-bold uppercase tracking-wider text-white/80">${roleLabel(role)}</div>
       </div>
     </div>
-    <nav class="p-3 space-y-4 overflow-y-auto flex-1" aria-label="Điều hướng">
+    <nav class="px-3 pb-3 space-y-4 overflow-y-auto flex-1" aria-label="Điều hướng">
       ${groups.map(g => html`
         <div class="space-y-1">
-          ${g.name ? html`<div class="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">${g.name}</div>` : ''}
+          ${g.name ? html`<div class="px-3.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/50">${g.name}</div>` : ''}
           ${g.items.map(navLink)}
         </div>`)}
     </nav>`;
@@ -58,32 +57,47 @@ export function renderShell(root) {
   }
   root.dataset.shell = role;
   render(root, html`
-    <div class="min-h-screen flex">
-      <aside id="sidebar" class="hidden lg:flex fixed lg:sticky top-0 z-30 h-screen w-64 shrink-0 flex-col bg-white border-r border-slate-200">
+    <div class="min-h-screen flex gap-0 lg:gap-3 lg:p-3">
+      <aside id="sidebar" class="hidden lg:flex fixed lg:sticky top-0 lg:top-3 z-30 h-screen lg:h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col ${BRAND_BG} lg:rounded-3xl shadow-xl">
         ${sidebar(role)}
       </aside>
       <div id="sidebar-backdrop" class="hidden fixed inset-0 z-20 bg-slate-900/40 lg:hidden"></div>
-      <div class="flex-1 min-w-0 flex flex-col">
-        <header class="sticky top-0 z-10 h-16 bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-4 sm:px-6">
+      <div class="flex-1 min-w-0 flex flex-col gap-3 px-3 pt-3 lg:px-0 lg:pt-0">
+        <header class="sticky top-3 z-10 h-16 shrink-0 bg-white rounded-2xl shadow-sm border border-slate-200/70 flex items-center justify-between px-4 sm:px-6">
           <button type="button" id="menu-toggle" class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100" aria-label="Mở menu">${icon('menu', 'w-5 h-5')}</button>
           <div class="hidden lg:block"></div>
           <div class="flex items-center gap-3">
             ${role === 'MEMBER' ? html`
-              <a href="#/member/notifications" id="notif-bell" class="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Thông báo" title="Thông báo">
+              <a href="#/member/notifications" id="notif-bell" class="relative p-2.5 rounded-full text-slate-500 hover:bg-slate-100" aria-label="Thông báo" title="Thông báo">
                 ${icon('bell', 'w-5 h-5')}
                 <span data-notification-count class="hidden absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center"></span>
               </a>` : ''}
-            <div class="text-right leading-tight hidden sm:block">
-              <div class="text-sm font-bold text-slate-900" data-testid="current-user">${s.fullName || s.email}</div>
-              <div class="text-[11px] text-slate-500">${s.email || ''}</div>
+            <div class="relative">
+              <button type="button" id="profile-trigger" class="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-slate-100 transition-colors" aria-haspopup="true" aria-expanded="false">
+                <div class="text-right leading-tight hidden sm:block">
+                  <div class="text-sm font-bold text-slate-900" data-testid="current-user">${s.fullName || s.email}</div>
+                  <div class="text-[11px] text-slate-500">${s.email || ''}</div>
+                </div>
+                <div class="w-9 h-9 rounded-full ${BRAND_BG} text-white flex items-center justify-center font-bold text-sm shrink-0">
+                  ${(s.firstName || s.email || '?').charAt(0).toUpperCase()}
+                </div>
+                <span class="text-slate-400">${icon('chevron-down', 'w-4 h-4')}</span>
+              </button>
+              <div id="profile-menu" class="hidden absolute right-0 top-[calc(100%+0.5rem)] w-56 bg-white rounded-2xl shadow-lg border border-slate-200/70 py-1.5 z-20" role="menu">
+                <a href="#${PROFILE_BY_ROLE[role] || '/profile'}" data-testid="menu-profile" role="menuitem"
+                  class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  ${icon('user', 'w-4 h-4 text-slate-400')} Thông tin cá nhân
+                </a>
+                <div class="h-px bg-slate-100 my-1"></div>
+                <button type="button" id="logout-btn" data-testid="menu-logout" role="menuitem"
+                  class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50">
+                  ${icon('log-out', 'w-4 h-4')} Đăng xuất
+                </button>
+              </div>
             </div>
-            <div class="w-9 h-9 rounded-full bg-gradient-to-tr ${ROLE_ACCENT[role] || ROLE_ACCENT.MEMBER} text-white flex items-center justify-center font-bold text-sm">
-              ${(s.firstName || s.email || '?').charAt(0).toUpperCase()}
-            </div>
-            <button type="button" id="logout-btn" class="ml-1 p-2 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600" title="Đăng xuất" aria-label="Đăng xuất">${icon('log-out', 'w-5 h-5')}</button>
           </div>
         </header>
-        <main id="page" class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto"></main>
+        <main id="page" class="flex-1 pb-6 max-w-7xl w-full mx-auto"></main>
       </div>
     </div>
   `);
@@ -100,6 +114,16 @@ export function renderShell(root) {
   aside.addEventListener('click', e => {
     if (e.target.closest('a') && window.innerWidth < 1024) toggle(false);
   });
+  const trigger = root.querySelector('#profile-trigger');
+  const menu = root.querySelector('#profile-menu');
+  const setMenu = open => {
+    menu.classList.toggle('hidden', !open);
+    trigger.setAttribute('aria-expanded', String(open));
+  };
+  trigger.addEventListener('click', e => { e.stopPropagation(); setMenu(menu.classList.contains('hidden')); });
+  menu.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
+  document.addEventListener('click', () => setMenu(false));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
   root.querySelector('#logout-btn').addEventListener('click', () => {
     session.end();
     window.location.hash = '#/login';
@@ -112,8 +136,10 @@ export function renderShell(root) {
 export function setActiveNav(path) {
   document.querySelectorAll('[data-nav]').forEach(a => {
     const active = path === a.dataset.nav || path.startsWith(`${a.dataset.nav}/`);
-    a.classList.toggle('bg-indigo-50', active);
-    a.classList.toggle('text-indigo-700', active);
+    a.classList.toggle('bg-white', active);
+    a.classList.toggle('text-[#2F6B55]', active);
+    a.classList.toggle('shadow-sm', active);
+    a.classList.toggle('text-white/75', !active);
     a.setAttribute('aria-current', active ? 'page' : 'false');
   });
 }

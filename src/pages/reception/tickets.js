@@ -2,7 +2,7 @@ import { html, icon, readForm } from '../../core/dom.js';
 import { pageHeader, tabs, table, openModal, field, textarea, showFormErrors, toast, withBusy, statCard } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
-import { dateTime, badge, fullName } from '../../core/format.js';
+import { dateTime, badge, fullName, phoneText } from '../../core/format.js';
 import { openMemberPicker } from '../../components/memberPicker.js';
 
 function view(s) {
@@ -53,7 +53,7 @@ function contentModal(member, onCreated) {
     title: `Ghi nhận yêu cầu của ${fullName(member)}`,
     body: html`
       <form data-action="create" class="space-y-4" novalidate data-testid="ticket-form">
-        <div class="text-sm text-slate-500">#${member.memberId} · ${member.phone}</div>
+        <div class="text-sm text-slate-500">#${member.memberId} · ${phoneText(member.phone)}</div>
         ${field('Nội dung yêu cầu', textarea('content', '', { rows: 4, required: true, placeholder: 'VD: Thẻ tập bị lỗi, cần cấp lại...' }), 'Tối đa 2000 ký tự')}
         <div class="flex justify-end gap-2"><button type="button" data-action="cancel" class="btn-secondary">Hủy</button><button type="submit" class="btn bg-teal-600 text-white hover:bg-teal-700">Ghi nhận</button></div>
       </form>`,

@@ -48,7 +48,7 @@ function view(s) {
           let footer;
           if (reg) {
             footer = html`
-              <span class="mr-auto text-xs font-bold text-indigo-600 flex items-center gap-1">${icon('check-circle-2', 'w-4 h-4')} Đã đăng ký</span>
+              <span class="mr-auto text-xs font-bold text-emerald-600 flex items-center gap-1">${icon('check-circle-2', 'w-4 h-4')} Đã đăng ký</span>
               <button type="button" class="btn-secondary btn-sm" data-action="cancel-booking" data-id="${reg.registrationId}">Hủy</button>`;
           } else if (isBookable(c)) {
             footer = html`<button type="button" class="btn-primary btn-sm" data-action="book" data-id="${c.classId}">${icon('plus', 'w-3.5 h-3.5')} Đặt lớp</button>`;

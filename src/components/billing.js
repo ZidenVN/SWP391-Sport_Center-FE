@@ -37,7 +37,7 @@ export function checkoutSteps(current, { failed = false } = {}) {
         const done = i < current || (i === current && i === STEPS.length - 1 && !failed);
         const active = i === current;
         const err = failed && active;
-        const dot = err ? 'bg-rose-600 text-white' : done ? 'bg-emerald-600 text-white' : active ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500';
+        const dot = err ? 'bg-rose-600 text-white' : done ? 'bg-emerald-600 text-white' : active ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500';
         return html`
           <li class="flex items-center gap-2 ${i < STEPS.length - 1 ? 'flex-1' : ''}" ${active ? raw('aria-current="step"') : ''}>
             <span class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${dot}">

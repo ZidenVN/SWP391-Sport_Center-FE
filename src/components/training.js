@@ -30,13 +30,13 @@ export function resultList(results, { editable = false, emptyText = 'Chưa có k
   if (!results?.length) return emptyState(emptyText, 'activity');
   const sorted = [...results].sort((a, b) => String(b.loggedDate).localeCompare(String(a.loggedDate)));
   return html`
-    <ol class="relative border-l-2 border-indigo-100 ml-2 space-y-5">
+    <ol class="relative border-l-2 border-emerald-100 ml-2 space-y-5">
       ${sorted.map(r => html`
         <li class="ml-5" data-testid="result-item">
-          <span class="absolute -left-[9px] mt-1.5 w-4 h-4 rounded-full bg-indigo-500 ring-4 ring-white"></span>
+          <span class="absolute -left-[9px] mt-1.5 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white"></span>
           <div class="card p-4">
             <div class="flex items-center justify-between gap-2">
-              <div class="text-xs font-bold text-indigo-600">${dateTime(r.loggedDate)}</div>
+              <div class="text-xs font-bold text-emerald-600">${dateTime(r.loggedDate)}</div>
               ${editable ? html`<button type="button" class="btn-ghost btn-sm" data-action="edit-result" data-id="${r.resultId}">${icon('pencil', 'w-3.5 h-3.5')} Sửa</button>` : ''}
             </div>
             <div class="text-sm text-slate-800 mt-1 whitespace-pre-line">${r.activityDetails}</div>
@@ -55,7 +55,7 @@ export function progressSummary(p) {
     <div class="space-y-5">
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         ${statCard('Buổi đã tham gia', p.totalSessionAttended ?? 0, 'calendar-check', 'emerald')}
-        ${statCard('Giáo án được giao', p.totalPlansAssigned ?? 0, 'clipboard-list', 'indigo')}
+        ${statCard('Giáo án được giao', p.totalPlansAssigned ?? 0, 'clipboard-list', 'emerald')}
         ${statCard('Đang thực hiện', p.inProgressPlans ?? 0, 'loader', 'amber')}
         ${statCard('Đã hoàn thành', p.completedPlans ?? 0, 'check-circle-2', 'sky')}
       </div>

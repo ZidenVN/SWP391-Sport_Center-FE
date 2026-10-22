@@ -30,7 +30,7 @@ function upcomingView(list) {
           <div class="space-y-3">
             ${items.map(r => html`
               <div class="card p-4 flex items-center gap-4">
-                <div class="w-20 shrink-0 text-center rounded-xl bg-indigo-50 text-indigo-700 py-2">
+                <div class="w-20 shrink-0 text-center rounded-xl bg-emerald-50 text-emerald-700 py-2">
                   <div class="text-sm font-extrabold">${timeRange(r.startTime, r.endTime).split(' – ')[0]}</div>
                   <div class="text-[11px]">${timeRange(r.startTime, r.endTime).split(' – ')[1]}</div>
                 </div>

@@ -21,7 +21,7 @@ function view(s) {
           const [ic, cls] = STYLE[n.targetType] || STYLE.INDIVIDUAL;
           const unread = s.unreadIds.has(n.notificationId);
           return html`
-            <div class="card p-5 flex gap-4 ${unread ? 'ring-2 ring-indigo-100 border-indigo-200' : ''}" data-testid="notification" data-unread="${unread}">
+            <div class="card p-5 flex gap-4 ${unread ? 'ring-2 ring-emerald-100 border-emerald-200' : ''}" data-testid="notification" data-unread="${unread}">
               <div class="w-10 h-10 rounded-xl ${cls} flex items-center justify-center shrink-0">${icon(ic, 'w-5 h-5')}</div>
               <div class="flex-1 min-w-0">
                 <div class="flex flex-wrap items-center gap-2">

@@ -41,7 +41,7 @@ export function classCard(c, footer = '') {
               <span>${c.currentEnrolled ?? 0}/${c.maxCapacity} học viên</span>
               <span class="font-semibold ${c.availableSeats > 0 ? 'text-emerald-600' : 'text-rose-600'}">${c.availableSeats > 0 ? `Còn ${c.availableSeats} chỗ` : 'Hết chỗ'}</span>
             </div>
-            <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-indigo-500" style="width:${seatsPct}%"></div></div>
+            <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-emerald-500" style="width:${seatsPct}%"></div></div>
           </div>` : ''}
         ${footer ? html`<div class="mt-5 pt-4 border-t border-slate-100 flex gap-2 justify-end">${footer}</div>` : ''}
       </div>

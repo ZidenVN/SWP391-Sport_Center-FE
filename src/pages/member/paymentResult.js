@@ -17,7 +17,7 @@ function receipt(r, { loggedIn }) {
     <div class="max-w-xl mx-auto ${loggedIn ? '' : 'py-10 px-4'}">
       ${loggedIn ? checkoutSteps(2, { failed: !ok }) : html`
         <div class="flex items-center justify-center gap-2 mb-8">
-          <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm">SC</div>
+          <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm">SC</div>
           <span class="font-extrabold tracking-tight">SPORT CENTER</span>
         </div>`}
       <div class="rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden" data-testid="payment-result" data-success="${ok}">
@@ -53,7 +53,7 @@ function receipt(r, { loggedIn }) {
                 <a href="#/member/packages" class="btn-primary !py-3">${icon('refresh-cw', 'w-4 h-4')} Thử lại</a>`}
             </div>` : html`
             <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600 flex gap-3">
-              ${icon('monitor-smartphone', 'w-5 h-5 shrink-0 text-indigo-600')}
+              ${icon('monitor-smartphone', 'w-5 h-5 shrink-0 text-emerald-600')}
               <span>${ok ? 'Bạn có thể quay lại màn hình máy tính, trang thanh toán sẽ tự cập nhật.' : 'Quay lại màn hình máy tính để tạo mã mới và thử lại.'}</span>
             </div>
             <a href="#/login" class="btn-secondary w-full mt-3">Đăng nhập trên thiết bị này</a>`}

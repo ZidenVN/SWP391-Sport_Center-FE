@@ -2,7 +2,7 @@ import { html, raw, icon, refreshIcons } from '../../core/dom.js';
 import { toast, toastError } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { packageApi, memberApi, vnpayApi } from '../../api/endpoints.js';
-import { money, date, genderLabel } from '../../core/format.js';
+import { money, date, genderLabel, phoneText } from '../../core/format.js';
 import { checkoutSteps, renewalWindow, vnpayMark } from '../../components/billing.js';
 
 const QR_TTL_MS = 15 * 60 * 1000; // VNPay giữ giao dịch 15 phút
@@ -46,11 +46,11 @@ function methodTiles(s) {
         return html`
           <button type="button" role="radio" aria-checked="${on}" data-action="method" data-method="${m.id}" data-testid="method-${m.id}" ${locked ? raw('disabled') : ''}
             class="relative text-left rounded-2xl border-2 p-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed
-              ${on ? 'border-indigo-600 bg-indigo-50/60 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}">
-            <span class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 ${on ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'} flex items-center justify-center">
+              ${on ? 'border-emerald-600 bg-emerald-50/60 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}">
+            <span class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 ${on ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'} flex items-center justify-center">
               ${on ? html`<span class="w-2 h-2 rounded-full bg-white"></span>` : ''}
             </span>
-            <span class="w-10 h-10 rounded-xl ${on ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} flex items-center justify-center">${icon(m.icon, 'w-5 h-5')}</span>
+            <span class="w-10 h-10 rounded-xl ${on ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'} flex items-center justify-center">${icon(m.icon, 'w-5 h-5')}</span>
             <div class="font-bold text-sm text-slate-900 mt-3 pr-4">${m.title}</div>
             <div class="text-[11px] text-slate-500 mt-0.5">${m.text}</div>
           </button>`;
@@ -111,9 +111,9 @@ function qrPanel(s) {
   const svg = qrSvg(q.url);
   const status = q.status;
   return html`
-    <section style="scroll-margin-top: 88px" class="rounded-3xl bg-white border-2 border-indigo-600 shadow-lg shadow-indigo-600/10 p-6" id="qr-panel" data-testid="qr-panel" data-status="${status}">
+    <section style="scroll-margin-top: 88px" class="rounded-3xl bg-white border-2 border-emerald-600 shadow-lg shadow-emerald-600/10 p-6" id="qr-panel" data-testid="qr-panel" data-status="${status}">
       <div class="flex items-center justify-between mb-5">
-        <h2 class="font-extrabold text-slate-900 flex items-center gap-2">${icon('scan-qr-code', 'w-5 h-5 text-indigo-600')} Quét mã để thanh toán</h2>
+        <h2 class="font-extrabold text-slate-900 flex items-center gap-2">${icon('scan-qr-code', 'w-5 h-5 text-emerald-600')} Quét mã để thanh toán</h2>
         ${status === 'WAITING' ? html`
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">
             ${icon('timer', 'w-3.5 h-3.5')} <span data-countdown>15:00</span>
@@ -125,7 +125,7 @@ function qrPanel(s) {
             <div class="aspect-square [&>svg]:w-full [&>svg]:h-full" data-testid="qr-code">${svg ? raw(svg) : html`<div class="h-full flex items-center justify-center text-xs text-slate-400 text-center p-4">Không tải được thư viện QR. Dùng nút "Mở trên máy này".</div>`}</div>
             <div class="flex items-center justify-center gap-1.5 mt-3 text-xs text-slate-500">${vnpayMark('text-sm')} <span>· ${money(s.pkg.price)}</span></div>
           </div>
-          ${status === 'WAITING' ? html`<span class="absolute inset-x-6 top-6 h-0.5 bg-indigo-500/70 rounded qr-scanline"></span>` : ''}
+          ${status === 'WAITING' ? html`<span class="absolute inset-x-6 top-6 h-0.5 bg-emerald-500/70 rounded qr-scanline"></span>` : ''}
           ${status !== 'WAITING' ? html`
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center gap-2">
               <span class="w-12 h-12 rounded-full ${status === 'EXPIRED' ? 'bg-slate-100 text-slate-600' : 'bg-rose-50 text-rose-600'} flex items-center justify-center">${icon(status === 'EXPIRED' ? 'clock-alert' : 'x-circle', 'w-6 h-6')}</span>
@@ -141,12 +141,12 @@ function qrPanel(s) {
                 ['Nhập thẻ & OTP trên điện thoại, trang này sẽ tự cập nhật', 'badge-check']
               ].map(([t, ic], i) => html`
                 <li class="flex gap-3">
-                  <span class="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold flex items-center justify-center shrink-0">${i + 1}</span>
+                  <span class="w-7 h-7 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center justify-center shrink-0">${i + 1}</span>
                   <span class="pt-1">${t}</span>
                 </li>`)}
             </ol>
-            <div class="mt-5 flex items-center gap-2 text-sm text-indigo-700 font-semibold" data-testid="qr-waiting">
-              <span class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span> Đang chờ bạn thanh toán...
+            <div class="mt-5 flex items-center gap-2 text-sm text-emerald-700 font-semibold" data-testid="qr-waiting">
+              <span class="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span> Đang chờ bạn thanh toán...
             </div>
             ${!q.reachable ? html`
               <p class="mt-4 text-xs rounded-xl bg-amber-50 text-amber-800 p-3">Không xác định được IP mạng LAN của máy chủ dev. Điện thoại vẫn thanh toán được, nhưng sẽ không tự quay về trang kết quả; trang này vẫn tự cập nhật khi thanh toán xong.</p>` : html`
@@ -169,12 +169,12 @@ function summary(s) {
   const isQr = s.method === 'QR';
   return html`
     <aside class="lg:sticky lg:top-24 rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden" data-testid="order-summary">
-      <div class="p-6 bg-gradient-to-br from-slate-900 to-indigo-900 text-white relative overflow-hidden">
+      <div class="p-6 bg-gradient-to-br from-slate-900 to-emerald-900 text-white relative overflow-hidden">
         <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10"></div>
         <div class="relative">
-          <div class="text-xs font-bold uppercase tracking-widest text-indigo-200">Đơn hàng</div>
+          <div class="text-xs font-bold uppercase tracking-widest text-emerald-200">Đơn hàng</div>
           <div class="text-xl font-extrabold mt-1">${p.packageName}</div>
-          <div class="text-sm text-indigo-100 mt-0.5">${p.durationDays} ngày tập</div>
+          <div class="text-sm text-emerald-100 mt-0.5">${p.durationDays} ngày tập</div>
         </div>
       </div>
       <div class="p-6">
@@ -190,7 +190,7 @@ function summary(s) {
           <span class="text-3xl font-black text-slate-900" data-testid="total">${money(p.price)}</span>
         </div>
         ${win.isRenewal ? html`
-          <div class="mt-4 text-xs rounded-xl bg-indigo-50 text-indigo-800 p-3 flex gap-2">
+          <div class="mt-4 text-xs rounded-xl bg-emerald-50 text-emerald-800 p-3 flex gap-2">
             ${icon('info', 'w-4 h-4 shrink-0')}<span>Gói hiện tại còn đến ${date(win.latest.endDate)}. Gói mới tự bắt đầu ngay sau đó.</span>
           </div>` : ''}
         ${s.payError ? html`
@@ -204,7 +204,7 @@ function summary(s) {
             <span>Tôi đồng ý với điều khoản sử dụng dịch vụ và chính sách hoàn tiền của trung tâm.</span>
           </label>
           <button type="button" data-action="pay" data-testid="pay-button" ${s.agree && !s.busy ? '' : raw('disabled')}
-            class="btn w-full mt-5 !py-3.5 !text-base bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">
+            class="btn w-full mt-5 !py-3.5 !text-base bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">
             ${s.busy ? html`<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> ${isQr ? 'Đang tạo mã...' : 'Đang chuyển sang VNPay...'}`
               : isQr ? html`${icon('scan-qr-code', 'w-4 h-4')} Tạo mã QR thanh toán` : html`${icon('lock', 'w-4 h-4')} Thanh toán ${money(p.price)}`}
           </button>
@@ -223,7 +223,7 @@ function view(s) {
         ${qrPanel(s)}
         <section class="rounded-3xl bg-white border border-slate-200 shadow-sm p-6">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="font-extrabold text-slate-900 flex items-center gap-2">${icon('wallet', 'w-5 h-5 text-indigo-600')} Phương thức thanh toán</h2>
+            <h2 class="font-extrabold text-slate-900 flex items-center gap-2">${icon('wallet', 'w-5 h-5 text-emerald-600')} Phương thức thanh toán</h2>
             <span class="flex items-center gap-1 text-xs text-slate-400">qua ${vnpayMark('text-xs')}</span>
           </div>
           ${methodTiles(s)}
@@ -234,14 +234,14 @@ function view(s) {
         ${testCard(s)}
         <section class="rounded-3xl bg-white border border-slate-200 shadow-sm p-6">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="font-extrabold text-slate-900 flex items-center gap-2">${icon('user-round', 'w-5 h-5 text-indigo-600')} Thông tin người mua</h2>
-            <a href="#/member/profile" class="text-xs font-bold text-indigo-600 hover:underline">Chỉnh sửa</a>
+            <h2 class="font-extrabold text-slate-900 flex items-center gap-2">${icon('user-round', 'w-5 h-5 text-emerald-600')} Thông tin người mua</h2>
+            <a href="#/member/profile" class="text-xs font-bold text-emerald-600 hover:underline">Chỉnh sửa</a>
           </div>
           <dl class="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm" data-testid="buyer-info">
             <div><dt class="text-slate-500 text-xs">Họ và tên</dt><dd class="font-semibold mt-0.5">${me.firstName} ${me.lastName}</dd></div>
             <div><dt class="text-slate-500 text-xs">Mã hội viên</dt><dd class="font-semibold mt-0.5">#${me.memberId}</dd></div>
             <div><dt class="text-slate-500 text-xs">Email</dt><dd class="font-semibold mt-0.5 break-all">${me.email}</dd></div>
-            <div><dt class="text-slate-500 text-xs">Số điện thoại</dt><dd class="font-semibold mt-0.5">${me.phone} <span class="text-slate-400 font-normal">· ${genderLabel(me.gender)}</span></dd></div>
+            <div><dt class="text-slate-500 text-xs">Số điện thoại</dt><dd class="font-semibold mt-0.5">${phoneText(me.phone)} <span class="text-slate-400 font-normal">· ${genderLabel(me.gender)}</span></dd></div>
           </dl>
         </section>
       </div>

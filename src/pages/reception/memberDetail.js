@@ -2,7 +2,7 @@ import { html, icon, readForm } from '../../core/dom.js';
 import { tabs, table, openModal, field, input, select, textarea, GENDER_OPTIONS, showFormErrors, toast, confirmDialog, withBusy } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
-import { fullName, genderLabel, badge, money, date, dateTime, timeRange, daysUntil, isFuture, paymentMethodLabel, toDate } from '../../core/format.js';
+import { fullName, genderLabel, badge, money, date, dateTime, timeRange, daysUntil, isFuture, paymentMethodLabel, toDate, phoneText } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openSellPackage } from '../../components/sellPackage.js';
 import { openBookClass } from '../../components/bookClass.js';
@@ -120,7 +120,7 @@ function view(s) {
           <button type="button" class="btn-secondary btn-sm" data-action="edit">${icon('pencil', 'w-3.5 h-3.5')} Sửa thông tin</button>
         </div>
         <dl class="grid sm:grid-cols-3 gap-4 mt-6 text-sm">
-          <div><dt class="text-xs text-slate-500">Số điện thoại</dt><dd class="font-semibold font-mono">${m.phone}</dd></div>
+          <div><dt class="text-xs text-slate-500">Số điện thoại</dt><dd class="font-semibold font-mono">${phoneText(m.phone)}</dd></div>
           <div class="sm:col-span-2"><dt class="text-xs text-slate-500">Email</dt><dd class="font-semibold break-all">${m.email}</dd></div>
           <div><dt class="text-xs text-slate-500">Giới tính</dt><dd class="font-semibold">${genderLabel(m.gender)}</dd></div>
           <div class="sm:col-span-2"><dt class="text-xs text-slate-500">Mục tiêu tập luyện</dt><dd class="font-semibold">${m.trainingGoal || '—'}</dd></div>

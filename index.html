@@ -24,22 +24,22 @@
   <style type="text/tailwindcss">
     @layer components {
       .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
-      .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
-      .btn-primary { @apply btn bg-indigo-600 text-white hover:bg-indigo-700; }
+      .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
+      .btn-primary { @apply btn bg-slate-900 text-white hover:bg-slate-800; }
       .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50; }
       .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
-      .btn-ghost { @apply btn px-2.5 py-1.5 text-slate-600 hover:bg-slate-100; }
-      .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
-      .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500; }
+      .btn-ghost { @apply btn rounded-full px-2.5 py-1.5 text-slate-600 hover:bg-slate-100; }
+      .btn-sm { @apply px-3 py-1.5 text-xs; }
+      .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500; }
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
+<body class="bg-slate-100 text-slate-900 antialiased min-h-screen">
   <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col max-w-sm w-[calc(100%-2.5rem)]" aria-live="polite"></div>
   <div id="modal-root"></div>
   <div id="app-root">
     <div class="flex items-center justify-center min-h-screen">
-      <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div class="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
   </div>
   <script type="module" src="./src/main.js"></script>

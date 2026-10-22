@@ -4,6 +4,7 @@ import { authApi, memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { HOME_BY_ROLE } from '../../routes.js';
 import { authLayout } from './authLayout.js';
+import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
 
 // Chỉ điền sẵn email (không lưu mật khẩu trong code vì repo công khai)
 const DEV_ACCOUNTS = [
@@ -14,7 +15,11 @@ const DEV_ACCOUNTS = [
 
 // Đăng nhập + chuẩn bị session (member cần memberId cho các màn sau)
 export async function loginAndStart(email, password) {
-  const auth = await authApi.login(email, password);
+  return startSession(await authApi.login(email, password), email);
+}
+
+// Dùng chung cho đăng nhập mật khẩu và Google: kiểm tra phản hồi, lưu session, member lấy thêm memberId
+export async function startSession(auth, email) {
   if (!auth || !auth.token) throw new Error('Phản hồi đăng nhập không hợp lệ');
   if (!HOME_BY_ROLE[auth.role]) throw new Error(`Tài khoản có vai trò "${auth.role}" chưa được hỗ trợ trên giao diện`);
   session.start(auth, email);
@@ -46,8 +51,9 @@ export default function LoginPage(el, { navigate }) {
       <p id="login-error" class="hidden text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2" role="alert"></p>
       <button type="submit" class="btn-primary w-full !py-2.5">Đăng nhập</button>
     </form>
+    ${googleSection()}
     <p class="text-sm text-slate-600 text-center mt-6">
-      Chưa có tài khoản? <a href="#/register" class="font-bold text-indigo-600 hover:underline">Đăng ký hội viên</a>
+      Chưa có tài khoản? <a href="#/register" class="font-bold text-emerald-600 hover:underline">Đăng ký hội viên</a>
     </p>
     ${isDev ? html`
       <div class="mt-8 rounded-xl border border-dashed border-slate-300 p-4">
@@ -60,6 +66,11 @@ export default function LoginPage(el, { navigate }) {
 
   const form = el.querySelector('form');
   const errorBox = el.querySelector('#login-error');
+  const showError = message => {
+    errorBox.textContent = message;
+    errorBox.classList.remove('hidden');
+  };
+  mountGoogleButton(el, { onSuccess: () => goAfterLogin(navigate), onError: showError });
 
   return bindActions(el, {
     fill: btn => {

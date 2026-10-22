@@ -6,6 +6,14 @@ export const HOME_BY_ROLE = {
   CENTER_MANAGER: '/manager/dashboard'
 };
 
+// nơi menu "Thông tin cá nhân" ở header trỏ tới, theo từng vai trò
+export const PROFILE_BY_ROLE = {
+  MEMBER: '/member/profile',
+  RECEPTIONIST: '/profile',
+  COACH: '/profile',
+  CENTER_MANAGER: '/profile'
+};
+
 const M = ['MEMBER'];
 const R = ['RECEPTIONIST'];
 const C = ['COACH'];
@@ -14,6 +22,8 @@ const CM = ['CENTER_MANAGER'];
 export const ROUTES = [
   { path: '/login', public: true, load: () => import('./pages/auth/login.js') },
   { path: '/register', public: true, load: () => import('./pages/auth/register.js') },
+  // hồ sơ cá nhân dùng chung cho Lễ tân/HLV/Quản lý, vào từ menu ở header (không có trong sidebar)
+  { path: '/profile', roles: [...R, ...C, ...CM], load: () => import('./pages/shared/myProfile.js') },
 
   // ----- Member -----
   { path: '/member/home', roles: M, nav: { label: 'Tổng quan', icon: 'layout-dashboard' }, load: () => import('./pages/member/home.js') },
@@ -37,9 +47,9 @@ export const ROUTES = [
 
   // ----- Coach -----
   { path: '/coach/schedule', roles: C, nav: { label: 'Lịch dạy', icon: 'calendar-days' }, load: () => import('./pages/coach/schedule.js') },
-  { path: '/coach/classes/:id', roles: C, load: () => import('./pages/coach/classDetail.js') },
+  { path: '/coach/classes/:id', roles: C, navParent: '/coach/schedule', load: () => import('./pages/coach/classDetail.js') },
   { path: '/coach/students', roles: C, nav: { label: 'Học viên', icon: 'users' }, load: () => import('./pages/coach/students.js') },
-  { path: '/coach/members/:id', roles: C, load: () => import('./pages/coach/memberDetail.js') },
+  { path: '/coach/members/:id', roles: C, navParent: '/coach/students', load: () => import('./pages/coach/memberDetail.js') },
   { path: '/coach/plans', roles: C, nav: { label: 'Giáo án', icon: 'clipboard-list' }, load: () => import('./pages/coach/plans.js') },
 
   // ----- Center Manager -----

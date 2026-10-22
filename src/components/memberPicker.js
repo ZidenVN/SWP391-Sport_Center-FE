@@ -1,14 +1,14 @@
 import { html, render, icon } from '../core/dom.js';
 import { openModal, loading, emptyState, errorState } from '../core/ui.js';
 import { receptionApi } from '../api/endpoints.js';
-import { fullName } from '../core/format.js';
+import { fullName, phoneText } from '../core/format.js';
 
 export function memberAvatar(m, size = 'w-10 h-10 text-sm') {
   return html`<span class="${size} rounded-full bg-gradient-to-tr from-teal-500 to-emerald-600 text-white font-bold flex items-center justify-center shrink-0">${(m.firstName || '?').charAt(0).toUpperCase()}</span>`;
 }
 
 // bỏ dấu để gõ "nguyen" vẫn ra "Nguyễn"
-const norm = v => String(v ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+const norm = v => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
 
 // Hộp chọn hội viên: mở ra là thấy danh sách, gõ tên / SĐT / email để lọc. onPick(member) có thể trả Promise.
 export function openMemberPicker({ title = 'Chọn hội viên', onPick }) {
@@ -25,7 +25,7 @@ export function openMemberPicker({ title = 'Chọn hội viên', onPick }) {
             ${memberAvatar(m, 'w-9 h-9 text-sm')}
             <span class="min-w-0 flex-1">
               <span class="block font-semibold text-sm">${fullName(m)}</span>
-              <span class="block text-xs text-slate-500 truncate">#${m.memberId} · ${m.phone} · ${m.email}</span>
+              <span class="block text-xs text-slate-500 truncate">#${m.memberId} · ${phoneText(m.phone)} · ${m.email}</span>
             </span>
             ${icon('chevron-right', 'w-4 h-4 text-slate-400')}
           </button>

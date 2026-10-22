@@ -5,8 +5,9 @@ import { loading, errorState } from './ui.js';
 //   load(ctx)  -> Promise<object> gộp vào state (gọi lúc mount và khi reload)
 //   view(state, ctx) -> html``
 //   actions: { name: (target, event, ctx) => ... } gắn qua data-action
+//   afterRender(state, ctx) -> chạy sau mỗi lần vẽ xong view (vd vẽ biểu đồ lên canvas)
 // ctx: { state, el, set(patch), reload(), rerender() }
-export function mountPage(el, { state = {}, load, view, actions = {} }) {
+export function mountPage(el, { state = {}, load, view, actions = {}, afterRender }) {
   let disposed = false;
   const ctx = { state, el, set, reload, rerender };
 
@@ -19,7 +20,10 @@ export function mountPage(el, { state = {}, load, view, actions = {} }) {
 
     if (state.__loading && !state.__loaded) render(el, loading());
     else if (state.__error && !state.__loaded) render(el, errorState(state.__error));
-    else render(el, view(state, ctx));
+    else {
+      render(el, view(state, ctx));
+      if (afterRender) afterRender(state, ctx);
+    }
 
     if (focusKey) {
       const next = el.querySelector(`[name="${focusKey}"]`);

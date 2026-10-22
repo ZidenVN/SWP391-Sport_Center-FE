@@ -144,3 +144,7 @@ export function badge(value, labelOverride) {
   const [label, color] = STATUS[value] || [value || '—', 'slate'];
   return html`<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ring-1 ring-inset ${BADGE_CLASSES[color]}">${labelOverride || label}</span>`;
 }
+
+// Tài khoản tạo qua Google chưa có SĐT: BE lưu tạm "GG_<số>" vì cột phone bắt buộc
+export const isPlaceholderPhone = phone => /^GG_/.test(phone || '');
+export const phoneText = phone => (!phone || isPlaceholderPhone(phone) ? 'Chưa có SĐT' : phone);

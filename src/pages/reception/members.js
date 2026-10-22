@@ -2,7 +2,7 @@ import { html, icon, readForm } from '../../core/dom.js';
 import { pageHeader, table, openModal, field, input, select, textarea, GENDER_OPTIONS, showFormErrors, toast, emptyState } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
-import { fullName, genderLabel, badge } from '../../core/format.js';
+import { fullName, genderLabel, badge, phoneText } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openSellPackage } from '../../components/sellPackage.js';
 
@@ -30,7 +30,7 @@ function view(s) {
             ${memberAvatar(m)}
             <span class="min-w-0"><span class="block font-semibold group-hover:text-teal-700">${fullName(m)}</span><span class="block text-xs text-slate-500 truncate">#${m.memberId} · ${m.email}</span></span>
           </a>`,
-          html`<span class="font-mono text-sm">${m.phone}</span>`,
+          html`<span class="font-mono text-sm">${phoneText(m.phone)}</span>`,
           genderLabel(m.gender),
           badge(m.status),
           html`<div class="flex justify-end gap-2">

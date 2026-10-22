@@ -9,10 +9,10 @@ import { latestActive, bestValueId, vnpayMark } from '../../components/billing.j
 function membershipHero(current, latest) {
   if (!latest) {
     return html`
-      <div class="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white relative overflow-hidden" data-testid="membership-status">
-        <div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-indigo-500/20"></div>
+      <div class="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 text-white relative overflow-hidden" data-testid="membership-status">
+        <div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-emerald-500/20"></div>
         <div class="relative">
-          <div class="text-xs font-bold uppercase tracking-widest text-indigo-200">Hội viên</div>
+          <div class="text-xs font-bold uppercase tracking-widest text-emerald-200">Hội viên</div>
           <h1 class="text-2xl sm:text-3xl font-extrabold mt-2">Bắt đầu hành trình tập luyện</h1>
           <p class="text-slate-300 mt-2 max-w-xl text-sm">Chọn một gói phù hợp bên dưới. Gói được kích hoạt ngay sau khi thanh toán và bạn có thể đặt lớp liền.</p>
         </div>
@@ -23,7 +23,7 @@ function membershipHero(current, latest) {
   const pct = Math.max(2, Math.min(100, Math.round(((Date.now() - start) / (end - start)) * 100)));
   const left = daysUntil(latest.endDate);
   return html`
-    <div class="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 text-white relative overflow-hidden" data-testid="membership-status">
+    <div class="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-600 text-white relative overflow-hidden" data-testid="membership-status">
       <div class="absolute -right-12 -bottom-16 w-56 h-56 rounded-full bg-white/10"></div>
       <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div>
@@ -31,12 +31,12 @@ function membershipHero(current, latest) {
             <span class="w-2 h-2 rounded-full bg-emerald-300"></span> Đang hoạt động
           </div>
           <h1 class="text-2xl sm:text-3xl font-extrabold mt-3">${(current || latest).packageName}</h1>
-          <p class="text-indigo-100 text-sm mt-1">Bạn được tập đến <b class="text-white">${date(latest.endDate)}</b> · còn ${left} ngày</p>
+          <p class="text-emerald-100 text-sm mt-1">Bạn được tập đến <b class="text-white">${date(latest.endDate)}</b> · còn ${left} ngày</p>
         </div>
         <div class="md:w-80">
-          <div class="flex justify-between text-xs text-indigo-100 mb-1.5"><span>${date(start)}</span><span>${date(end)}</span></div>
+          <div class="flex justify-between text-xs text-emerald-100 mb-1.5"><span>${date(start)}</span><span>${date(end)}</span></div>
           <div class="h-2 rounded-full bg-white/20 overflow-hidden"><div class="h-full rounded-full bg-white" style="width:${pct}%"></div></div>
-          <div class="text-xs text-indigo-100 mt-2">Mua thêm gói sẽ được cộng nối tiếp sau ${date(latest.endDate)}, không mất ngày còn lại.</div>
+          <div class="text-xs text-emerald-100 mt-2">Mua thêm gói sẽ được cộng nối tiếp sau ${date(latest.endDate)}, không mất ngày còn lại.</div>
         </div>
       </div>
     </div>`;
@@ -51,9 +51,9 @@ function planCard(p, { best, isRenewal }) {
     isRenewal ? 'Cộng nối tiếp, không mất ngày còn lại' : 'Kích hoạt ngay sau khi thanh toán'
   ];
   return html`
-    <div class="relative rounded-3xl bg-white border ${best ? 'border-indigo-500 ring-4 ring-indigo-500/10 shadow-xl shadow-indigo-500/10' : 'border-slate-200 shadow-sm'} p-6 sm:p-7 flex flex-col hover-lift"
+    <div class="relative rounded-3xl bg-white border ${best ? 'border-emerald-500 ring-4 ring-emerald-500/10 shadow-xl shadow-emerald-500/10' : 'border-slate-200 shadow-sm'} p-6 sm:p-7 flex flex-col hover-lift"
       data-testid="package-card" data-package-id="${p.packageId}">
-      ${best ? html`<span class="absolute -top-3 left-6 px-3 py-1 rounded-full bg-indigo-600 text-white text-[11px] font-bold uppercase tracking-wide shadow">Tiết kiệm nhất</span>` : ''}
+      ${best ? html`<span class="absolute -top-3 left-6 px-3 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide shadow">Tiết kiệm nhất</span>` : ''}
       <div class="flex items-center justify-between">
         <div class="text-sm font-bold text-slate-900">${p.packageName}</div>
         <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-xs font-bold text-slate-600">${p.durationDays} ngày</span>
@@ -68,7 +68,7 @@ function planCard(p, { best, isRenewal }) {
         ${perks.map(t => html`<li class="flex gap-2.5">${icon('check-circle-2', 'w-4 h-4 text-emerald-500 shrink-0 mt-0.5')}<span>${t}</span></li>`)}
       </ul>
       <a href="#/member/checkout/${p.packageId}" data-testid="choose-package"
-        class="mt-7 btn w-full !py-3 ${best ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-900 text-white hover:bg-slate-800'}">
+        class="mt-7 btn w-full !py-3 ${best ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-900 text-white hover:bg-slate-800'}">
         ${isRenewal ? 'Gia hạn với gói này' : 'Chọn gói này'} ${icon('arrow-right', 'w-4 h-4')}
       </a>
     </div>`;
@@ -92,7 +92,7 @@ function view(s) {
         <h2 class="text-xl font-extrabold text-slate-900">${latest ? 'Gia hạn gói tập' : 'Chọn gói tập'}</h2>
         <p class="text-sm text-slate-500 mt-1">Giá đã bao gồm VAT, không phát sinh phí giao dịch.</p>
       </div>
-      <a href="#/member/payments" class="hidden sm:inline-flex items-center gap-1 text-sm font-bold text-indigo-600 hover:underline">${icon('history', 'w-4 h-4')} Lịch sử thanh toán</a>
+      <a href="#/member/payments" class="hidden sm:inline-flex items-center gap-1 text-sm font-bold text-emerald-600 hover:underline">${icon('history', 'w-4 h-4')} Lịch sử thanh toán</a>
     </div>
     ${plans.length ? html`
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-3">
@@ -101,7 +101,7 @@ function view(s) {
     <div class="grid sm:grid-cols-3 gap-4 mt-10">
       ${TRUST.map(([ic, title, text]) => html`
         <div class="flex gap-3 p-4 rounded-2xl bg-white border border-slate-200">
-          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">${icon(ic, 'w-5 h-5')}</div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">${icon(ic, 'w-5 h-5')}</div>
           <div><div class="text-sm font-bold">${title}</div><div class="text-xs text-slate-500 mt-0.5">${text}</div></div>
         </div>`)}
     </div>

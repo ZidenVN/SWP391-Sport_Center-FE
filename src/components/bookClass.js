@@ -28,7 +28,7 @@ export function openBookClass({ member, onDone }) {
               <div class="text-[11px] mt-0.5 ${c.availableSeats > 3 ? 'text-emerald-600' : 'text-amber-600'} font-semibold">Còn ${c.availableSeats}/${c.maxCapacity} chỗ</div>
             </div>
             ${registered.has(c.classId)
-              ? html`<span class="text-xs font-bold text-indigo-600 flex items-center gap-1">${icon('check-circle-2', 'w-4 h-4')} Đã đăng ký</span>`
+              ? html`<span class="text-xs font-bold text-emerald-600 flex items-center gap-1">${icon('check-circle-2', 'w-4 h-4')} Đã đăng ký</span>`
               : html`<button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700 btn-sm" data-action="book" data-id="${c.classId}" data-testid="book-${c.classId}">Đặt</button>`}
           </li>`)}
       </ul>`;

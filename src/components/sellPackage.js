@@ -1,7 +1,7 @@
 import { html, raw, icon } from '../core/dom.js';
 import { openModal, loading, errorState, toast } from '../core/ui.js';
 import { packageApi, receptionApi } from '../api/endpoints.js';
-import { money, date, fullName } from '../core/format.js';
+import { money, date, fullName, phoneText } from '../core/format.js';
 import { renewalWindow } from './billing.js';
 import { openInvoice } from './invoice.js';
 
@@ -52,7 +52,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     return html`
       <div class="flex items-center gap-3 rounded-2xl bg-teal-50 border border-teal-100 p-3 mb-5">
         <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-600 text-white font-bold flex items-center justify-center">${(member.firstName || '?').charAt(0)}</span>
-        <div class="min-w-0"><div class="font-bold">${fullName(member)}</div><div class="text-xs text-slate-600">#${member.memberId} · ${member.phone}</div></div>
+        <div class="min-w-0"><div class="font-bold">${fullName(member)}</div><div class="text-xs text-slate-600">#${member.memberId} · ${phoneText(member.phone)}</div></div>
       </div>
 
       <div class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">1. Chọn gói</div>
