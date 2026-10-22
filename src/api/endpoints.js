@@ -97,6 +97,12 @@ export const vnpayApi = {
 
 export const receptionApi = {
   search: keyword => http.get('/receptionist/members', { keyword }),
+  // BE search bắt buộc có keyword -> danh sách đầy đủ lấy từ /users (lễ tân có quyền VIEW_USER), lọc role MEMBER
+  allMembers: async () => (await http.get('/users'))
+    .filter(u => u.roleName === 'MEMBER')
+    .map(u => ({ memberId: u.id, firstName: u.firstName, lastName: u.lastName, gender: u.gender, email: u.email, phone: u.phone, status: u.status }))
+    .sort((a, b) => b.memberId - a.memberId),
+  updateMember: (memberId, payload) => http.put(`/users/${memberId}`, payload),
   member: id => http.get(`/receptionist/members/${id}`),
   registerWalkIn: payload => http.post('/receptionist/members', payload),
   subscribe: (memberId, packageId, paymentMethod) => http.post(`/receptionist/members/${memberId}/subscriptions`, { packageId, paymentMethod }),

@@ -63,7 +63,8 @@ export function bindActions(root, handlers) {
     if (!handler) return;
     const isFormSubmit = event.type === 'submit';
     const isClick = event.type === 'click' && target.tagName !== 'FORM' && target.tagName !== 'SELECT' && target.tagName !== 'INPUT';
-    const isChange = event.type === 'change' && (target.tagName === 'SELECT' || target.tagName === 'INPUT');
+    // ô data-live đã xử lý ở 'input'; 'change' lúc mất focus sẽ render lại giữa mousedown/mouseup và nuốt cú click
+    const isChange = event.type === 'change' && (target.tagName === 'SELECT' || (target.tagName === 'INPUT' && target.dataset.live === undefined));
     const isInput = event.type === 'input' && target.dataset.live !== undefined;
     if (!(isFormSubmit || isClick || isChange || isInput)) return;
     if (isFormSubmit || target.tagName === 'A') event.preventDefault();
