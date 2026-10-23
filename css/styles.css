@@ -3,7 +3,7 @@
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: #f8fafc;
+  background-color: #FBF9F4;
   color: #0f172a;
 }
 
@@ -14,16 +14,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #EFE9DC;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #BAD8C7;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #469B7E;
 }
 
 /* Glassmorphism effects */
@@ -62,6 +62,21 @@ body {
 
 .animate-fade-in {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Đường quét chạy trên mã QR khi đang chờ thanh toán */
+@keyframes qrScan {
+  0%, 100% { transform: translateY(0); opacity: 0.2; }
+  50% { transform: translateY(250px); opacity: 0.9; }
+}
+
+.qr-scanline {
+  animation: qrScan 2.6s ease-in-out infinite;
+  box-shadow: 0 0 12px 2px rgba(70, 155, 126, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qr-scanline { animation: none; display: none; }
 }
 
 /* Micro-interactions & Smooth Transitions */
@@ -111,3 +126,70 @@ body {
   background-color: #dbeafe;
 }
 
+
+/* ---------- Trang đăng nhập / đăng ký: thẻ kính mờ trên ảnh nền tối ---------- */
+.auth-card {
+  background: rgba(28, 46, 37, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+.auth-glass .input {
+  height: 2.9rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.75rem;
+  color: #fff;
+  padding: 0 0.9rem;
+  font-size: 0.93rem;
+}
+.auth-glass .input::placeholder { color: rgba(255, 255, 255, 0.38); }
+.auth-glass .input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(215, 242, 91, 0.7);
+  box-shadow: 0 0 0 3px rgba(215, 242, 91, 0.18);
+}
+.auth-glass select.input { appearance: auto; }
+.auth-glass select.input option { color: #0f172a; background: #fff; }
+/* Báo trình duyệt trang này nền tối: chữ gợi ý tự điền (preview) của Chrome dùng màu hệ thống FieldText,
+   CSS không ghi đè được -> với color-scheme dark, FieldText thành màu sáng nên không còn chữ đen trên nền tối */
+.auth-glass { color-scheme: dark; }
+
+/* Trình duyệt tự điền: giữ nền tối + chữ trắng ở mọi trạng thái (Chrome ép màu riêng cho ô đã tự điền) */
+.auth-glass .input:-webkit-autofill,
+.auth-glass .input:-webkit-autofill:hover,
+.auth-glass .input:-webkit-autofill:focus,
+.auth-glass .input:-webkit-autofill:active,
+.auth-glass .input:autofill {
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px #233a2f inset !important;
+  box-shadow: 0 0 0 1000px #233a2f inset !important;
+  /* chặn nền xanh/vàng mặc định nháy lên khi vừa tự điền */
+  transition: background-color 9999s ease-out 0s;
+}
+.auth-glass .input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #233a2f inset, 0 0 0 3px rgba(215, 242, 91, 0.18) !important;
+  box-shadow: 0 0 0 1000px #233a2f inset, 0 0 0 3px rgba(215, 242, 91, 0.18) !important;
+}
+/* mọi nhãn trên thẻ (kể cả ô tạo bằng field()) cùng cỡ chữ và khoảng cách -> các cột thẳng hàng */
+.auth-glass label > span:first-child {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+.auth-glass .field-error { color: #fecdd3; }
+
+/* nút chính màu kem như mẫu */
+.auth-primary-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  width: 100%; height: 3rem; border-radius: 0.75rem;
+  background: #ece6d8; color: #1c2e25; font-weight: 700; font-size: 1rem;
+  transition: background-color 0.2s, transform 0.1s;
+}
+.auth-primary-btn:hover { background: #fff; }
+.auth-primary-btn:active { transform: translateY(1px); }
+.auth-primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
