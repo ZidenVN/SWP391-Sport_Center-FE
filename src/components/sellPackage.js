@@ -16,7 +16,7 @@ const QUICK_CASH = [100000, 200000, 500000, 1000000];
 
 // Hộp bán / gia hạn gói tại quầy. onDone(subscription) gọi sau khi bán thành công.
 export function openSellPackage({ member, onDone, packageId: preselect }) {
-  const st = { packages: [], subscriptions: [], packageId: null, method: 'CASH', cash: '', busy: false, error: null, sold: null };
+  const st = { packages: [], subscriptions: [], packageId: null, method: 'CASH', cash: '', ref: '', busy: false, error: null, sold: null };
 
   const pkg = () => st.packages.find(p => p.packageId === st.packageId);
 
@@ -44,11 +44,24 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
       </div>`;
   }
 
+  // BE bắt buộc mã giao dịch khi xác nhận chuyển khoản (để đối soát)
+  function refBlock() {
+    if (st.method !== 'BANK_TRANSFER') return '';
+    return html`
+      <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 mt-4" data-testid="ref-block">
+        <label class="block text-xs font-bold text-slate-600 mb-1">Mã giao dịch ngân hàng</label>
+        <input class="input font-mono" name="ref" data-action="ref" data-live maxlength="100" placeholder="VD: FT2610231234" value="${st.ref}" data-testid="sell-ref" />
+      </div>`;
+  }
+
+  const refMissing = () => st.method === 'BANK_TRANSFER' && !st.ref.trim();
+
   function formView() {
     const p = pkg();
     const win = p ? renewalWindow(st.subscriptions, p.durationDays) : null;
     const active = st.packages.filter(x => x.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays);
     const cashShort = st.method === 'CASH' && p && Number(st.cash || 0) < p.price;
+    const blocked = cashShort || refMissing();
     return html`
       <div class="flex items-center gap-3 rounded-2xl bg-teal-50 border border-teal-100 p-3 mb-5">
         <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-600 text-white font-bold flex items-center justify-center">${(member.firstName || '?').charAt(0)}</span>
@@ -83,6 +96,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
         })}
       </div>
       ${cashBlock(p)}
+      ${refBlock()}
 
       ${p ? html`
         <div class="rounded-2xl border border-slate-200 p-4 mt-5 text-sm space-y-1.5" data-testid="sell-summary">
@@ -97,7 +111,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
       <div class="flex justify-end gap-2 mt-6">
         <button type="button" data-action="cancel" class="btn-secondary">Hủy</button>
         <button type="button" data-action="submit" data-testid="sell-submit" class="btn bg-teal-600 text-white hover:bg-teal-700"
-          ${!p || st.busy || cashShort ? raw('disabled') : ''}>
+          ${!p || st.busy || blocked ? raw('disabled') : ''}>
           ${st.busy ? 'Đang xử lý...' : html`${icon('check', 'w-4 h-4')} Xác nhận thu ${p ? money(p.price) : ''}`}
         </button>
       </div>`;
@@ -144,6 +158,11 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
         }
         if (submit && p) submit.disabled = received < p.price;
       },
+      ref: input => {
+        st.ref = input.value;
+        const submit = modal.el.querySelector('[data-testid=sell-submit]');
+        if (submit && pkg()) submit.disabled = refMissing();
+      },
       submit: async () => {
         const p = pkg();
         if (!p || st.busy) return;
@@ -151,7 +170,21 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
         st.error = null;
         rerender();
         try {
-          st.sold = await receptionApi.subscribe(member.memberId, p.packageId, st.method);
+          // BE tạo gói + giao dịch PENDING; tiền đã thu tại quầy nên xác nhận luôn để kích hoạt gói
+          const created = await receptionApi.subscribe(member.memberId, p.packageId, st.method);
+          if (created.paymentId && created.paymentStatus === 'PENDING') {
+            try {
+              await receptionApi.confirmPayment(created.paymentId, { transactionRef: st.ref.trim() || undefined });
+            } catch (err) {
+              // không để giao dịch treo PENDING (BE chặn bán tiếp khi còn giao dịch chờ)
+              await receptionApi.cancelPayment(created.paymentId, 'Xác nhận thu tiền thất bại').catch(() => {});
+              throw err;
+            }
+          }
+          // ngày hiệu lực được tính lại lúc xác nhận -> lấy bản mới nhất
+          const subs = await receptionApi.subscriptions(member.memberId).catch(() => []);
+          const fresh = subs.find(x => x.subscriptionId === created.subscriptionId);
+          st.sold = { ...created, ...(fresh || {}), paymentId: created.paymentId, amount: created.amount };
           toast(`Đã bán ${p.packageName} cho ${fullName(member)}`);
           if (onDone) onDone(st.sold);
         } catch (err) {
@@ -162,14 +195,16 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
         }
       },
       print: async () => {
-        // BE không trả paymentId khi bán gói -> tìm giao dịch theo subscriptionId
-        const payments = await receptionApi.payments(member.memberId).catch(() => []);
-        const pay = payments.find(x => x.subscriptionId === st.sold.subscriptionId);
-        if (!pay) {
+        let paymentId = st.sold.paymentId;
+        if (!paymentId) {
+          const payments = await receptionApi.payments(member.memberId).catch(() => []);
+          paymentId = payments.find(x => x.subscriptionId === st.sold.subscriptionId)?.paymentId;
+        }
+        if (!paymentId) {
           toast('Chưa tìm thấy giao dịch để in, thử lại sau giây lát.', 'warning');
           return;
         }
-        openInvoice(() => receptionApi.invoice(pay.paymentId));
+        openInvoice(() => receptionApi.invoice(paymentId));
       },
       reload: () => load()
     }

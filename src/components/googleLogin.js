@@ -2,9 +2,11 @@ import { html, icon, raw } from '../core/dom.js';
 import { authApi } from '../api/endpoints.js';
 import { startSession } from '../pages/auth/login.js';
 
-// Client ID OAuth của Google, đặt trong FE/.env.local: VITE_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
-// (phải trùng GOOGLE_CLIENT_ID của BE, và origin http://localhost:5173 phải được khai báo trong Google Cloud Console)
-export const GOOGLE_CLIENT_ID = (import.meta.env || {}).VITE_GOOGLE_CLIENT_ID || '';
+// Client ID OAuth của Google (không phải bí mật: luôn lộ ra trình duyệt) -> để sẵn mặc định cho cả nhóm pull về chạy được ngay.
+// Muốn dùng client khác: đặt VITE_GOOGLE_CLIENT_ID trong FE/.env.local (đặt rỗng = tắt đăng nhập Google).
+// Phải trùng google.client-id của BE, và origin http://localhost:5173 phải được khai báo trong Google Cloud Console.
+const DEFAULT_GOOGLE_CLIENT_ID = '292845719554-mj6mhmh4snhmghljufj8iqg66mgktgvf.apps.googleusercontent.com';
+export const GOOGLE_CLIENT_ID = (import.meta.env || {}).VITE_GOOGLE_CLIENT_ID ?? DEFAULT_GOOGLE_CLIENT_ID;
 
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
 let gsiPromise = null;

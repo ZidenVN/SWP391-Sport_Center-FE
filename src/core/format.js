@@ -123,7 +123,9 @@ const STATUS = {
   ON_LEAVE: ['Nghỉ phép', 'sky'],
   INDIVIDUAL: ['Cá nhân', 'violet'],
   CLASS: ['Cả lớp', 'sky'],
-  SYSTEM: ['Hệ thống', 'amber']
+  SYSTEM: ['Hệ thống', 'amber'],
+  SCHEDULE_CHANGE: ['Đổi lịch', 'amber'],
+  CLASS_CANCELLED: ['Lớp bị hủy', 'rose']
 };
 
 const BADGE_CLASSES = {

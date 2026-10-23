@@ -9,7 +9,10 @@ import { setNotificationBadge } from '../../components/notificationBadge.js';
 const STYLE = {
   CLASS: ['users', 'bg-sky-50 text-sky-600'],
   INDIVIDUAL: ['user', 'bg-violet-50 text-violet-600'],
-  SYSTEM: ['megaphone', 'bg-amber-50 text-amber-600']
+  SYSTEM: ['megaphone', 'bg-amber-50 text-amber-600'],
+  // thông báo tự động của BE khi lớp đổi giờ / phòng hoặc bị hủy
+  SCHEDULE_CHANGE: ['calendar-clock', 'bg-amber-50 text-amber-600'],
+  CLASS_CANCELLED: ['calendar-x', 'bg-rose-50 text-rose-600']
 };
 
 function view(s) {

@@ -111,6 +111,9 @@ export const receptionApi = {
   currentSubscription: memberId => http.get(`/receptionist/members/${memberId}/subscriptions/current`),
   payments: memberId => http.get(`/receptionist/members/${memberId}/payments`),
   invoice: paymentId => http.get(`/receptionist/payments/${paymentId}/invoice`),
+  // bán gói tạo giao dịch PENDING; lễ tân xác nhận đã thu thì gói mới ACTIVE
+  confirmPayment: (paymentId, payload) => http.patch(`/receptionist/payments/${paymentId}/confirm`, payload),
+  cancelPayment: (paymentId, reason) => http.patch(`/receptionist/payments/${paymentId}/cancel`, { reason }),
   register: (memberId, classId) => http.post(`/receptionist/members/${memberId}/registrations`, { classId }),
   cancel: (memberId, registrationId) => http.delete(`/receptionist/members/${memberId}/registrations/${registrationId}`),
   registrations: memberId => http.get(`/receptionist/members/${memberId}/registrations`),

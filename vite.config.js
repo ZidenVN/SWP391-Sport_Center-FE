@@ -30,6 +30,8 @@ export default defineConfig({
   },
   server: {
     port: DEV_PORT,
+    // cổng 5173 bận thì báo lỗi luôn thay vì lặng lẽ chạy 5174: Google (origin đã khai báo) và CORS của BE chỉ nhận đúng 5173
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
