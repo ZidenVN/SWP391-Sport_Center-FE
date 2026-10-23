@@ -113,6 +113,7 @@ const STATUS = {
   CANCELLED: ['Đã hủy', 'slate'],
   PENDING: ['Chờ thanh toán', 'amber'],
   COMPLETED: ['Hoàn tất', 'emerald'],
+  REFUNDED: ['Đã hoàn tiền', 'violet'],
   FAILED: ['Thất bại', 'rose'],
   OPEN: ['Đang mở', 'amber'],
   RESOLVED: ['Đã xử lý', 'emerald'],

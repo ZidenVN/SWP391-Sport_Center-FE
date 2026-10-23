@@ -29,7 +29,7 @@ export function openBookClass({ member, onDone }) {
             </div>
             ${registered.has(c.classId)
               ? html`<span class="text-xs font-bold text-emerald-600 flex items-center gap-1">${icon('check-circle-2', 'w-4 h-4')} Đã đăng ký</span>`
-              : html`<button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700 btn-sm" data-action="book" data-id="${c.classId}" data-testid="book-${c.classId}">Đặt</button>`}
+              : html`<button type="button" class="btn bg-brand-dark text-white hover:bg-emerald-800 btn-sm" data-action="book" data-id="${c.classId}" data-testid="book-${c.classId}">Đặt</button>`}
           </li>`)}
       </ul>`;
   };

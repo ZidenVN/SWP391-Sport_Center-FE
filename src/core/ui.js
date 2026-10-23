@@ -2,9 +2,9 @@ import { html, raw, render, bindActions, refreshIcons, icon } from './dom.js';
 
 // ---------- Toast ----------
 const TOAST_STYLES = {
-  success: 'bg-emerald-600',
+  success: 'bg-emerald-700',
   error: 'bg-rose-600',
-  info: 'bg-slate-800',
+  info: 'bg-brand-dark',
   warning: 'bg-amber-600'
 };
 
@@ -43,10 +43,10 @@ export function openModal({ title, body, actions = {}, size = 'max-w-lg', onClos
   wrapper.setAttribute('role', 'dialog');
   wrapper.setAttribute('aria-modal', 'true');
   render(wrapper, html`
-    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" data-action="__close"></div>
-    <div class="relative w-full ${size} bg-white rounded-2xl shadow-2xl border border-slate-200 my-8 animate-fade-in">
+    <div class="fixed inset-0 bg-brand-dark/50 backdrop-blur-sm" data-action="__close"></div>
+    <div class="relative w-full ${size} bg-white rounded-3xl shadow-2xl border border-brand-line my-8 animate-fade-in">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-        <h3 class="font-extrabold text-slate-900 text-base">${title}</h3>
+        <h3 class="font-display font-extrabold text-brand-dark text-2xl leading-none">${title}</h3>
         <button type="button" data-action="__close" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Đóng">${icon('x', 'w-5 h-5')}</button>
       </div>
       <div class="px-6 py-5 modal-body">${body}</div>
@@ -144,7 +144,7 @@ export function showFormErrors(formOrButton, err) {
 export function loading(text = 'Đang tải dữ liệu...') {
   return html`
     <div class="flex items-center justify-center py-16 text-slate-500 text-sm gap-3" data-state="loading">
-      <span class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>${text}
+      <span class="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>${text}
     </div>`;
 }
 
@@ -171,20 +171,23 @@ export function pageHeader(title, subtitle, actions = '') {
   return html`
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
       <div>
-        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">${title}</h1>
+        <h1 class="font-display text-4xl font-extrabold tracking-tight leading-none text-brand-dark">${title}</h1>
         ${subtitle ? html`<p class="text-sm text-slate-500 mt-1">${subtitle}</p>` : ''}
       </div>
       <div class="flex flex-wrap gap-2">${actions}</div>
     </div>`;
 }
 
+// màu icon: amber/rose giữ nghĩa cảnh báo, còn lại theo tông thương hiệu (nền kem, icon xanh rừng)
+const STAT_TONES = { amber: 'bg-amber-50 text-amber-600', rose: 'bg-rose-50 text-rose-600' };
+
 export function statCard(label, value, iconName, color = 'emerald', hint = '') {
   return html`
     <div class="card p-5 flex items-start gap-4 rounded-3xl">
-      <div class="w-12 h-12 rounded-2xl bg-${color}-50 text-${color}-600 flex items-center justify-center shrink-0">${icon(iconName, 'w-5 h-5')}</div>
+      <div class="w-12 h-12 rounded-2xl ${STAT_TONES[color] || 'bg-brand-sand text-brand-deep'} flex items-center justify-center shrink-0">${icon(iconName, 'w-5 h-5')}</div>
       <div class="min-w-0">
         <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">${label}</div>
-        <div class="text-2xl font-extrabold text-slate-900 mt-0.5 truncate">${value}</div>
+        <div class="font-display text-3xl font-extrabold text-brand-dark mt-0.5 truncate">${value}</div>
         ${hint ? html`<div class="text-xs text-slate-500 mt-0.5">${hint}</div>` : ''}
       </div>
     </div>`;
@@ -193,11 +196,11 @@ export function statCard(label, value, iconName, color = 'emerald', hint = '') {
 // tabs: [{ id, label, count? }] — kiểu chip bo tròn, đồng bộ với tông bo tròn của sidebar/nút
 export function tabs(items, active, action = 'tab') {
   return html`
-    <div class="inline-flex flex-wrap gap-1 bg-slate-100 rounded-full p-1 mb-5" role="tablist">
+    <div class="inline-flex flex-wrap gap-1 bg-brand-sand rounded-full p-1 mb-5" role="tablist">
       ${items.map(t => html`
         <button type="button" role="tab" data-action="${action}" data-tab="${t.id}" aria-selected="${t.id === active}"
-          class="px-4 py-2 text-sm font-bold whitespace-nowrap rounded-full transition-colors ${t.id === active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">
-          ${t.label}${t.count !== undefined ? html` <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full ${t.id === active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200/70'}">${t.count}</span>` : ''}
+          class="px-4 py-2 text-sm font-bold whitespace-nowrap rounded-full transition-colors ${t.id === active ? 'bg-brand-dark text-white shadow-sm' : 'text-slate-600 hover:text-brand-dark'}">
+          ${t.label}${t.count !== undefined ? html` <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full ${t.id === active ? 'bg-brand-lime text-brand-dark' : 'bg-white/70'}">${t.count}</span>` : ''}
         </button>`)}
     </div>`;
 }
@@ -209,12 +212,12 @@ export function table({ columns, rows, empty = 'Chưa có dữ liệu' }) {
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
-          <tr class="text-left text-xs uppercase tracking-wide text-slate-400 bg-slate-50/80">
+          <tr class="text-left text-xs uppercase tracking-wide text-slate-500 bg-brand-cream">
             ${columns.map(c => html`<th class="px-5 py-3 font-bold ${c.cls || ''}">${c.label}</th>`)}
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
-          ${rows.map(r => html`<tr class="hover:bg-emerald-50/40 transition-colors">${r.map((cell, i) => html`<td class="px-5 py-3.5 align-middle ${columns[i]?.cls || ''}">${cell}</td>`)}</tr>`)}
+        <tbody class="divide-y divide-brand-line/60">
+          ${rows.map(r => html`<tr class="hover:bg-brand-cream/70 transition-colors">${r.map((cell, i) => html`<td class="px-5 py-3.5 align-middle ${columns[i]?.cls || ''}">${cell}</td>`)}</tr>`)}
         </tbody>
       </table>
     </div>`;

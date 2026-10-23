@@ -92,7 +92,7 @@ function testCard(s) {
             </div>
           </div>
         </div>
-        <div class="rounded-2xl bg-slate-900 text-white p-3 space-y-2">
+        <div class="rounded-2xl bg-brand-dark text-white p-3 space-y-2">
           ${copyChip('Số thẻ', TEST_CARD.number, 'copy-card-number')}
           ${copyChip('Tên chủ thẻ', TEST_CARD.holder, 'copy-holder')}
           <div class="grid grid-cols-2 gap-2">
@@ -169,11 +169,11 @@ function summary(s) {
   const isQr = s.method === 'QR';
   return html`
     <aside class="lg:sticky lg:top-24 rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden" data-testid="order-summary">
-      <div class="p-6 bg-gradient-to-br from-slate-900 to-emerald-900 text-white relative overflow-hidden">
-        <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10"></div>
+      <div class="p-6 bg-brand-dark text-white relative overflow-hidden">
+        <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-brand/30"></div>
         <div class="relative">
-          <div class="text-xs font-bold uppercase tracking-widest text-emerald-200">Đơn hàng</div>
-          <div class="text-xl font-extrabold mt-1">${p.packageName}</div>
+          <div class="text-xs font-bold uppercase tracking-widest text-brand-lime">Đơn hàng</div>
+          <div class="font-display text-3xl leading-none font-extrabold mt-1.5">${p.packageName}</div>
           <div class="text-sm text-emerald-100 mt-0.5">${p.durationDays} ngày tập</div>
         </div>
       </div>
@@ -204,7 +204,7 @@ function summary(s) {
             <span>Tôi đồng ý với điều khoản sử dụng dịch vụ và chính sách hoàn tiền của trung tâm.</span>
           </label>
           <button type="button" data-action="pay" data-testid="pay-button" ${s.agree && !s.busy ? '' : raw('disabled')}
-            class="btn w-full mt-5 !py-3.5 !text-base bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">
+            class="btn w-full mt-5 !py-3.5 !text-base bg-brand-dark text-white hover:bg-emerald-800 shadow-lg shadow-emerald-600/20">
             ${s.busy ? html`<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> ${isQr ? 'Đang tạo mã...' : 'Đang chuyển sang VNPay...'}`
               : isQr ? html`${icon('scan-qr-code', 'w-4 h-4')} Tạo mã QR thanh toán` : html`${icon('lock', 'w-4 h-4')} Thanh toán ${money(p.price)}`}
           </button>

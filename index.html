@@ -15,28 +15,40 @@
   <script defer src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
   <link rel="stylesheet" href="./css/styles.css" />
   <script>
+    // Tông màu chung lấy từ trang giới thiệu: xanh rừng #173F31, xanh thương hiệu #469B7E, vàng chanh #D7F25B, nền kem.
+    // emerald/teal được thay bằng thang xanh rừng để mọi trang của 4 role tự đồng bộ theo.
+    const forest = {
+      50: '#F0F6F2', 100: '#DCEBE2', 200: '#BAD8C7', 300: '#8EBFA6', 400: '#64A688', 500: '#469B7E',
+      600: '#3A8569', 700: '#2F6B55', 800: '#245543', 900: '#173F31', 950: '#0E2A20'
+    };
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'], display: ['"Barlow Condensed"', 'sans-serif'] }
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'], display: ['"Barlow Condensed"', 'sans-serif'] },
+          colors: {
+            emerald: forest,
+            teal: forest,
+            brand: { DEFAULT: '#469B7E', deep: '#2F6B55', dark: '#173F31', lime: '#D7F25B', cream: '#FBF9F4', sand: '#EFE9DC', line: '#E7E1D3' }
+          }
         }
       }
     }
   </script>
   <style type="text/tailwindcss">
     @layer components {
-      .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
+      .card { @apply bg-white rounded-2xl border border-brand-line/70 shadow-sm; }
       .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
-      .btn-primary { @apply btn bg-slate-900 text-white hover:bg-slate-800; }
-      .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50; }
+      .btn-primary { @apply btn bg-brand-dark text-white hover:bg-emerald-800; }
+      .btn-lime { @apply btn bg-brand-lime text-brand-dark hover:brightness-95; }
+      .btn-secondary { @apply btn bg-white text-slate-700 border border-brand-line hover:bg-brand-cream; }
       .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
       .btn-ghost { @apply btn rounded-full px-2.5 py-1.5 text-slate-600 hover:bg-slate-100; }
       .btn-sm { @apply px-3 py-1.5 text-xs; }
-      .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500; }
+      .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 disabled:bg-brand-cream disabled:text-slate-500 disabled:cursor-not-allowed; }
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-900 antialiased min-h-screen">
+<body class="bg-brand-cream text-slate-900 antialiased min-h-screen">
   <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col max-w-sm w-[calc(100%-2.5rem)]" aria-live="polite"></div>
   <div id="modal-root"></div>
   <div id="app-root">

@@ -1,7 +1,9 @@
 import { money } from '../core/format.js';
 
-// Bảng màu dùng chung cho biểu đồ, cùng tông màu thương hiệu
-export const CHART_COLORS = ['#469B7E', '#F59E0B', '#0EA5E9', '#F43F5E', '#8B5CF6', '#64748B'];
+// Bảng màu biểu đồ theo tông trang giới thiệu: xanh thương hiệu, xanh rừng, vàng chanh rồi mới tới màu phụ
+export const CHART_COLORS = ['#469B7E', '#173F31', '#C4DE3F', '#F59E0B', '#8EBFA6', '#94A3B8'];
+// màu chữ đọc rõ trên từng màu nền ở trên (nền sáng dùng chữ xanh rừng)
+export const chartTextColor = i => (['#C4DE3F', '#8EBFA6'].includes(CHART_COLORS[i % CHART_COLORS.length]) ? '#173F31' : '#fff');
 
 // Chart.js nạp kiểu defer từ CDN -> đợi có window.Chart rồi mới vẽ
 function whenChartReady() {
@@ -49,7 +51,7 @@ export function revenueLine(points) {
     options: {
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => money(c.parsed.y) } } },
       scales: {
-        y: { beginAtZero: true, ticks: { callback: v => `${(v / 1e6).toLocaleString('vi-VN')}tr` }, grid: { color: '#F1F5F9' } },
+        y: { beginAtZero: true, ticks: { callback: v => `${(v / 1e6).toLocaleString('vi-VN')}tr` }, grid: { color: '#EFE9DC' } },
         x: { grid: { display: false } }
       }
     }
@@ -73,7 +75,7 @@ export function bars(labels, values, label, { color = CHART_COLORS[0], max } = {
     data: { labels, datasets: [{ label, data: values, backgroundColor: color, borderRadius: 8, maxBarThickness: 36 }] },
     options: {
       plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, max, grid: { color: '#F1F5F9' } }, x: { grid: { display: false } } }
+      scales: { y: { beginAtZero: true, max, grid: { color: '#EFE9DC' } }, x: { grid: { display: false } } }
     }
   };
 }

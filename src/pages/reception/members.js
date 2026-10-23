@@ -11,7 +11,7 @@ function view(s) {
   const searching = s.keyword.trim().length >= 2;
   return html`
     ${pageHeader('Hội viên', 'Tra cứu, đăng ký mới và bán gói tại quầy', html`
-      <button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700" data-action="walk-in" data-testid="walk-in-btn">${icon('user-plus', 'w-4 h-4')} Đăng ký hội viên mới</button>`)}
+      <button type="button" class="btn bg-brand-dark text-white hover:bg-emerald-800" data-action="walk-in" data-testid="walk-in-btn">${icon('user-plus', 'w-4 h-4')} Đăng ký hội viên mới</button>`)}
     <div class="card p-4 mb-5">
       <div class="relative">
         <span class="absolute left-3 top-3 text-slate-400">${icon('search', 'w-5 h-5')}</span>
@@ -57,7 +57,7 @@ function walkInForm() {
       ${field('Mục tiêu tập luyện', textarea('trainingGoal', '', { rows: 2, placeholder: 'VD: Giảm cân, tăng cơ...' }))}
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" data-action="cancel" class="btn-secondary">Hủy</button>
-        <button type="submit" class="btn bg-teal-600 text-white hover:bg-teal-700">Tạo hội viên</button>
+        <button type="submit" class="btn bg-brand-dark text-white hover:bg-emerald-800">Tạo hội viên</button>
       </div>
     </form>`;
 }
@@ -70,7 +70,7 @@ function createdView(res) {
       <div class="text-lg font-extrabold mt-3">Đã tạo hội viên ${fullName(m)}</div>
       <div class="text-sm text-slate-500">#${m.memberId} · ${m.email}</div>
     </div>
-    <div class="mt-5 rounded-2xl bg-slate-900 text-white p-4">
+    <div class="mt-5 rounded-2xl bg-brand-dark text-white p-4">
       <div class="text-xs text-white/60">Mật khẩu tạm thời (chỉ hiện một lần, hãy đưa cho khách)</div>
       <div class="flex items-center justify-between gap-3 mt-1">
         <span class="font-mono text-2xl tracking-widest" data-testid="temp-password">${res.temporaryPassword}</span>
@@ -79,7 +79,7 @@ function createdView(res) {
     </div>
     <div class="flex flex-wrap justify-end gap-2 mt-6">
       <button type="button" class="btn-secondary" data-action="view-profile" data-id="${m.memberId}">Xem hồ sơ</button>
-      <button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700" data-action="sell-new" data-testid="sell-new">${icon('package-plus', 'w-4 h-4')} Bán gói ngay</button>
+      <button type="button" class="btn bg-brand-dark text-white hover:bg-emerald-800" data-action="sell-new" data-testid="sell-new">${icon('package-plus', 'w-4 h-4')} Bán gói ngay</button>
     </div>`;
 }
 

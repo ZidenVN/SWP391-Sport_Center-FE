@@ -14,18 +14,22 @@ function view(s) {
     ${pageHeader('Bảng giá gói tập', 'Tư vấn khách và bán gói ngay tại quầy')}
     ${plans.length ? html`
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-3" data-testid="price-board">
-        ${plans.map(p => html`
-          <div class="relative rounded-3xl bg-white border ${p.packageId === best ? 'border-teal-500 ring-4 ring-teal-500/10' : 'border-slate-200'} p-6 flex flex-col shadow-sm">
-            ${p.packageId === best ? html`<span class="absolute -top-3 left-6 px-3 py-1 rounded-full bg-teal-600 text-white text-[11px] font-bold uppercase">Tiết kiệm nhất</span>` : ''}
+        ${plans.map(p => {
+          // cùng kiểu bảng giá trang giới thiệu: gói tiết kiệm nhất nền xanh rừng + vàng chanh
+          const hot = p.packageId === best;
+          return html`
+          <div class="relative rounded-3xl p-6 flex flex-col ${hot ? 'bg-brand-dark text-white shadow-2xl shadow-brand-dark/20' : 'bg-white border border-brand-line shadow-sm'}">
+            ${hot ? html`<span class="absolute -top-3 left-6 px-3 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase">Tiết kiệm nhất</span>` : ''}
             <div class="flex justify-between items-center">
               <span class="font-bold">${p.packageName}</span>
-              <span class="text-xs font-bold px-2 py-0.5 rounded-lg bg-slate-100">${p.durationDays} ngày</span>
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${hot ? 'bg-white/15' : 'bg-brand-sand'}">${p.durationDays} ngày</span>
             </div>
-            <div class="text-3xl font-black mt-4">${money(p.price)}</div>
-            <div class="text-xs text-slate-500 mt-1">≈ ${money(Math.round(p.price / p.durationDays))} / ngày</div>
-            <p class="text-sm text-slate-600 mt-4 flex-1">${p.description || ''}</p>
-            <button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700 mt-6 w-full" data-action="sell" data-id="${p.packageId}">${icon('package-plus', 'w-4 h-4')} Bán gói này</button>
-          </div>`)}
+            <div class="font-display text-5xl font-extrabold mt-4 ${hot ? 'text-brand-lime' : 'text-brand-dark'}">${money(p.price)}</div>
+            <div class="text-xs mt-1 ${hot ? 'text-white/60' : 'text-slate-500'}">≈ ${money(Math.round(p.price / p.durationDays))} / ngày</div>
+            <p class="text-sm mt-4 flex-1 ${hot ? 'text-white/75' : 'text-slate-600'}">${p.description || ''}</p>
+            <button type="button" class="${hot ? 'btn-lime' : 'btn-primary'} mt-6 w-full" data-action="sell" data-id="${p.packageId}">${icon('package-plus', 'w-4 h-4')} Bán gói này</button>
+          </div>`;
+        })}
       </div>` : emptyState('Chưa có gói tập đang mở bán', 'package')}`;
 }
 

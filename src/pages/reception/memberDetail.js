@@ -2,7 +2,7 @@ import { html, icon, readForm } from '../../core/dom.js';
 import { tabs, table, openModal, field, input, select, textarea, GENDER_OPTIONS, showFormErrors, toast, confirmDialog, withBusy } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
-import { fullName, genderLabel, badge, money, date, dateTime, timeRange, daysUntil, isFuture, paymentMethodLabel, toDate, phoneText } from '../../core/format.js';
+import { fullName, genderLabel, badge, money, date, dateTime, timeRange, daysUntil, isFuture, paymentMethodLabel, toDate, phoneText, time, weekday, isToday } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openSellPackage } from '../../components/sellPackage.js';
 import { openBookClass } from '../../components/bookClass.js';
@@ -22,12 +22,12 @@ function membershipCard(s) {
   const left = daysUntil(latest.endDate);
   const warn = left <= 7;
   return html`
-    <div class="rounded-2xl p-5 ${warn ? 'bg-amber-50 border border-amber-200' : 'bg-gradient-to-br from-teal-500 to-emerald-600 text-white'}" data-testid="membership-card" data-active="true">
-      <div class="text-xs font-bold uppercase tracking-wide ${warn ? 'text-amber-700' : 'text-teal-50'}">Gói đang dùng</div>
-      <div class="text-lg font-extrabold mt-1">${s.current.packageName}</div>
-      <div class="text-sm mt-1 ${warn ? 'text-amber-800' : 'text-teal-50'}">Tập được đến <b>${date(latest.endDate)}</b> · còn ${left} ngày</div>
+    <div class="rounded-2xl p-5 ${warn ? 'bg-amber-50 border border-amber-200' : 'bg-brand-dark text-white'}" data-testid="membership-card" data-active="true">
+      <div class="text-xs font-bold uppercase tracking-wide ${warn ? 'text-amber-700' : 'text-brand-lime'}">Gói đang dùng</div>
+      <div class="font-display text-3xl leading-none font-extrabold mt-1.5">${s.current.packageName}</div>
+      <div class="text-sm mt-1 ${warn ? 'text-amber-800' : 'text-white/70'}">Tập được đến <b>${date(latest.endDate)}</b> · còn ${left} ngày</div>
       ${warn ? html`<div class="text-xs font-bold text-amber-700 mt-2">Sắp hết hạn — gợi ý khách gia hạn</div>` : ''}
-      <button type="button" class="btn mt-4 w-full ${warn ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-white/20 hover:bg-white/30 text-white'}" data-action="sell">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</button>
+      <button type="button" class="btn mt-4 w-full ${warn ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-brand-lime text-brand-dark hover:brightness-95'}" data-action="sell">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</button>
     </div>`;
 }
 
@@ -70,17 +70,27 @@ function classesTab(s) {
       <button type="button" class="btn-secondary btn-sm" data-action="book">${icon('calendar-plus', 'w-3.5 h-3.5')} Đặt lớp hộ</button>
     </div>
     ${table({
-      columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
+      columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Trạng thái' }, { label: 'Điểm danh' }, { label: '', cls: 'text-right' }],
       rows: regs.map(r => [
         html`<div class="font-semibold">${r.subjectName}</div><div class="text-xs text-slate-500">HLV ${r.coachName}</div>`,
         html`${date(r.startTime)}<div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)}</div>`,
         r.roomName,
-        badge(r.status),
-        r.status === 'REGISTERED' && isFuture(r.startTime)
+        r.classStatus === 'CANCELLED' ? badge('CLASS_CANCELLED') : badge(r.status),
+        r.attendanceStatus ? badge(r.attendanceStatus) : html`<span class="text-xs text-slate-300">—</span>`,
+        r.status === 'REGISTERED' && r.classStatus !== 'CANCELLED' && isFuture(r.startTime)
           ? html`<button type="button" class="btn-ghost btn-sm text-rose-600" data-action="cancel-reg" data-id="${r.registrationId}" data-testid="cancel-reg">Hủy</button>` : ''
       ]),
       empty: 'Chưa đăng ký lớp nào'
     })}`;
+}
+
+// lượt hội viên đến trung tâm (check-in tại quầy)
+function checkinsTab(s) {
+  return table({
+    columns: [{ label: 'Thời gian' }, { label: 'Thứ' }, { label: 'Lễ tân ghi nhận' }, { label: 'Ghi chú' }],
+    rows: s.checkIns.map(c => [dateTime(c.checkInTime), weekday(c.checkInTime), c.checkedInBy || '—', c.note || '—']),
+    empty: 'Hội viên chưa check-in lần nào'
+  });
 }
 
 function ticketsTab(s) {
@@ -100,6 +110,8 @@ function ticketsTab(s) {
       empty: 'Chưa có yêu cầu hỗ trợ'
     })}`;
 }
+
+const checkedToday = s => s.checkIns.find(c => isToday(c.checkInTime));
 
 function view(s) {
   const m = s.member;
@@ -126,7 +138,10 @@ function view(s) {
           <div class="sm:col-span-2"><dt class="text-xs text-slate-500">Mục tiêu tập luyện</dt><dd class="font-semibold">${m.trainingGoal || '—'}</dd></div>
         </dl>
         <div class="flex flex-wrap gap-2 mt-6 pt-5 border-t border-slate-100">
-          <button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700" data-action="sell" data-testid="detail-sell">${icon('package-plus', 'w-4 h-4')} Bán / gia hạn gói</button>
+          ${checkedToday(s)
+            ? html`<span class="btn bg-emerald-50 text-emerald-700 cursor-default" data-testid="detail-checked">${icon('check-circle-2', 'w-4 h-4')} Đã check-in ${time(checkedToday(s).checkInTime)}</span>`
+            : html`<button type="button" class="btn-lime" data-action="checkin" data-testid="detail-checkin">${icon('log-in', 'w-4 h-4')} Check-in</button>`}
+          <button type="button" class="btn bg-brand-dark text-white hover:bg-emerald-800" data-action="sell" data-testid="detail-sell">${icon('package-plus', 'w-4 h-4')} Bán / gia hạn gói</button>
           <button type="button" class="btn-secondary" data-action="book" data-testid="detail-book">${icon('calendar-plus', 'w-4 h-4')} Đặt lớp hộ</button>
           <button type="button" class="btn-secondary" data-action="new-ticket" data-testid="detail-ticket">${icon('life-buoy', 'w-4 h-4')} Ghi nhận yêu cầu</button>
         </div>
@@ -140,6 +155,7 @@ function view(s) {
           { id: 'subs', label: 'Gói tập', count: s.subscriptions.length },
           { id: 'payments', label: 'Thanh toán', count: s.payments.length },
           { id: 'classes', label: 'Lớp học', count: upcoming },
+          { id: 'checkins', label: 'Lượt đến', count: s.checkIns.length },
           { id: 'tickets', label: 'Hỗ trợ', count: openTickets }
         ], s.tab)}
       </div>
@@ -147,6 +163,7 @@ function view(s) {
         ${s.tab === 'subs' ? subsTab(s) : ''}
         ${s.tab === 'payments' ? paymentsTab(s) : ''}
         ${s.tab === 'classes' ? classesTab(s) : ''}
+        ${s.tab === 'checkins' ? checkinsTab(s) : ''}
         ${s.tab === 'tickets' ? ticketsTab(s) : ''}
       </div>
     </div>`;
@@ -166,7 +183,7 @@ function editForm(m) {
       ${field('Email', input('email', { type: 'email', value: m.email, required: true }))}
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" data-action="cancel" class="btn-secondary">Hủy</button>
-        <button type="submit" class="btn bg-teal-600 text-white hover:bg-teal-700">Lưu</button>
+        <button type="submit" class="btn bg-brand-dark text-white hover:bg-emerald-800">Lưu</button>
       </div>
     </form>`;
 }
@@ -182,7 +199,8 @@ export default function ReceptionMemberDetail(el, { params, query }) {
         current: [() => receptionApi.currentSubscription(id), null],
         payments: [() => receptionApi.payments(id), []],
         registrations: [() => receptionApi.registrations(id), []],
-        tickets: [() => receptionApi.tickets(id), []]
+        tickets: [() => receptionApi.tickets(id), []],
+        checkIns: [() => receptionApi.memberCheckIns(id), []]
       });
       if (res.memberError) throw res.memberError;
       return res;
@@ -190,6 +208,10 @@ export default function ReceptionMemberDetail(el, { params, query }) {
     view,
     actions: {
       tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),
+      checkin: async (btn, e, ctx) => {
+        const res = await withBusy(btn, () => receptionApi.checkIn(Number(id)));
+        if (res) { toast(`Đã check-in ${res.memberName} lúc ${time(res.checkInTime)}`); ctx.reload(); }
+      },
       sell: (t, e, ctx) => openSellPackage({ member: ctx.state.member, onDone: () => ctx.reload() }),
       book: (t, e, ctx) => openBookClass({ member: ctx.state.member, onDone: () => ctx.reload() }),
       invoice: btn => openInvoice(() => receptionApi.invoice(btn.dataset.id)),
@@ -204,7 +226,7 @@ export default function ReceptionMemberDetail(el, { params, query }) {
           body: html`
             <form data-action="create-ticket" class="space-y-4" novalidate>
               ${field('Nội dung yêu cầu', textarea('content', '', { rows: 4, required: true, placeholder: 'VD: Thẻ tập bị lỗi, cần cấp lại...' }))}
-              <div class="flex justify-end gap-2"><button type="button" data-action="cancel" class="btn-secondary">Hủy</button><button type="submit" class="btn bg-teal-600 text-white hover:bg-teal-700">Ghi nhận</button></div>
+              <div class="flex justify-end gap-2"><button type="button" data-action="cancel" class="btn-secondary">Hủy</button><button type="submit" class="btn bg-brand-dark text-white hover:bg-emerald-800">Ghi nhận</button></div>
             </form>`,
           actions: {
             'create-ticket': async form => {

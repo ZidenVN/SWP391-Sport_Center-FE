@@ -19,7 +19,8 @@ function required(form, keys) {
 
 // Giao giáo án. preset: { targetType, targetId } khi đã biết giao cho ai (từ trang lớp / học viên).
 // classes, members: danh sách để chọn khi chưa có preset.
-export function openPlanForm({ preset, classes = [], members = [], onDone }) {
+// values: điền sẵn nội dung (vd từ gợi ý AI), HLV vẫn sửa được trước khi giao
+export function openPlanForm({ preset, classes = [], members = [], values = {}, onDone }) {
   const due = new Date(Date.now() + 28 * 86400000);
   const st = { targetType: preset?.targetType || (classes.length ? 'CLASS' : 'INDIVIDUAL') };
 
@@ -38,10 +39,10 @@ export function openPlanForm({ preset, classes = [], members = [], onDone }) {
   const body = () => html`
     <form data-action="save" class="space-y-4" novalidate data-testid="plan-form">
       ${targetField()}
-      ${field('Tên giáo án', input('planName', { required: true, placeholder: 'VD: Giảm mỡ 30 ngày' }))}
-      ${field('Nội dung bài tập', textarea('exerciseDetails', '', { rows: 4, required: true, placeholder: 'VD: Squat 4x12, Plank 3x60s...' }))}
+      ${field('Tên giáo án', input('planName', { value: values.planName || '', required: true, placeholder: 'VD: Giảm mỡ 30 ngày' }))}
+      ${field('Nội dung bài tập', textarea('exerciseDetails', values.exerciseDetails || '', { rows: values.exerciseDetails ? 10 : 4, required: true, placeholder: 'VD: Squat 4x12, Plank 3x60s...' }))}
       <div class="grid sm:grid-cols-2 gap-3">
-        ${field('Thời lượng', input('duration', { placeholder: 'VD: 4 tuần' }))}
+        ${field('Thời lượng', input('duration', { value: values.duration || '', placeholder: 'VD: 4 tuần' }))}
         ${field('Hạn hoàn thành', input('dueDate', { type: 'date', value: isoDate(due) }))}
       </div>
       ${submitRow('Giao giáo án')}

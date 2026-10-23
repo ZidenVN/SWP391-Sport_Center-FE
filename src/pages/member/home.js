@@ -10,28 +10,31 @@ import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
 function subscriptionCard(sub) {
   if (!sub) {
     return html`
-      <div class="card p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white border-0" data-testid="no-subscription">
-        <div class="text-sm text-slate-300">Gói tập hiện tại</div>
-        <div class="text-xl font-extrabold mt-1">Bạn chưa có gói tập còn hiệu lực</div>
-        <p class="text-sm text-slate-300 mt-2">Mua gói để bắt đầu đặt lớp và tập luyện.</p>
-        <a href="#/member/packages" class="btn mt-5 bg-white text-slate-900 hover:bg-slate-100">${icon('package', 'w-4 h-4')} Xem gói tập</a>
+      <div class="card p-6 bg-brand-sand border-0" data-testid="no-subscription">
+        <div class="text-sm font-semibold text-slate-600">Gói tập hiện tại</div>
+        <div class="font-display text-3xl font-extrabold leading-tight text-brand-dark mt-1">Bạn chưa có gói tập còn hiệu lực</div>
+        <p class="text-sm text-slate-600 mt-2">Mua gói để bắt đầu đặt lớp và tập luyện.</p>
+        <a href="#/member/packages" class="btn-primary mt-5">${icon('package', 'w-4 h-4')} Xem gói tập</a>
       </div>`;
   }
   const left = daysUntil(sub.endDate);
   return html`
-    <div class="card p-6 bg-gradient-to-br from-emerald-600 to-teal-600 text-white border-0" data-testid="current-subscription">
+    <div class="card p-6 bg-brand-dark text-white border-0 relative overflow-hidden" data-testid="current-subscription">
+      <div class="absolute -right-14 -bottom-16 w-36 h-36 rounded-full bg-brand/25"></div>
+      <div class="relative">
       <div class="flex items-start justify-between">
         <div>
-          <div class="text-sm text-emerald-100">Gói tập hiện tại</div>
-          <div class="text-2xl font-extrabold mt-1">${sub.packageName}</div>
+          <div class="text-sm text-white/60">Gói tập hiện tại</div>
+          <div class="font-display text-4xl font-extrabold leading-none text-brand-lime mt-1">${sub.packageName}</div>
         </div>
-        <span class="px-2.5 py-1 rounded-full bg-white/20 text-xs font-bold">${left > 0 ? `Còn ${left} ngày` : 'Hết hạn hôm nay'}</span>
+        <span class="px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold whitespace-nowrap">${left > 0 ? `Còn ${left} ngày` : 'Hết hạn hôm nay'}</span>
       </div>
       <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
-        <div><div class="text-emerald-200 text-xs">Bắt đầu</div><div class="font-semibold">${date(sub.startDate)}</div></div>
-        <div><div class="text-emerald-200 text-xs">Hết hạn</div><div class="font-semibold">${date(sub.endDate)}</div></div>
+        <div><div class="text-white/50 text-xs">Bắt đầu</div><div class="font-semibold">${date(sub.startDate)}</div></div>
+        <div><div class="text-white/50 text-xs">Hết hạn</div><div class="font-semibold">${date(sub.endDate)}</div></div>
       </div>
-      <a href="#/member/packages" class="btn mt-5 bg-white/15 hover:bg-white/25 text-white">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</a>
+      <a href="#/member/packages" class="btn-lime mt-5">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</a>
+      </div>
     </div>`;
 }
 

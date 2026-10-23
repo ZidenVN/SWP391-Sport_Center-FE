@@ -64,7 +64,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     const blocked = cashShort || refMissing();
     return html`
       <div class="flex items-center gap-3 rounded-2xl bg-teal-50 border border-teal-100 p-3 mb-5">
-        <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-600 text-white font-bold flex items-center justify-center">${(member.firstName || '?').charAt(0)}</span>
+        <span class="w-10 h-10 rounded-full bg-brand-dark text-brand-lime font-bold flex items-center justify-center">${(member.firstName || '?').charAt(0)}</span>
         <div class="min-w-0"><div class="font-bold">${fullName(member)}</div><div class="text-xs text-slate-600">#${member.memberId} · ${phoneText(member.phone)}</div></div>
       </div>
 
@@ -110,7 +110,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
 
       <div class="flex justify-end gap-2 mt-6">
         <button type="button" data-action="cancel" class="btn-secondary">Hủy</button>
-        <button type="button" data-action="submit" data-testid="sell-submit" class="btn bg-teal-600 text-white hover:bg-teal-700"
+        <button type="button" data-action="submit" data-testid="sell-submit" class="btn bg-brand-dark text-white hover:bg-emerald-800"
           ${!p || st.busy || blocked ? raw('disabled') : ''}>
           ${st.busy ? 'Đang xử lý...' : html`${icon('check', 'w-4 h-4')} Xác nhận thu ${p ? money(p.price) : ''}`}
         </button>
@@ -130,7 +130,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
       </div>
       <div class="flex justify-end gap-2 mt-6">
         <button type="button" data-action="cancel" class="btn-secondary">Đóng</button>
-        <button type="button" data-action="print" data-testid="sell-print" class="btn bg-teal-600 text-white hover:bg-teal-700">${icon('printer', 'w-4 h-4')} In hóa đơn</button>
+        <button type="button" data-action="print" data-testid="sell-print" class="btn bg-brand-dark text-white hover:bg-emerald-800">${icon('printer', 'w-4 h-4')} In hóa đơn</button>
       </div>`;
   }
 

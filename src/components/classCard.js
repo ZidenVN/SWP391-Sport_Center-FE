@@ -2,7 +2,14 @@ import { html, icon } from '../core/dom.js';
 import { badge, date, weekday, timeRange, isFuture } from '../core/format.js';
 import { coachLink } from './coachInfo.js';
 
-const SUBJECT_COLORS = ['from-indigo-500 to-violet-500', 'from-emerald-500 to-teal-500', 'from-orange-500 to-rose-500', 'from-sky-500 to-blue-600', 'from-fuchsia-500 to-pink-500'];
+// Tông đất cùng bộ với trang giới thiệu; đều đủ đậm để đặt chữ trắng lên trên (hero lớp, ô ngày của HLV)
+const SUBJECT_COLORS = [
+  'from-[#173F31] to-[#2F6B55]',
+  'from-[#2F6B55] to-[#469B7E]',
+  'from-[#3F5A1E] to-[#6E8F2E]',
+  'from-[#8A3F22] to-[#C0683A]',
+  'from-[#1E4A57] to-[#3A7A88]'
+];
 
 export function subjectColor(name = '') {
   let h = 0;
@@ -24,7 +31,7 @@ export function classCard(c, footer = '') {
       <div class="p-5 flex-1 flex flex-col">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="font-extrabold text-slate-900">${c.subjectName}</div>
+            <div class="font-display text-2xl leading-none font-extrabold text-brand-dark">${c.subjectName}</div>
             <div class="text-xs text-slate-500 mt-0.5">${weekday(c.startTime)}, ${date(c.startTime)}</div>
           </div>
           ${badge(c.status)}

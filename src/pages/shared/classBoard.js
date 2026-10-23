@@ -34,7 +34,7 @@ function view(s) {
     ${list.length ? html`
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5" data-testid="class-list">
         ${list.map(c => classCard(c, isBookable(c)
-          ? html`<button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700 btn-sm" data-action="book" data-id="${c.classId}" data-testid="board-book-${c.classId}">${icon('user-plus', 'w-3.5 h-3.5')} Đặt cho hội viên</button>`
+          ? html`<button type="button" class="btn bg-brand-dark text-white hover:bg-emerald-800 btn-sm" data-action="book" data-id="${c.classId}" data-testid="board-book-${c.classId}">${icon('user-plus', 'w-3.5 h-3.5')} Đặt cho hội viên</button>`
           : html`<span class="text-xs text-slate-400">Không nhận đăng ký</span>`))}
       </div>` : emptyState('Không có lớp phù hợp', 'calendar-x')}`;
 }

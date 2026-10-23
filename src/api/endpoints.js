@@ -1,5 +1,5 @@
 // Toàn bộ API của BE (xem Docs/API_FE.md). Mỗi hàm trả về Promise của body đã parse.
-import { http } from './client.js';
+import { http, download } from './client.js';
 
 export const authApi = {
   login: (email, password) => http.post('/auth/login', { email, password }, { auth: false }),
@@ -13,7 +13,11 @@ export const userApi = {
   get: id => http.get(`/users/${id}`),
   update: (id, payload) => http.put(`/users/${id}`, payload),
   toggleStatus: id => http.patch(`/users/${id}/status`),
-  assignRole: (userId, roleId) => http.patch(`/users/${userId}/role/${roleId}`)
+  assignRole: (userId, roleId) => http.patch(`/users/${userId}/role/${roleId}`),
+  // hồ sơ của chính mình (mọi vai trò), theo quyền VIEW_OWN_PROFILE / UPDATE_OWN_PROFILE
+  me: () => http.get('/users/me'),
+  updateMe: payload => http.put('/users/me', payload),
+  myPermissions: () => http.get('/users/me/permissions')
 };
 
 export const roleApi = {
@@ -63,6 +67,9 @@ export const classApi = {
   create: payload => http.post('/classes', payload),
   update: (id, payload) => http.put(`/classes/${id}`, payload),
   assignCoach: (classId, coachId) => http.put(`/classes/${classId}/coach/${coachId}`),
+  // hủy lớp: giữ lịch sử, hủy các đăng ký và báo học viên; xóa chỉ dùng cho lớp tạo nhầm
+  cancel: (id, reason) => http.patch(`/classes/${id}/cancel`, { reason }),
+  complete: id => http.patch(`/classes/${id}/complete`),
   remove: id => http.delete(`/classes/${id}`)
 };
 
@@ -81,6 +88,8 @@ export const memberApi = {
   workoutResults: () => http.get('/members/me/workout-results'),
   progress: () => http.get('/members/me/progress'),
   notifications: () => http.get('/members/me/notifications'),
+  checkIns: () => http.get('/members/me/check-ins'),
+  aiChat: payload => http.post('/members/me/ai-chat', payload, { timeoutMs: 120000 }),
   classWorkoutPlans: classId => http.get(`/coaches/classes/${classId}/workout-plans`),
   profileById: memberId => http.get(`/members/${memberId}`)
 };
@@ -119,7 +128,13 @@ export const receptionApi = {
   registrations: memberId => http.get(`/receptionist/members/${memberId}/registrations`),
   createTicket: (memberId, content) => http.post('/receptionist/tickets', { memberId, content }),
   tickets: memberId => http.get('/receptionist/tickets', memberId ? { memberId } : undefined),
-  resolveTicket: ticketId => http.patch(`/receptionist/tickets/${ticketId}/resolve`)
+  resolveTicket: ticketId => http.patch(`/receptionist/tickets/${ticketId}/resolve`),
+  // danh sách giao dịch tại quầy (lọc ngày, trạng thái, phương thức, từ khóa), có phân trang
+  allPayments: query => http.get('/receptionist/payments', query),
+  // điểm danh hội viên khi đến trung tâm
+  checkIn: (memberId, note) => http.post('/receptionist/check-ins', { memberId, note }),
+  checkInsByDate: date => http.get('/receptionist/check-ins', date ? { date } : undefined),
+  memberCheckIns: memberId => http.get(`/receptionist/members/${memberId}/check-ins`)
 };
 
 export const coachApi = {
@@ -129,6 +144,8 @@ export const coachApi = {
   takeAttendance: (classId, records) => http.post(`/coaches/me/classes/${classId}/attendances`, { records }),
   attendances: classId => http.get(`/coaches/me/classes/${classId}/attendances`),
   createPlan: payload => http.post('/coaches/me/workout-plans', payload),
+  // AI gợi ý bài tập theo mục tiêu + lịch sử tập của học viên (Claude hoặc bộ luật dự phòng); chờ lâu hơn mặc định
+  aiSuggest: (memberId, payload) => http.post(`/coaches/members/${memberId}/ai-suggestions`, payload, { timeoutMs: 120000 }),
   myPlans: () => http.get('/coaches/me/workout-plans'),
   memberPlans: memberId => http.get(`/coaches/members/${memberId}/workout-plans`),
   classPlans: classId => http.get(`/coaches/classes/${classId}/workout-plans`),
@@ -139,6 +156,21 @@ export const coachApi = {
   notifyClass: (classId, payload) => http.post(`/coaches/classes/${classId}/notifications`, payload),
   notifyMember: (memberId, payload) => http.post(`/coaches/members/${memberId}/notifications`, payload),
   classNotifications: classId => http.get(`/coaches/classes/${classId}/notifications`)
+};
+
+// Quản lý: nhân viên lễ tân
+export const staffApi = {
+  list: query => http.get('/manager/receptionists', query),
+  create: payload => http.post('/manager/receptionists', payload),
+  update: (id, payload) => http.put(`/manager/receptionists/${id}`, payload),
+  toggleStatus: id => http.patch(`/manager/receptionists/${id}/status`)
+};
+
+// Quản lý: toàn bộ giao dịch, xuất CSV, hoàn tiền
+export const managerPaymentApi = {
+  list: query => http.get('/manager/payments', query),
+  exportCsv: (query, filename) => download('/manager/payments/export', query, filename),
+  refund: (paymentId, reason) => http.patch(`/manager/payments/${paymentId}/refund`, { reason })
 };
 
 export const reportApi = {

@@ -4,7 +4,7 @@ import { receptionApi } from '../api/endpoints.js';
 import { fullName, phoneText } from '../core/format.js';
 
 export function memberAvatar(m, size = 'w-10 h-10 text-sm') {
-  return html`<span class="${size} rounded-full bg-gradient-to-tr from-teal-500 to-emerald-600 text-white font-bold flex items-center justify-center shrink-0">${(m.firstName || '?').charAt(0).toUpperCase()}</span>`;
+  return html`<span class="${size} rounded-full bg-brand-dark text-brand-lime font-bold flex items-center justify-center shrink-0">${(m.firstName || '?').charAt(0).toUpperCase()}</span>`;
 }
 
 // bỏ dấu để gõ "nguyen" vẫn ra "Nguyễn"

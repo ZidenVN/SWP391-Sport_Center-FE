@@ -2,7 +2,7 @@ import { html, icon } from '../../core/dom.js';
 import { pageHeader, tabs, table, emptyState, confirmDialog, withBusy, toast } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
-import { date, weekday, timeRange, dateTime, badge, isFuture, toDate } from '../../core/format.js';
+import { date, weekday, timeRange, dateTime, badge, isFuture, toDate, time } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 
 function cancelButton(r) {
@@ -48,34 +48,77 @@ function upcomingView(list) {
     </div>`;
 }
 
+// Kết quả HLV điểm danh; buổi đã qua mà chưa có thì ghi "Chưa điểm danh"
+function attendanceCell(r) {
+  if (r.attendanceStatus) {
+    return html`${badge(r.attendanceStatus)}${r.attendanceNote ? html`<div class="text-[11px] text-slate-400 mt-0.5 max-w-[12rem] truncate" title="${r.attendanceNote}">${r.attendanceNote}</div>` : ''}`;
+  }
+  if (r.status === 'REGISTERED' && r.classStatus !== 'CANCELLED' && !isFuture(r.startTime)) return html`<span class="text-xs text-slate-400">Chưa điểm danh</span>`;
+  return html`<span class="text-xs text-slate-300">—</span>`;
+}
+
+// lớp bị Quản lý hủy thì hiện rõ thay vì chỉ "Đã hủy" như khi tự hủy đăng ký
+const registrationBadge = r => (r.classStatus === 'CANCELLED' ? badge('CLASS_CANCELLED') : badge(r.status));
+
+function attendanceSummary(list) {
+  const n = st => list.filter(r => r.attendanceStatus === st).length;
+  const marked = list.filter(r => r.attendanceStatus).length;
+  if (!marked) return '';
+  const rate = Math.round(((n('PRESENT') + n('LATE')) / marked) * 100);
+  return html`
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5" data-testid="attendance-summary">
+      ${[['Có mặt', n('PRESENT'), 'text-emerald-700'], ['Đến muộn', n('LATE'), 'text-amber-600'], ['Vắng', n('ABSENT'), 'text-rose-600'], ['Nghỉ phép', n('ON_LEAVE'), 'text-sky-600'], ['Chuyên cần', `${rate}%`, 'text-brand-dark']]
+        .map(([label, value, cls]) => html`<div class="card p-4 text-center"><div class="font-display text-3xl font-extrabold ${cls}">${value}</div><div class="text-xs text-slate-500 mt-0.5">${label}</div></div>`)}
+    </div>`;
+}
+
 function historyView(list) {
-  return table({
-    columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Trạng thái' }, { label: 'Đăng ký lúc' }, { label: '', cls: 'text-right' }],
-    rows: list.map(r => [
-      html`<div class="font-semibold">${r.subjectName}</div><div class="text-xs text-slate-500">${coachLink(r)}</div>`,
-      html`${date(r.startTime)}<div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)}</div>`,
-      r.roomName,
-      badge(r.status),
-      html`<span class="text-xs">${dateTime(r.registeredAt)}</span>${r.cancelledAt ? html`<div class="text-xs text-slate-400">Hủy: ${dateTime(r.cancelledAt)}</div>` : ''}`,
-      cancelButton(r)
-    ]),
-    empty: 'Bạn chưa đăng ký lớp nào'
-  });
+  return html`
+    ${attendanceSummary(list)}
+    <div class="card" data-testid="history-table">
+      ${table({
+        columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Đăng ký' }, { label: 'Điểm danh' }, { label: 'Đăng ký lúc' }, { label: '', cls: 'text-right' }],
+        rows: list.map(r => [
+          html`<div class="font-semibold">${r.subjectName}</div><div class="text-xs text-slate-500">${coachLink(r)}</div>`,
+          html`${date(r.startTime)}<div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)}</div>`,
+          r.roomName,
+          registrationBadge(r),
+          attendanceCell(r),
+          html`<span class="text-xs">${dateTime(r.registeredAt)}</span>${r.cancelledAt ? html`<div class="text-xs text-slate-400">Hủy: ${dateTime(r.cancelledAt)}</div>` : ''}`,
+          cancelButton(r)
+        ]),
+        empty: 'Bạn chưa đăng ký lớp nào'
+      })}
+    </div>`;
+}
+
+// lượt đến trung tâm do lễ tân check-in
+function visitsView(list) {
+  return html`
+    <div class="card" data-testid="visit-table">
+      ${table({
+        columns: [{ label: 'Ngày' }, { label: 'Giờ vào' }, { label: 'Lễ tân ghi nhận' }],
+        rows: list.map(c => [html`<b>${weekday(c.checkInTime)}, ${date(c.checkInTime)}</b>`, time(c.checkInTime), c.checkedInBy || '—']),
+        empty: 'Bạn chưa check-in tại trung tâm lần nào'
+      })}
+    </div>`;
 }
 
 function view(s) {
-  const upcoming = s.schedule.filter(r => r.status === 'REGISTERED').sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
-  const history = [...s.registrations].sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)));
+  const upcoming = s.schedule
+    .filter(r => r.status === 'REGISTERED' && r.classStatus !== 'CANCELLED')
+    .sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
+  const history = [...s.registrations].sort((a, b) => toDate(b.startTime) - toDate(a.startTime));
   return html`
-    ${pageHeader('Lịch tập của tôi', 'Các lớp bạn đã đăng ký', html`<a href="#/member/classes" class="btn-primary">${icon('plus', 'w-4 h-4')} Đặt thêm lớp</a>`)}
-    ${tabs([{ id: 'upcoming', label: 'Sắp tới', count: upcoming.length }, { id: 'history', label: 'Lịch sử đăng ký', count: history.length }], s.tab)}
-    ${s.tab === 'upcoming' ? upcomingView(upcoming) : html`<div class="card">${historyView(history)}</div>`}`;
+    ${pageHeader('Lịch tập của tôi', 'Các lớp bạn đã đăng ký và lịch sử điểm danh', html`<a href="#/member/classes" class="btn-primary">${icon('plus', 'w-4 h-4')} Đặt thêm lớp</a>`)}
+    ${tabs([{ id: 'upcoming', label: 'Sắp tới', count: upcoming.length }, { id: 'history', label: 'Lịch sử & điểm danh', count: history.length }, { id: 'visits', label: 'Lượt đến', count: s.checkIns.length }], s.tab)}
+    ${s.tab === 'upcoming' ? upcomingView(upcoming) : s.tab === 'visits' ? visitsView(s.checkIns) : historyView(history)}`;
 }
 
 export default function MemberSchedule(el) {
   return mountPage(el, {
     state: { tab: 'upcoming' },
-    load: () => settle({ schedule: [memberApi.schedule, []], registrations: [memberApi.registrations, []] }),
+    load: () => settle({ schedule: [memberApi.schedule, []], registrations: [memberApi.registrations, []], checkIns: [memberApi.checkIns, []] }),
     view,
     actions: {
       tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),

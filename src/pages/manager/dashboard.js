@@ -3,7 +3,7 @@ import { pageHeader, emptyState } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { reportApi, classApi } from '../../api/endpoints.js';
 import { money, isoDate, date, timeRange, toDate, isToday, paymentMethodLabel, badge } from '../../core/format.js';
-import { drawChart, revenueLine, doughnut, CHART_COLORS } from '../../components/charts.js';
+import { drawChart, revenueLine, doughnut, CHART_COLORS, chartTextColor } from '../../components/charts.js';
 import { subjectColor } from '../../components/classCard.js';
 import { session } from '../../core/session.js';
 
@@ -41,17 +41,17 @@ function view(s) {
   const rev = s.revenue || {};
   const cls = s.classReport || {};
   const now = new Date();
-  const upcoming = (s.classes || []).filter(c => toDate(c.endTime) >= now).sort((a, b) => toDate(a.startTime) - toDate(b.startTime)).slice(0, 5);
+  const upcoming = (s.classes || []).filter(c => c.status === 'OPENING' && toDate(c.endTime) >= now).sort((a, b) => toDate(a.startTime) - toDate(b.startTime)).slice(0, 5);
   const methods = rev.revenueByMethod || [];
   return html`
     ${pageHeader(`Xin chào, ${session.get()?.firstName || 'Quản lý'}!`, 'Tình hình trung tâm hôm nay',
       html`<a href="#/manager/reports" class="btn-primary">${icon('bar-chart-3', 'w-4 h-4')} Xem báo cáo</a>`)}
 
     <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-      ${kpi('Doanh thu tháng này', money(o.revenueThisMonth), 'wallet', 'bg-[#469B7E]/10 text-[#2F6B55]', growthTag(o.revenueGrowthRate))}
-      ${kpi('Hội viên đang có gói', o.totalActiveMembers ?? 0, 'users', 'bg-sky-50 text-sky-600', html`<span class="text-slate-400">trên tổng ${s.memberReport?.totalMembers ?? '—'} hội viên</span>`)}
+      ${kpi('Doanh thu tháng này', money(o.revenueThisMonth), 'wallet', 'bg-brand-dark text-brand-lime', growthTag(o.revenueGrowthRate))}
+      ${kpi('Hội viên đang có gói', o.totalActiveMembers ?? 0, 'users', 'bg-brand-sand text-brand-deep', html`<span class="text-slate-400">trên tổng ${s.memberReport?.totalMembers ?? '—'} hội viên</span>`)}
       ${kpi('Hội viên mới tháng này', o.newMembersThisMonth ?? 0, 'user-plus', 'bg-amber-50 text-amber-600', html`<span class="text-slate-400">tài khoản đăng ký mới</span>`)}
-      ${kpi('Lớp hôm nay', o.classesToday ?? 0, 'calendar-days', 'bg-violet-50 text-violet-600', html`<span class="text-slate-400">${cls.totalOpeningClasses ?? 0} lớp đang mở đăng ký</span>`)}
+      ${kpi('Lớp hôm nay', o.classesToday ?? 0, 'calendar-days', 'bg-brand-sand text-brand-deep', html`<span class="text-slate-400">${cls.totalOpeningClasses ?? 0} lớp đang mở đăng ký</span>`)}
     </div>
 
     <div class="grid xl:grid-cols-3 gap-5 mb-6">
@@ -67,7 +67,7 @@ function view(s) {
           <div class="space-y-3">
             ${methods.map((m, i) => html`
               <div class="flex items-center gap-3">
-                <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold" style="background:${CHART_COLORS[i % CHART_COLORS.length]}">${Math.round(m.percentage)}%</span>
+                <span class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold" style="background:${CHART_COLORS[i % CHART_COLORS.length]};color:${chartTextColor(i)}">${Math.round(m.percentage)}%</span>
                 <div class="flex-1 min-w-0"><div class="text-sm font-semibold">${paymentMethodLabel(m.categoryName)}</div><div class="text-xs text-slate-500">${m.transactionCnt} giao dịch</div></div>
                 <div class="text-sm font-extrabold">${money(m.totalAmount)}</div>
               </div>`)}

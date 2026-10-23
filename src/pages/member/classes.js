@@ -16,6 +16,12 @@ function filtered(s) {
     .sort((a, b) => (toDate(a.startTime) - toDate(b.startTime)));
 }
 
+// Ngày học phải nằm trong 1 gói đang hiệu lực (gói hiện tại hoặc gói gia hạn nối tiếp) — giống luật của BE
+function covered(s, c) {
+  const start = toDate(c.startTime);
+  return (s.subscriptions || []).some(x => x.status === 'ACTIVE' && toDate(x.startDate) <= start && start <= toDate(x.endDate));
+}
+
 function view(s) {
   const myActive = new Map(s.registrations.filter(r => r.status === 'REGISTERED').map(r => [r.classId, r]));
   const subjects = [...new Set(s.classes.map(c => c.subjectName))].sort();
@@ -50,6 +56,10 @@ function view(s) {
             footer = html`
               <span class="mr-auto text-xs font-bold text-emerald-600 flex items-center gap-1">${icon('check-circle-2', 'w-4 h-4')} Đã đăng ký</span>
               <button type="button" class="btn-secondary btn-sm" data-action="cancel-booking" data-id="${reg.registrationId}">Hủy</button>`;
+          } else if (isBookable(c) && !s.current) {
+            footer = html`<a href="#/member/packages" class="btn-secondary btn-sm" data-testid="need-package">${icon('package', 'w-3.5 h-3.5')} Cần mua gói để đặt</a>`;
+          } else if (isBookable(c) && !covered(s, c)) {
+            footer = html`<span class="mr-auto text-xs text-amber-700">Gói hết hạn trước ngày học</span><a href="#/member/packages" class="btn-secondary btn-sm" data-testid="need-renew">Gia hạn</a>`;
           } else if (isBookable(c)) {
             footer = html`<button type="button" class="btn-primary btn-sm" data-action="book" data-id="${c.classId}">${icon('plus', 'w-3.5 h-3.5')} Đặt lớp</button>`;
           } else {
@@ -68,7 +78,8 @@ export default function MemberClasses(el, { query } = {}) {
       const res = await settle({
         classes: [classApi.list, null],
         registrations: [memberApi.registrations, []],
-        current: [memberApi.currentSubscription, null]
+        current: [memberApi.currentSubscription, null],
+        subscriptions: [memberApi.subscriptions, []]
       });
       if (res.classesError) throw res.classesError;
       return res;

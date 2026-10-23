@@ -9,7 +9,7 @@ export function openCoachInfo({ coachId, coachName, coachSpeciality }) {
   const initials = (coachName || '?').split(' ').map(w => w.charAt(0)).slice(0, 2).join('').toUpperCase();
   const header = html`
     <div class="flex items-center gap-4">
-      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-500 to-rose-500 text-white flex items-center justify-center text-xl font-black">${initials}</div>
+      <div class="w-16 h-16 rounded-2xl bg-brand-dark text-brand-lime flex items-center justify-center text-xl font-black">${initials}</div>
       <div>
         <div class="text-lg font-extrabold" data-testid="coach-name">${coachName}</div>
         <div class="text-sm text-slate-500 flex items-center gap-1">${icon('medal', 'w-4 h-4')} ${coachSpeciality || 'Huấn luyện viên'}</div>

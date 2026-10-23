@@ -84,7 +84,7 @@ function membersTab(m) {
       </div>
       <div class="card rounded-3xl p-6 flex flex-col justify-center">
         <div class="text-sm text-slate-500">Tỷ lệ hội viên đang có gói</div>
-        <div class="text-5xl font-black text-[#2F6B55] mt-2">${rate.toFixed(1)}%</div>
+        <div class="font-display text-6xl font-extrabold text-brand-deep mt-2">${rate.toFixed(1)}%</div>
         <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden mt-4"><div class="h-full bg-[#469B7E]" style="width:${rate}%"></div></div>
         <p class="text-sm text-slate-600 mt-4">${m.expiredOrNoSubMembers ?? 0} hội viên chưa có gói hoặc đã hết hạn — có thể liên hệ mời gia hạn.</p>
       </div>
@@ -126,7 +126,7 @@ function view(s) {
       html`<button type="button" class="btn-secondary" data-action="export" data-testid="export">${icon('download', 'w-4 h-4')} Xuất CSV</button>`)}
     <div class="card p-4 mb-5 flex flex-col lg:flex-row lg:items-end gap-3" data-testid="report-filter">
       <div class="flex flex-wrap gap-2">
-        ${PRESETS.map(p => html`<button type="button" class="btn-sm ${s.preset === p.id ? 'btn bg-[#469B7E] text-white' : 'btn-secondary'}" data-action="preset" data-id="${p.id}">${p.label}</button>`)}
+        ${PRESETS.map(p => html`<button type="button" class="btn-sm ${s.preset === p.id ? 'btn bg-brand-dark text-white' : 'btn-secondary'}" data-action="preset" data-id="${p.id}">${p.label}</button>`)}
       </div>
       <form class="flex flex-wrap items-end gap-2 lg:ml-auto" data-action="apply-range">
         <label class="text-xs font-bold text-slate-600">Từ<input class="input mt-1" type="date" name="from" value="${s.from}" max="${s.to}" /></label>

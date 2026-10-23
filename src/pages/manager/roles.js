@@ -60,12 +60,12 @@ function permissionPanel(s) {
 
 function view(s) {
   return html`
-    ${pageHeader('Phân quyền', 'Bật / tắt quyền cho từng vai trò. Người dùng nhận quyền mới ở lần đăng nhập sau.')}
+    ${pageHeader('Phân quyền', 'Bật / tắt quyền cho từng vai trò. Thay đổi có hiệu lực ngay, người dùng không cần đăng nhập lại.')}
     <div class="grid lg:grid-cols-[260px_1fr] gap-5">
       <div class="card p-2 h-fit" data-testid="role-list">
         ${s.roles.map(r => html`
           <button type="button" data-action="pick-role" data-id="${r.roleId}"
-            class="w-full text-left flex items-center gap-3 px-3 py-3 rounded-xl ${r.roleId === s.roleId ? 'bg-[#469B7E] text-white' : 'hover:bg-slate-50'}">
+            class="w-full text-left flex items-center gap-3 px-3 py-3 rounded-xl ${r.roleId === s.roleId ? 'bg-brand-dark text-white' : 'hover:bg-slate-50'}">
             ${icon(r.roleName === 'CENTER_MANAGER' ? 'crown' : r.roleName === 'COACH' ? 'medal' : r.roleName === 'RECEPTIONIST' ? 'concierge-bell' : 'user', 'w-4 h-4 shrink-0')}
             <span class="min-w-0">
               <span class="block font-semibold text-sm">${roleLabel(r.roleName)}</span>

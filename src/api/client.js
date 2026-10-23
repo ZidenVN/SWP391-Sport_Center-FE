@@ -125,6 +125,23 @@ export async function request(method, path, { query, body, timeoutMs = DEFAULT_T
   return data;
 }
 
+// Tải file (CSV...) từ API cần đăng nhập: fetch kèm token rồi lưu blob về máy
+export async function download(path, query, filename) {
+  const token = tokenProvider();
+  const res = await doFetch(buildUrl(path, query), { headers: token ? { Authorization: `Bearer ${token}` } : {} }, DEFAULT_TIMEOUT_MS);
+  if (!res.ok) {
+    const error = toApiError(res.status, parseBody(await res.text()));
+    if (res.status === 401 && token) unauthorizedHandler(error);
+    throw error;
+  }
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export const http = {
   get: (path, query, opts) => request('GET', path, { ...opts, query }),
   post: (path, body, opts) => request('POST', path, { ...opts, body }),

@@ -14,7 +14,7 @@ function view(s) {
   const open = s.tickets.filter(t => t.status === 'OPEN').length;
   return html`
     ${pageHeader('Yêu cầu hỗ trợ', 'Ghi nhận và xử lý yêu cầu của hội viên', html`
-      <button type="button" class="btn bg-teal-600 text-white hover:bg-teal-700" data-action="new" data-testid="new-ticket">${icon('plus', 'w-4 h-4')} Ghi nhận yêu cầu</button>`)}
+      <button type="button" class="btn bg-brand-dark text-white hover:bg-emerald-800" data-action="new" data-testid="new-ticket">${icon('plus', 'w-4 h-4')} Ghi nhận yêu cầu</button>`)}
     <div class="grid sm:grid-cols-3 gap-4 mb-6">
       ${statCard('Đang chờ xử lý', open, 'inbox', 'amber')}
       ${statCard('Đã xử lý', s.tickets.length - open, 'check-circle-2', 'emerald')}
@@ -55,7 +55,7 @@ function contentModal(member, onCreated) {
       <form data-action="create" class="space-y-4" novalidate data-testid="ticket-form">
         <div class="text-sm text-slate-500">#${member.memberId} · ${phoneText(member.phone)}</div>
         ${field('Nội dung yêu cầu', textarea('content', '', { rows: 4, required: true, placeholder: 'VD: Thẻ tập bị lỗi, cần cấp lại...' }), 'Tối đa 2000 ký tự')}
-        <div class="flex justify-end gap-2"><button type="button" data-action="cancel" class="btn-secondary">Hủy</button><button type="submit" class="btn bg-teal-600 text-white hover:bg-teal-700">Ghi nhận</button></div>
+        <div class="flex justify-end gap-2"><button type="button" data-action="cancel" class="btn-secondary">Hủy</button><button type="submit" class="btn bg-brand-dark text-white hover:bg-emerald-800">Ghi nhận</button></div>
       </form>`,
     actions: {
       create: async form => {
