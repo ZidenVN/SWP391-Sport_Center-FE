@@ -4,6 +4,7 @@ import { mountPage, settle } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
 import { date, weekday, timeRange, dateTime, badge, isFuture, toDate, time } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
+import { FEATURES } from '../../core/features.js';
 
 function cancelButton(r) {
   if (r.status !== 'REGISTERED' || !isFuture(r.startTime)) return '';
@@ -48,21 +49,18 @@ function upcomingView(list) {
     </div>`;
 }
 
-// Kết quả HLV điểm danh; buổi đã qua mà chưa có thì ghi "Chưa điểm danh"
-function attendanceCell(r) {
-  if (r.attendanceStatus) {
-    return html`${badge(r.attendanceStatus)}${r.attendanceNote ? html`<div class="text-[11px] text-slate-400 mt-0.5 max-w-[12rem] truncate" title="${r.attendanceNote}">${r.attendanceNote}</div>` : ''}`;
+// Kết quả HLV điểm danh (GET /members/me/attendances, ghép theo classId); buổi đã qua mà chưa có thì ghi "Chưa điểm danh"
+function attendanceCell(r, att) {
+  if (att) {
+    return html`${badge(att.status, att.statusDescription)}${att.note ? html`<div class="text-[11px] text-slate-400 mt-0.5 max-w-[12rem] truncate" title="${att.note}">${att.note}</div>` : ''}`;
   }
-  if (r.status === 'REGISTERED' && r.classStatus !== 'CANCELLED' && !isFuture(r.startTime)) return html`<span class="text-xs text-slate-400">Chưa điểm danh</span>`;
+  if (r.status === 'REGISTERED' && !isFuture(r.startTime)) return html`<span class="text-xs text-slate-400">Chưa điểm danh</span>`;
   return html`<span class="text-xs text-slate-300">—</span>`;
 }
 
-// lớp bị Quản lý hủy thì hiện rõ thay vì chỉ "Đã hủy" như khi tự hủy đăng ký
-const registrationBadge = r => (r.classStatus === 'CANCELLED' ? badge('CLASS_CANCELLED') : badge(r.status));
-
 function attendanceSummary(list) {
-  const n = st => list.filter(r => r.attendanceStatus === st).length;
-  const marked = list.filter(r => r.attendanceStatus).length;
+  const n = st => list.filter(a => a.status === st).length;
+  const marked = list.length;
   if (!marked) return '';
   const rate = Math.round(((n('PRESENT') + n('LATE')) / marked) * 100);
   return html`
@@ -72,9 +70,28 @@ function attendanceSummary(list) {
     </div>`;
 }
 
-function historyView(list) {
+// Tab Điểm danh: từng buổi HLV đã điểm danh, mới nhất trước
+function attendanceView(list) {
+  const rows = [...list].sort((a, b) => toDate(b.startTime) - toDate(a.startTime));
   return html`
     ${attendanceSummary(list)}
+    <div class="card" data-testid="attendance-table">
+      ${table({
+        columns: [{ label: 'Buổi học' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Điểm danh' }, { label: 'Ghi chú' }],
+        rows: rows.map(a => [
+          html`<div class="font-semibold">${a.subjectName}</div><div class="text-xs text-slate-500">HLV ${a.coachName}</div>`,
+          html`${weekday(a.startTime)}, ${date(a.startTime)}<div class="text-xs text-slate-500">${timeRange(a.startTime, a.endTime)}</div>`,
+          a.roomName,
+          badge(a.status, a.statusDescription),
+          html`<span class="text-sm text-slate-600">${a.note || '—'}</span>`
+        ]),
+        empty: 'Chưa có buổi nào được điểm danh'
+      })}
+    </div>`;
+}
+
+function historyView(list, attByClass) {
+  return html`
     <div class="card" data-testid="history-table">
       ${table({
         columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Đăng ký' }, { label: 'Điểm danh' }, { label: 'Đăng ký lúc' }, { label: '', cls: 'text-right' }],
@@ -82,8 +99,8 @@ function historyView(list) {
           html`<div class="font-semibold">${r.subjectName}</div><div class="text-xs text-slate-500">${coachLink(r)}</div>`,
           html`${date(r.startTime)}<div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)}</div>`,
           r.roomName,
-          registrationBadge(r),
-          attendanceCell(r),
+          badge(r.status),
+          attendanceCell(r, attByClass.get(r.classId)),
           html`<span class="text-xs">${dateTime(r.registeredAt)}</span>${r.cancelledAt ? html`<div class="text-xs text-slate-400">Hủy: ${dateTime(r.cancelledAt)}</div>` : ''}`,
           cancelButton(r)
         ]),
@@ -98,7 +115,7 @@ function visitsView(list) {
     <div class="card" data-testid="visit-table">
       ${table({
         columns: [{ label: 'Ngày' }, { label: 'Giờ vào' }, { label: 'Lễ tân ghi nhận' }],
-        rows: list.map(c => [html`<b>${weekday(c.checkInTime)}, ${date(c.checkInTime)}</b>`, time(c.checkInTime), c.checkedInBy || '—']),
+        rows: list.map(c => [html`<b>${weekday(c.checkInTime)}, ${date(c.checkInTime)}</b>`, time(c.checkInTime), c.receptionistName || '—']),
         empty: 'Bạn chưa check-in tại trung tâm lần nào'
       })}
     </div>`;
@@ -106,19 +123,37 @@ function visitsView(list) {
 
 function view(s) {
   const upcoming = s.schedule
-    .filter(r => r.status === 'REGISTERED' && r.classStatus !== 'CANCELLED')
+    .filter(r => r.status === 'REGISTERED')
     .sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
   const history = [...s.registrations].sort((a, b) => toDate(b.startTime) - toDate(a.startTime));
+  const attByClass = new Map(s.attendances.map(a => [a.classId, a]));
+  const body = {
+    upcoming: () => upcomingView(upcoming),
+    history: () => historyView(history, attByClass),
+    attendance: () => attendanceView(s.attendances),
+    visits: () => visitsView(s.checkIns)
+  }[s.tab]();
   return html`
     ${pageHeader('Lịch tập của tôi', 'Các lớp bạn đã đăng ký và lịch sử điểm danh', html`<a href="#/member/classes" class="btn-primary">${icon('plus', 'w-4 h-4')} Đặt thêm lớp</a>`)}
-    ${tabs([{ id: 'upcoming', label: 'Sắp tới', count: upcoming.length }, { id: 'history', label: 'Lịch sử & điểm danh', count: history.length }, { id: 'visits', label: 'Lượt đến', count: s.checkIns.length }], s.tab)}
-    ${s.tab === 'upcoming' ? upcomingView(upcoming) : s.tab === 'visits' ? visitsView(s.checkIns) : historyView(history)}`;
+    ${tabs([
+      { id: 'upcoming', label: 'Sắp tới', count: upcoming.length },
+      { id: 'history', label: 'Lịch sử đăng ký', count: history.length },
+      { id: 'attendance', label: 'Điểm danh', count: s.attendances.length },
+      // BE main chưa có lịch sử check-in của hội viên (FE-TODO #11)
+      ...(FEATURES.checkInHistory ? [{ id: 'visits', label: 'Lượt đến', count: s.checkIns.length }] : [])
+    ], s.tab)}
+    ${body}`;
 }
 
 export default function MemberSchedule(el) {
   return mountPage(el, {
     state: { tab: 'upcoming' },
-    load: () => settle({ schedule: [memberApi.schedule, []], registrations: [memberApi.registrations, []], checkIns: [memberApi.checkIns, []] }),
+    load: () => settle({
+      schedule: [memberApi.schedule, []],
+      registrations: [memberApi.registrations, []],
+      attendances: [memberApi.attendances, []],
+      checkIns: [() => (FEATURES.checkInHistory ? memberApi.checkIns() : []), []]
+    }),
     view,
     actions: {
       tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),

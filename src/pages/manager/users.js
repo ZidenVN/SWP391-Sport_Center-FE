@@ -5,7 +5,7 @@ import { userApi } from '../../api/endpoints.js';
 import { badge, fullName, genderLabel, roleLabel, phoneText } from '../../core/format.js';
 import { session } from '../../core/session.js';
 import { memberAvatar } from '../../components/memberPicker.js';
-import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
+import { openFormModal, requireFields, confirmAction, searchBox } from '../../components/crud.js';
 
 const ROLE_TABS = ['ALL', 'MEMBER', 'RECEPTIONIST', 'COACH', 'CENTER_MANAGER'];
 const ROLE_BADGE = {
@@ -14,14 +14,15 @@ const ROLE_BADGE = {
   COACH: 'bg-amber-50 text-amber-700',
   CENTER_MANAGER: 'bg-violet-50 text-violet-700'
 };
+const PAGE_SIZE = 20;
 
 const isSelf = u => (u.email || '').toLowerCase() === (session.get()?.email || '').toLowerCase();
 
 function editForm(u) {
   return html`
     <div class="grid grid-cols-2 gap-3">
-      ${field('Họ', input('firstName', { value: u.firstName, required: true }))}
-      ${field('Tên', input('lastName', { value: u.lastName, required: true }))}
+      ${field('Họ', input('firstName', { value: u.firstName, required: true, attrs: 'maxlength="50"' }))}
+      ${field('Tên', input('lastName', { value: u.lastName, required: true, attrs: 'maxlength="50"' }))}
     </div>
     <div class="grid grid-cols-2 gap-3">
       ${field('Giới tính', select('gender', GENDER_OPTIONS, (u.gender || '').toUpperCase(), { placeholder: 'Chọn' }))}
@@ -32,27 +33,38 @@ function editForm(u) {
 
 function validateEdit(d) {
   const e = requireFields(d, ['firstName', 'lastName', 'phone', 'email']);
-  if (d.phone && !/^(0|\+84)[0-9]{9}$/.test(d.phone)) e.phone = 'Số điện thoại không hợp lệ';
+  if (d.phone && !/^(0|\+84)[0-9]{9}$/.test(d.phone.trim())) e.phone = 'Số điện thoại không hợp lệ';
+  if (d.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email.trim())) e.email = 'Email không hợp lệ';
   return e;
 }
 
+function pager(page) {
+  if (!page || page.totalPages <= 1) return '';
+  const n = page.number;
+  return html`
+    <div class="flex items-center justify-between px-5 py-3 border-t border-brand-line/60 text-sm" data-testid="pager">
+      <span class="text-slate-500">Trang ${n + 1}/${page.totalPages} · ${page.totalElements} tài khoản</span>
+      <div class="flex gap-2">
+        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n - 1}" ${n <= 0 ? 'disabled' : ''}>${icon('chevron-left', 'w-3.5 h-3.5')} Trước</button>
+        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n + 1}" ${n + 1 >= page.totalPages ? 'disabled' : ''}>Sau ${icon('chevron-right', 'w-3.5 h-3.5')}</button>
+      </div>
+    </div>`;
+}
+
+// Lọc + phân trang ở BE (GET /users?keyword&role&status&page&size); số trên tab và thẻ thống kê cũng lấy từ BE
 function view(s) {
-  const count = r => s.users.filter(u => u.roleName === r).length;
-  const list = s.users
-    .filter(u => s.tab === 'ALL' || u.roleName === s.tab)
-    .filter(u => !s.status || u.status === s.status)
-    .filter(u => matches(s.keyword, [fullName(u), u.email, u.phone, u.id]))
-    .sort((a, b) => b.id - a.id);
+  const c = s.counts || {};
+  const list = s.page?.content || [];
   return html`
     ${pageHeader('Tài khoản', 'Toàn bộ tài khoản trong hệ thống: sửa thông tin, khóa / mở khóa. Thêm nhân viên ở mục Huấn luyện viên / Lễ tân')}
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      ${statCard('Tổng tài khoản', s.users.length, 'users', 'emerald')}
-      ${statCard('Hội viên', count('MEMBER'), 'user', 'sky')}
-      ${statCard('Nhân viên', s.users.length - count('MEMBER'), 'briefcase', 'violet')}
-      ${statCard('Đang bị khóa', s.users.filter(u => u.status === 'INACTIVE').length, 'lock', 'rose')}
+      ${statCard('Tổng tài khoản', c.ALL ?? '—', 'users', 'emerald')}
+      ${statCard('Hội viên', c.MEMBER ?? '—', 'user', 'sky')}
+      ${statCard('Nhân viên', c.ALL != null && c.MEMBER != null ? c.ALL - c.MEMBER : '—', 'briefcase', 'violet')}
+      ${statCard('Đang bị khóa', c.INACTIVE ?? '—', 'lock', 'rose')}
     </div>
     <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3">
-      ${tabs(ROLE_TABS.map(r => ({ id: r, label: r === 'ALL' ? 'Tất cả' : roleLabel(r), count: r === 'ALL' ? s.users.length : count(r) })), s.tab)}
+      ${tabs(ROLE_TABS.map(r => ({ id: r, label: r === 'ALL' ? 'Tất cả' : roleLabel(r), count: c[r] ?? undefined })), s.tab)}
       <div class="flex flex-col sm:flex-row gap-2 mb-5">
         <select class="input sm:w-40" name="status" data-action="status">
           <option value="">Mọi trạng thái</option>
@@ -63,7 +75,7 @@ function view(s) {
       </div>
     </div>
     <div class="card" data-testid="user-table">
-      ${list.length ? table({
+      ${list.length ? html`${table({
         columns: [{ label: 'Tài khoản' }, { label: 'Liên hệ' }, { label: 'Vai trò' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
         rows: list.map(u => [
           html`<div class="flex items-center gap-3">${memberAvatar(u, 'w-9 h-9 text-sm')}<div><div class="font-semibold">${fullName(u)} ${isSelf(u) ? html`<span class="text-[10px] font-bold text-slate-400">(bạn)</span>` : ''}</div><div class="text-xs text-slate-500">#${u.id} · ${genderLabel(u.gender)}</div></div></div>`,
@@ -77,30 +89,56 @@ function view(s) {
                 <button type="button" class="btn-ghost btn-sm ${u.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-700 hover:bg-emerald-50'}" data-action="toggle" data-id="${u.id}" title="${u.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}" data-testid="row-toggle">${icon(u.status === 'ACTIVE' ? 'lock' : 'unlock', 'w-3.5 h-3.5')}</button>`}
             </div>`
         ])
-      }) : emptyState('Không có tài khoản phù hợp', 'users')}
+      })}${pager(s.page)}` : emptyState('Không có tài khoản phù hợp', 'users')}
     </div>`;
 }
 
 export default function ManagerUsers(el) {
+  let timer = null;
+  const find = (ctx, id) => (ctx.state.page?.content || []).find(x => String(x.id) === id);
   return mountPage(el, {
-    state: { tab: 'ALL', keyword: '', status: '' },
-    load: async () => {
-      return { users: await userApi.list() };
+    state: { tab: 'ALL', keyword: '', status: '', pageNo: 0 },
+    load: async ctx => {
+      const s = ctx.state;
+      const query = {
+        keyword: s.keyword.trim() || undefined,
+        role: s.tab === 'ALL' ? undefined : s.tab,
+        status: s.status || undefined,
+        page: s.pageNo,
+        size: PAGE_SIZE
+      };
+      // đếm bằng totalElements, mỗi lần chỉ lấy 1 dòng
+      const total = q => userApi.page({ ...q, size: 1 }).then(p => p.totalElements).catch(() => null);
+      const [page, ALL, MEMBER, RECEPTIONIST, COACH, CENTER_MANAGER, INACTIVE] = await Promise.all([
+        userApi.page(query), total({}), total({ role: 'MEMBER' }), total({ role: 'RECEPTIONIST' }),
+        total({ role: 'COACH' }), total({ role: 'CENTER_MANAGER' }), total({ status: 'INACTIVE' })
+      ]);
+      return { page, counts: { ALL, MEMBER, RECEPTIONIST, COACH, CENTER_MANAGER, INACTIVE } };
     },
     view,
     actions: {
-      tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),
-      search: (t, e, ctx) => ctx.set({ keyword: t.value }),
-      status: (t, e, ctx) => ctx.set({ status: t.value }),
+      tab: (t, e, ctx) => { ctx.state.tab = t.dataset.tab; ctx.state.pageNo = 0; ctx.reload(); },
+      // gõ xong 350ms mới hỏi BE, tránh gọi theo từng phím
+      search: (t, e, ctx) => {
+        ctx.state.keyword = t.value;
+        clearTimeout(timer);
+        timer = setTimeout(() => { ctx.state.pageNo = 0; ctx.reload(); }, 350);
+      },
+      status: (t, e, ctx) => { ctx.state.status = t.value; ctx.state.pageNo = 0; ctx.reload(); },
+      page: (t, e, ctx) => { ctx.state.pageNo = Math.max(0, Number(t.dataset.page)); ctx.reload(); },
       edit: (t, e, ctx) => {
-        const u = ctx.state.users.find(x => String(x.id) === t.dataset.id);
+        const u = find(ctx, t.dataset.id);
         openFormModal({
           title: `Sửa tài khoản ${fullName(u)}`, fields: editForm(u), validate: validateEdit, success: 'Đã cập nhật tài khoản',
-          submit: d => userApi.update(u.id, { ...u, ...d }), onDone: () => ctx.reload()
+          submit: d => userApi.update(u.id, {
+            firstName: d.firstName.trim(), lastName: d.lastName.trim(), gender: d.gender || undefined,
+            email: d.email.trim(), phone: d.phone.trim()
+          }),
+          onDone: () => ctx.reload()
         });
       },
       toggle: async (t, e, ctx) => {
-        const u = ctx.state.users.find(x => String(x.id) === t.dataset.id);
+        const u = find(ctx, t.dataset.id);
         const locking = u.status === 'ACTIVE';
         if (await confirmAction(
           locking ? `Khóa tài khoản ${fullName(u)} (${u.email})? Tài khoản sẽ không đăng nhập được.` : `Mở khóa tài khoản ${fullName(u)}?`,

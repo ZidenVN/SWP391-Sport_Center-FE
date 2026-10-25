@@ -1,5 +1,5 @@
 import { html, readForm } from '../core/dom.js';
-import { openModal, field, input, select, textarea, withBusy, toast, showFormErrors } from '../core/ui.js';
+import { openModal, field, input, select, textarea, withBusy, toast, showFormErrors, dateTimeInput } from '../core/ui.js';
 import { coachApi } from '../api/endpoints.js';
 import { isoDate, isoLocalMinute, fullName, date, isPlaceholderPhone } from '../core/format.js';
 
@@ -92,7 +92,7 @@ export function openResultForm({ member, result, onDone }) {
       <form data-action="save" class="space-y-4" novalidate data-testid="result-form">
         ${field('Nội dung buổi tập', textarea('activityDetails', result?.activityDetails || '', { rows: 3, required: true, placeholder: 'VD: Squat 4x10 (60kg), chạy 3km' }))}
         ${field('Nhận xét của HLV', textarea('coachFeedback', result?.coachFeedback || '', { rows: 3, placeholder: 'VD: Đúng form, tuần sau tăng tạ' }))}
-        ${field('Thời điểm tập', input('loggedDate', { type: 'datetime-local', value: isoLocalMinute(result?.loggedDate || new Date()) }))}
+        ${field('Thời điểm tập', dateTimeInput('loggedDate', isoLocalMinute(result?.loggedDate || new Date()), { minuteStep: 1 }))}
         ${submitRow(result ? 'Lưu thay đổi' : 'Ghi kết quả')}
       </form>`,
     actions: {

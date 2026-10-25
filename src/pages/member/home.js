@@ -6,6 +6,7 @@ import { session } from '../../core/session.js';
 import { date, dateTime, daysUntil, weekday, timeRange, badge, isPlaceholderPhone } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
+import { quizStore } from '../../core/quiz.js';
 
 function subscriptionCard(sub) {
   if (!sub) {
@@ -38,6 +39,29 @@ function subscriptionCard(sub) {
     </div>`;
 }
 
+// Chưa có gói: mời làm quiz, hoặc nhắc lại gợi ý nếu đã làm
+function quizBanner(current) {
+  if (current) return '';
+  const done = Boolean(quizStore.answers(session.get()?.email));
+  const combo = quizStore.combo(session.get()?.email);
+  if (combo) {
+    return html`
+      <a href="#/member/onboarding" class="mb-5 flex items-center gap-3 rounded-2xl bg-brand-dark p-4 text-white hover:bg-brand-deep" data-testid="quiz-banner">
+        <span class="w-10 h-10 rounded-xl bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('heart-handshake', 'w-5 h-5')}</span>
+        <span class="flex-1 text-sm"><b>Combo bạn đã chọn: ${combo.name}</b> · ${Math.round(combo.price / 1000)}k/tháng<br /><span class="text-white/70">Xem lịch tập xen kẽ gợi ý và các lựa chọn khác.</span></span>
+        ${icon('chevron-right', 'w-5 h-5')}
+      </a>`;
+  }
+  return html`
+    <a href="#/member/onboarding" class="mb-5 flex items-center gap-3 rounded-2xl bg-brand-dark p-4 text-white hover:bg-brand-deep" data-testid="quiz-banner">
+      <span class="w-10 h-10 rounded-xl bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('sparkles', 'w-5 h-5')}</span>
+      <span class="flex-1 text-sm">${done
+        ? html`<b>Xem lại gói tập gợi ý cho bạn</b><br /><span class="text-white/70">Dựa trên chỉ số cơ thể, mục tiêu và khung giờ bạn đã chọn.</span>`
+        : html`<b>Chưa biết chọn gói nào?</b><br /><span class="text-white/70">Trả lời 4 câu hỏi nhanh để nhận gói tập và lớp học hợp với bạn.</span>`}</span>
+      ${icon('chevron-right', 'w-5 h-5')}
+    </a>`;
+}
+
 function view(s) {
   const name = session.get()?.firstName || '';
   const upcoming = (s.schedule || []).filter(r => r.status === 'REGISTERED').slice(0, 4);
@@ -52,6 +76,7 @@ function view(s) {
         ${icon('chevron-right', 'w-5 h-5')}
       </a>` : ''}
     ${expiryBanner(s.current)}
+    ${quizBanner(s.current)}
     <div class="grid lg:grid-cols-3 gap-6">
       <div class="lg:col-span-1">${subscriptionCard(s.current)}</div>
       <div class="lg:col-span-2 grid sm:grid-cols-3 gap-4 content-start">

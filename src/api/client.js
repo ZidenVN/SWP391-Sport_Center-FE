@@ -104,7 +104,7 @@ async function doFetch(url, options, timeoutMs) {
   }
 }
 
-export async function request(method, path, { query, body, timeoutMs = DEFAULT_TIMEOUT_MS, auth = true } = {}) {
+export async function request(method, path, { query, body, timeoutMs = DEFAULT_TIMEOUT_MS, auth = true, handle401 = true } = {}) {
   const headers = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const token = auth ? tokenProvider() : null;
@@ -119,7 +119,7 @@ export async function request(method, path, { query, body, timeoutMs = DEFAULT_T
   const data = parseBody(await res.text());
   if (!res.ok) {
     const error = toApiError(res.status, data);
-    if (res.status === 401 && auth && token) unauthorizedHandler(error);
+    if (res.status === 401 && auth && token && handle401) unauthorizedHandler(error);
     throw error;
   }
   return data;

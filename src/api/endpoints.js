@@ -5,19 +5,22 @@ export const authApi = {
   login: (email, password) => http.post('/auth/login', { email, password }, { auth: false }),
   register: payload => http.post('/auth/register', payload, { auth: false }),
   // payload: { token } (ID token) hoặc { accessToken } (nút Google tự thiết kế)
-  google: payload => http.post('/auth/google', payload, { auth: false })
+  google: payload => http.post('/auth/google', payload, { auth: false }),
+  // đổi mật khẩu: BE trả token mới, token cũ bị vô hiệu
+  changePassword: (currentPassword, newPassword) => http.put('/auth/change-password', { currentPassword, newPassword }),
+  // vô hiệu token phía server (token lộ ra ngoài cũng không dùng được nữa)
+  logout: () => http.post('/auth/logout', undefined, { handle401: false })
 };
 
 export const userApi = {
-  list: () => http.get('/users'),
+  // chỉ Quản lý; BE trả trang { content, totalElements, totalPages, number, size }
+  // query: { keyword, role (CENTER_MANAGER|COACH|RECEPTIONIST|MEMBER), status (ACTIVE|INACTIVE), page (từ 0), size (tối đa 100) }
+  page: query => http.get('/users', query),
+  list: query => http.get('/users', { size: 100, ...query }).then(page => page.content || []),
   get: id => http.get(`/users/${id}`),
   update: (id, payload) => http.put(`/users/${id}`, payload),
   toggleStatus: id => http.patch(`/users/${id}/status`),
-  assignRole: (userId, roleId) => http.patch(`/users/${userId}/role/${roleId}`),
-  // hồ sơ của chính mình (mọi vai trò), theo quyền VIEW_OWN_PROFILE / UPDATE_OWN_PROFILE
-  me: () => http.get('/users/me'),
-  updateMe: payload => http.put('/users/me', payload),
-  myPermissions: () => http.get('/users/me/permissions')
+  assignRole: (userId, roleId) => http.patch(`/users/${userId}/role/${roleId}`)
 };
 
 export const roleApi = {
@@ -63,6 +66,8 @@ export const subjectApi = {
 
 export const classApi = {
   list: () => http.get('/classes'),
+  // tìm lớp có lọc + phân trang: { fromDate, toDate (yyyy-MM-dd), subjectId, coachId, roomId, status (OPENING|CANCELLED|COMPLETED), available, page, size }
+  search: query => http.get('/classes/search', query),
   get: id => http.get(`/classes/${id}`),
   create: payload => http.post('/classes', payload),
   update: (id, payload) => http.put(`/classes/${id}`, payload),
@@ -88,6 +93,9 @@ export const memberApi = {
   workoutResults: () => http.get('/members/me/workout-results'),
   progress: () => http.get('/members/me/progress'),
   notifications: () => http.get('/members/me/notifications'),
+  // lịch sử điểm danh theo từng buổi học
+  attendances: () => http.get('/members/me/attendances'),
+  // BE chưa có (FE-TODO #11, #13): các màn hình dùng 2 API này đang ẩn / hiện "Sắp có"
   checkIns: () => http.get('/members/me/check-ins'),
   aiChat: payload => http.post('/members/me/ai-chat', payload, { timeoutMs: 120000 }),
   classWorkoutPlans: classId => http.get(`/coaches/classes/${classId}/workout-plans`),
@@ -107,12 +115,12 @@ export const vnpayApi = {
 
 export const receptionApi = {
   search: keyword => http.get('/receptionist/members', { keyword }),
-  // BE search bắt buộc có keyword -> danh sách đầy đủ lấy từ /users (lễ tân có quyền VIEW_USER), lọc role MEMBER
-  allMembers: async () => (await http.get('/users'))
-    .filter(u => u.roleName === 'MEMBER')
-    .map(u => ({ memberId: u.id, firstName: u.firstName, lastName: u.lastName, gender: u.gender, email: u.email, phone: u.phone, status: u.status }))
-    .sort((a, b) => b.memberId - a.memberId),
-  updateMember: (memberId, payload) => http.put(`/users/${memberId}`, payload),
+  // /users giờ chỉ Quản lý gọi được. BE đang trả rỗng khi keyword trống; khi BE cập nhật (FE-TODO #8)
+  // keyword trống sẽ trả mọi hội viên và danh sách tự hiện, không phải sửa FE
+  // (keyword để thẳng trong đường dẫn vì client bỏ tham số rỗng, mà BE bắt buộc phải có keyword)
+  allMembers: async () => (await http.get('/receptionist/members?keyword=')).sort((a, b) => b.memberId - a.memberId),
+  // BE chưa có API sửa hội viên cho Lễ tân (FE-TODO #9, dự kiến PUT /receptionist/members/{id}); nút sửa đang ẩn
+  updateMember: (memberId, payload) => http.put(`/receptionist/members/${memberId}`, payload),
   member: id => http.get(`/receptionist/members/${id}`),
   registerWalkIn: payload => http.post('/receptionist/members', payload),
   subscribe: (memberId, packageId, paymentMethod) => http.post(`/receptionist/members/${memberId}/subscriptions`, { packageId, paymentMethod }),
@@ -131,9 +139,10 @@ export const receptionApi = {
   resolveTicket: ticketId => http.patch(`/receptionist/tickets/${ticketId}/resolve`),
   // danh sách giao dịch tại quầy (lọc ngày, trạng thái, phương thức, từ khóa), có phân trang
   allPayments: query => http.get('/receptionist/payments', query),
-  // điểm danh hội viên khi đến trung tâm
-  checkIn: (memberId, note) => http.post('/receptionist/check-ins', { memberId, note }),
+  // điểm danh hội viên khi đến trung tâm (không có body)
+  checkIn: memberId => http.post(`/receptionist/members/${memberId}/check-ins`),
   checkInsByDate: date => http.get('/receptionist/check-ins', date ? { date } : undefined),
+  // BE chưa có (FE-TODO #11)
   memberCheckIns: memberId => http.get(`/receptionist/members/${memberId}/check-ins`)
 };
 
@@ -144,7 +153,7 @@ export const coachApi = {
   takeAttendance: (classId, records) => http.post(`/coaches/me/classes/${classId}/attendances`, { records }),
   attendances: classId => http.get(`/coaches/me/classes/${classId}/attendances`),
   createPlan: payload => http.post('/coaches/me/workout-plans', payload),
-  // AI gợi ý bài tập theo mục tiêu + lịch sử tập của học viên (Claude hoặc bộ luật dự phòng); chờ lâu hơn mặc định
+  // BE chưa có (FE-TODO #13): nút gợi ý AI đang ẩn bằng FEATURES.ai
   aiSuggest: (memberId, payload) => http.post(`/coaches/members/${memberId}/ai-suggestions`, payload, { timeoutMs: 120000 }),
   myPlans: () => http.get('/coaches/me/workout-plans'),
   memberPlans: memberId => http.get(`/coaches/members/${memberId}/workout-plans`),

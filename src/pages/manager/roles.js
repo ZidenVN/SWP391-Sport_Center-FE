@@ -60,7 +60,7 @@ function permissionPanel(s) {
 
 function view(s) {
   return html`
-    ${pageHeader('Phân quyền', 'Bật / tắt quyền cho từng vai trò. Thay đổi có hiệu lực ngay, người dùng không cần đăng nhập lại.')}
+    ${pageHeader('Phân quyền', 'Bật / tắt quyền cho từng vai trò. Máy chủ áp dụng ngay; menu và nút trên giao diện của người dùng cập nhật ở lần đăng nhập sau.')}
     <div class="grid lg:grid-cols-[260px_1fr] gap-5">
       <div class="card p-2 h-fit" data-testid="role-list">
         ${s.roles.map(r => html`

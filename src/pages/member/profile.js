@@ -4,7 +4,6 @@ import { mountPage } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { genderLabel, isPlaceholderPhone, phoneText } from '../../core/format.js';
-import { syncPermissions } from '../../components/permissionSync.js';
 
 const PHONE_RE = /^(0|\+84)[0-9]{9}$/;
 
@@ -59,8 +58,6 @@ function view(s) {
 export default function MemberProfile(el) {
   return mountPage(el, {
     load: async () => {
-      // lấy quyền mới nhất: Quản lý có thể vừa đổi phân quyền của hội viên
-      await syncPermissions({ force: true });
       if (!session.can('VIEW_OWN_PROFILE')) return { me: null };
       return { me: await memberApi.me() };
     },

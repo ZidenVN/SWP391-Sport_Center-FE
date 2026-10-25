@@ -5,6 +5,7 @@ import { authLayout, iconInput, togglePassword } from './authLayout.js';
 import { darkSelect, mountDarkSelects } from '../../components/darkSelect.js';
 import { loginAndStart, goAfterLogin } from './login.js';
 import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
+import { quizStore } from '../../core/quiz.js';
 
 // Cùng luật với RegisterRequestDTO phía BE để báo lỗi sớm
 export function validateRegister(data) {
@@ -60,6 +61,7 @@ export default function RegisterPage(el, { navigate }) {
       try {
         const { confirmPassword, ...payload } = data;
         await authApi.register(payload);
+        quizStore.markPending(payload.email);
         toast('Đăng ký thành công! Đang đăng nhập...');
         await loginAndStart(payload.email, payload.password);
         goAfterLogin(navigate);
