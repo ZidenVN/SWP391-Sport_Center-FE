@@ -7,7 +7,7 @@ import { date, weekday, timeRange, toDate } from '../../core/format.js';
 import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner } from '../../components/memberAlerts.js';
 import { classSearchQuery, classFilterBar, classPager, filterByKeyword, classSearchActions } from '../../components/classSearch.js';
-import { calendarGrid, calendarToolbar, viewModeTabs, loadCalendarClasses, chipState, scrollTimeGrid } from '../../components/classCalendar.js';
+import { calendarGrid, calendarToolbar, viewModeTabs, loadCalendarClasses, chipState, scrollTimeGrid, whenLine } from '../../components/classCalendar.js';
 
 // Lớp học của hội viên: xem dạng lịch Tháng / Tuần hoặc Danh sách (GET /classes/search, FE-TODO #7).
 const PAGE_SIZE = 12;
@@ -85,7 +85,7 @@ function classDetail(s, c, mine) {
       <div class="flex items-start justify-between gap-3">
         <div>
           <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">${c.subjectName}</div>
-          <div class="text-sm text-slate-500">${weekday(c.startTime)}, ${date(c.startTime)} · ${timeRange(c.startTime, c.endTime)}</div>
+          <div class="text-sm text-slate-500">${whenLine(c)}</div>
         </div>
         <span class="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${st === 'registered' ? 'bg-brand-dark text-brand-lime' : st === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
           ${st === 'registered' ? 'Đã đăng ký' : st === 'open' ? `Còn ${c.availableSeats} chỗ` : c.availableSeats <= 0 ? 'Hết chỗ' : 'Không nhận đăng ký'}</span>

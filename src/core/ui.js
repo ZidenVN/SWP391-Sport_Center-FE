@@ -240,27 +240,42 @@ export function input(name, { type = 'text', value = '', required = false, place
 // Ngày + giờ kiểu 24h Việt Nam (ô datetime-local của trình duyệt hiện SA/CH theo máy, không ép 24h được).
 // Gửi đi qua ô ẩn name=<name> dạng yyyy-MM-ddTHH:mm như datetime-local nên validate/payload giữ nguyên.
 const pad2 = n => String(n).padStart(2, '0');
-export function dateTimeInput(name, value = '', { required = false, minuteStep = 5 } = {}) {
-  const [d = '', t = ''] = String(value || '').split('T');
-  const [hh = '', mm = ''] = t.split(':');
+function clockSelects(hh, mm, minuteStep) {
   const minutes = [];
   for (let m = 0; m < 60; m += minuteStep) minutes.push(pad2(m));
   if (mm && !minutes.includes(mm)) minutes.push(mm);
   minutes.sort();
   const opt = (v, cur) => html`<option value="${v}" ${v === cur ? raw('selected') : ''}>${v}</option>`;
   return html`
+    <div class="flex items-center gap-1.5">
+      <select class="input !w-[5.5rem] !pl-3 !pr-8" data-dt-part="hour" aria-label="Giờ">
+        ${Array.from({ length: 24 }, (_, h) => opt(pad2(h), hh))}
+      </select>
+      <span class="font-bold text-slate-400">:</span>
+      <select class="input !w-[5.5rem] !pl-3 !pr-8" data-dt-part="minute" aria-label="Phút">
+        ${minutes.map(m => opt(m, mm))}
+      </select>
+    </div>`;
+}
+
+export function dateTimeInput(name, value = '', { required = false, minuteStep = 5 } = {}) {
+  const [d = '', t = ''] = String(value || '').split('T');
+  const [hh = '', mm = ''] = t.split(':');
+  return html`
     <div class="flex flex-wrap items-center gap-2" data-field-wrap data-dt24>
       <input type="hidden" name="${name}" value="${value || ''}" ${required ? raw('required') : ''} />
       <input class="input flex-1 min-w-[10rem]" type="date" value="${d}" data-dt-part="date" aria-label="Ngày" />
-      <div class="flex items-center gap-1.5">
-        <select class="input !w-[5.5rem] !pl-3 !pr-8" data-dt-part="hour" aria-label="Giờ">
-          ${Array.from({ length: 24 }, (_, h) => opt(pad2(h), hh))}
-        </select>
-        <span class="font-bold text-slate-400">:</span>
-        <select class="input !w-[5.5rem] !pl-3 !pr-8" data-dt-part="minute" aria-label="Phút">
-          ${minutes.map(m => opt(m, mm))}
-        </select>
-      </div>
+      ${clockSelects(hh, mm, minuteStep)}
+    </div>`;
+}
+
+// Chỉ giờ:phút kiểu 24h, gửi đi dạng HH:mm
+export function timeInput(name, value = '', { minuteStep = 5 } = {}) {
+  const [hh = '', mm = ''] = String(value || '').split(':');
+  return html`
+    <div data-field-wrap data-dt24>
+      <input type="hidden" name="${name}" value="${value || ''}" />
+      ${clockSelects(hh, mm, minuteStep)}
     </div>`;
 }
 
@@ -269,8 +284,10 @@ if (typeof document !== 'undefined') {
   const syncDateTime = e => {
     const wrap = e.target.closest?.('[data-dt24]');
     if (!wrap) return;
-    const part = p => wrap.querySelector(`[data-dt-part="${p}"]`).value;
-    wrap.querySelector('input[type=hidden]').value = part('date') ? `${part('date')}T${part('hour')}:${part('minute')}` : '';
+    const part = p => wrap.querySelector(`[data-dt-part="${p}"]`)?.value;
+    const clock = `${part('hour')}:${part('minute')}`;
+    const hasDate = wrap.querySelector('[data-dt-part="date"]');
+    wrap.querySelector('input[type=hidden]').value = !hasDate ? clock : part('date') ? `${part('date')}T${clock}` : '';
   };
   document.addEventListener('change', syncDateTime);
   document.addEventListener('input', syncDateTime);

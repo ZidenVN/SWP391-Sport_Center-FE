@@ -1,5 +1,5 @@
 import { html, icon } from '../core/dom.js';
-import { isoDate, time, toDate } from '../core/format.js';
+import { isoDate, time, toDate, weekday, date, timeRange } from '../core/format.js';
 import { classApi } from '../api/endpoints.js';
 
 // Lịch lớp học dạng tháng / tuần (như Google Calendar): mỗi ô ngày có các thẻ lớp, bấm thẻ để xem chi tiết.
@@ -49,16 +49,55 @@ export function calendarTitle(mode, offset) {
 }
 
 // Tải mọi lớp trong khoảng (API giới hạn 100 lớp/trang -> lấy lần lượt các trang)
+// Lớp nhiều ngày (vd 27/10 08:00 -> 31/10 09:00) bắt đầu trước khoảng đang xem vẫn phải hiện,
+// nên lùi ngày tìm thêm MULTI_DAY_LOOKBACK ngày rồi lọc lại theo giờ kết thúc.
+const MULTI_DAY_LOOKBACK = 31;
 export async function loadCalendarClasses(s, { includeCancelled = false } = {}) {
   const { start, end } = calendarRange(s.mode, s.calOffset);
-  const query = { fromDate: isoDate(start), toDate: isoDate(end), subjectId: s.subjectId || undefined, size: 100 };
+  const query = { fromDate: isoDate(addDays(start, -MULTI_DAY_LOOKBACK)), toDate: isoDate(end), subjectId: s.subjectId || undefined, size: 100 };
   const all = [];
   for (let page = 0; page < 10; page++) {
     const res = await classApi.search({ ...query, page });
     all.push(...(res.content || []));
     if (res.last !== false || page + 1 >= (res.totalPages || 0)) break;
   }
-  return includeCancelled ? all : all.filter(c => c.status !== 'CANCELLED');
+  return all
+    .filter(c => toDate(c.endTime) >= start)
+    .filter(c => includeCancelled || c.status !== 'CANCELLED');
+}
+
+export const isMultiDay = c => isoDate(toDate(c.startTime)) !== isoDate(toDate(c.endTime));
+
+// Thời gian hiển thị: lớp nhiều ngày ghi "27/10 → 31/10 · 08:00 – 09:00 mỗi ngày"
+export function classWhen(c) {
+  if (!isMultiDay(c)) return null;
+  const s = toDate(c.startTime);
+  const e = toDate(c.endTime);
+  const dm = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const days = Math.round((startOfDay(e) - startOfDay(s)) / 86400000) + 1;
+  return { range: `${dm(s)} → ${dm(e)}/${e.getFullYear()}`, clock: `${time(c.startTime)} – ${time(c.endTime)} mỗi ngày`, days };
+}
+
+// 1 dòng thời gian cho popup/bảng: lớp 1 ngày "Thứ 3, 27/10/2026 · 08:00 – 09:00", lớp nhiều ngày ghi cả khoảng ngày
+export function whenLine(c) {
+  const m = classWhen(c);
+  return m ? `${m.range} (${m.days} ngày) · ${m.clock}` : `${weekday(c.startTime)}, ${date(c.startTime)} · ${timeRange(c.startTime, c.endTime)}`;
+}
+
+// Tách lớp nhiều ngày thành từng buổi theo ngày (cùng classId, cùng khung giờ) để vẽ lên lịch
+function occurrences(c) {
+  if (!isMultiDay(c)) return [c];
+  const s = toDate(c.startTime);
+  const e = toDate(c.endTime);
+  const clock = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+  // giờ kết thúc trong ngày phải sau giờ bắt đầu, nếu không thì coi như 1 khối liền (qua đêm) và chỉ vẽ ngày đầu
+  if (clock(e) <= clock(s)) return [c];
+  const out = [];
+  const total = Math.round((startOfDay(e) - startOfDay(s)) / 86400000) + 1;
+  for (let d = startOfDay(s), i = 1; d <= e; d = addDays(d, 1), i++) {
+    out.push({ ...c, startTime: `${isoDate(d)}T${clock(s)}`, endTime: `${isoDate(d)}T${clock(e)}`, dayIndex: i, dayTotal: total });
+  }
+  return out;
 }
 
 // trạng thái của 1 lớp với hội viên: registered | open | closed
@@ -91,7 +130,7 @@ function chip(c, st, compact) {
     <button type="button" data-action="cal-class" data-id="${c.classId}" data-testid="cal-chip" title="${c.subjectName} · ${time(c.startTime)}–${time(c.endTime)} · ${c.roomName}"
       class="w-full text-left rounded-md px-2 ${compact ? 'py-1' : 'py-1.5'} text-[11px] font-semibold leading-tight truncate transition-colors ${cls}">
       ${st === 'registered' ? icon('check', 'w-3 h-3 inline -mt-0.5') : ''} <span class="opacity-80">${time(c.startTime)}</span> ${c.subjectName}
-      ${compact ? '' : html`<div class="font-normal opacity-75 truncate">${c.coachName} · ${c.roomName}</div>`}
+      ${compact ? '' : html`<div class="font-normal opacity-75 truncate">${c.dayTotal ? `Ngày ${c.dayIndex}/${c.dayTotal} · ` : ''}${c.coachName} · ${c.roomName}</div>`}
     </button>`;
 }
 
@@ -105,7 +144,7 @@ export function calendarGrid(s, classes, { stateOf, legend = MEMBER_LEGEND }) {
   const { start, end, anchor } = calendarRange(s.mode, s.calOffset);
   const today = new Date();
   const byDay = new Map();
-  [...classes].sort((a, b) => toDate(a.startTime) - toDate(b.startTime)).forEach(c => {
+  classes.flatMap(occurrences).sort((a, b) => toDate(a.startTime) - toDate(b.startTime)).forEach(c => {
     const key = isoDate(toDate(c.startTime));
     if (!byDay.has(key)) byDay.set(key, []);
     byDay.get(key).push(c);
@@ -205,7 +244,7 @@ function timeCard(x, st, fromHour) {
       style="top:${top + 3}px;height:${height}px;left:calc(${x.lane * width}% + 4px);width:calc(${width}% - 8px)"
       title="${c.subjectName} · ${time(c.startTime)} – ${time(c.endTime)} · ${c.coachName} · ${c.roomName}">
       <div class="text-xs font-bold leading-tight ${narrow ? 'line-clamp-2 break-words' : 'truncate'}">${st === 'registered' ? html`${icon('check', 'w-3 h-3 inline -mt-0.5 text-brand-lime')} ` : ''}${c.subjectName}</div>
-      <div class="text-[11px] leading-tight mt-0.5 ${st === 'registered' ? 'text-white/70' : 'opacity-80'}">${narrow ? time(c.startTime) : `${time(c.startTime)} – ${time(c.endTime)}`}</div>
+      <div class="text-[11px] leading-tight mt-0.5 ${st === 'registered' ? 'text-white/70' : 'opacity-80'}">${narrow ? time(c.startTime) : `${time(c.startTime)} – ${time(c.endTime)}`}${c.dayTotal && !narrow ? ` · Ngày ${c.dayIndex}/${c.dayTotal}` : ''}</div>
       ${roomy ? html`
         <div class="text-[11px] leading-tight mt-1 truncate ${st === 'registered' ? 'text-white/70' : 'opacity-75'}">${c.coachName} · ${c.roomName}</div>
         <div class="flex items-center gap-1.5 mt-1.5 text-[11px] font-semibold ${TONES[st].sub}">
