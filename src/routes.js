@@ -37,7 +37,7 @@ export const ROUTES = [
   { path: '/member/schedule', roles: M, nav: { label: 'Lịch tập của tôi', icon: 'calendar-check' }, load: () => import('./pages/member/schedule.js') },
   { path: '/member/packages', roles: M, nav: { label: 'Gói tập', icon: 'package' }, load: () => import('./pages/member/packages.js') },
   { path: '/member/training', roles: M, nav: { label: 'Tập luyện', icon: 'dumbbell' }, load: () => import('./pages/member/training.js') },
-  // BE main chưa có API trợ lý AI (FE-TODO #13) -> chỉ hiện khi bật FEATURES.ai
+  // Trợ lý AI chỉ dành cho hội viên (BE chặn 403 với vai khác) -> menu chỉ có ở vai hội viên
   ...(FEATURES.ai ? [{ path: '/member/assistant', roles: M, nav: { label: 'Trợ lý AI', icon: 'sparkles' }, load: () => import('./pages/member/assistant.js') }] : []),
   { path: '/member/payments', roles: M, nav: { label: 'Thanh toán', icon: 'receipt' }, load: () => import('./pages/member/payments.js') },
   { path: '/member/notifications', roles: M, nav: { label: 'Thông báo', icon: 'bell' }, load: () => import('./pages/member/notifications.js') },

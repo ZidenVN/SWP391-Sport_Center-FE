@@ -46,7 +46,14 @@ function sidebar(role) {
           ${g.name ? html`<div class="px-3.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/40">${g.name}</div>` : ''}
           ${g.items.map(navLink)}
         </div>`)}
-    </nav>`;
+    </nav>
+    <!-- đăng xuất cố định ở đáy sidebar (mọi vai trò) -->
+    <div class="px-3 pb-4 pt-3 shrink-0 border-t border-white/10">
+      <button type="button" id="logout-btn" data-testid="menu-logout"
+        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-rose-200 hover:bg-rose-500/15 hover:text-white transition-colors disabled:opacity-60">
+        ${icon('log-out', 'w-4 h-4')} Đăng xuất
+      </button>
+    </div>`;
 }
 
 export function renderShell(root) {
@@ -92,11 +99,6 @@ export function renderShell(root) {
                   class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                   ${icon('key-round', 'w-4 h-4 text-slate-400')} Đổi mật khẩu
                 </a>
-                <div class="h-px bg-slate-100 my-1"></div>
-                <button type="button" id="logout-btn" data-testid="menu-logout" role="menuitem"
-                  class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50">
-                  ${icon('log-out', 'w-4 h-4')} Đăng xuất
-                </button>
               </div>
             </div>
           </div>

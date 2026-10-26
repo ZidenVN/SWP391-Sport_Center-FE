@@ -2,7 +2,7 @@ import { html, render, bindActions, readForm } from '../../core/dom.js';
 import { authApi, memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { HOME_BY_ROLE } from '../../routes.js';
-import { authLayout, iconInput, togglePassword } from './authLayout.js';
+import { authLayout, iconInput, togglePassword, markAuthSwitch } from './authLayout.js';
 import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
 import { shouldAskQuiz } from '../../core/quiz.js';
 
@@ -50,7 +50,7 @@ export default function LoginPage(el, { navigate }) {
     </form>
     ${googleSection('hoặc tiếp tục với')}
     <p class="text-sm text-white/65 text-center mt-7">
-      Chưa có tài khoản? <a href="#/register" class="font-bold text-white hover:underline ml-1">Đăng ký</a>
+      Chưa có tài khoản? <a href="#/register" data-action="auth-switch" data-to="register" class="font-bold text-white hover:underline ml-1">Đăng ký</a>
     </p>
   `, { active: 'login' }));
 
@@ -64,6 +64,7 @@ export default function LoginPage(el, { navigate }) {
 
   return bindActions(el, {
     'toggle-pw': togglePassword,
+    'auth-switch': a => { markAuthSwitch(a.dataset.to); location.hash = a.getAttribute('href'); },
     login: async () => {
       const { email, password } = readForm(form);
       errorBox.classList.add('hidden');

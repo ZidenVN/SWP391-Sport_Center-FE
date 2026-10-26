@@ -32,9 +32,10 @@ const ERROR_TEXT = {
 // Logo chữ G nhiều màu chuẩn của Google
 const GOOGLE_G = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 
-// Khung "hoặc" + chỗ đặt nút Google chính thức.
-// BE (POST /auth/google { token }) xác minh ID token bằng GoogleIdTokenVerifier, nên phải dùng luồng Sign In With Google
-// (google.accounts.id) để nhận credential là ID token; nút do Google vẽ (iframe), chỉ chỉnh được theme/kích thước.
+// Khung "hoặc" + nút Google kính trong suốt đồng bộ với thẻ đăng nhập.
+// BE (POST /auth/google { token }) xác minh ID token, nên phải dùng nút Sign In With Google (google.accounts.id, iframe)
+// để nhận credential. Nút iframe không đổi màu được -> vẽ nút kính riêng, đặt nút thật của Google phủ lên trên
+// gần như trong suốt và kéo giãn vừa khít: người dùng thấy nút kính, cú bấm vẫn vào nút Google.
 export function googleSection(label = 'hoặc', buttonText = 'Đăng nhập bằng Google') {
   if (!GOOGLE_CLIENT_ID) {
     return import.meta.env?.DEV ? html`
@@ -47,11 +48,12 @@ export function googleSection(label = 'hoặc', buttonText = 'Đăng nhập bằ
     <div class="flex items-center gap-3 my-6 text-xs font-semibold text-white/50">
       <span class="h-px flex-1 bg-white/20"></span>${label}<span class="h-px flex-1 bg-white/20"></span>
     </div>
-    <div id="google-btn" data-testid="google-btn" data-text="${buttonText.startsWith('Đăng ký') ? 'signup_with' : 'signin_with'}" class="w-full min-h-[44px] flex justify-center">
-      <div data-google-fallback class="w-full h-11 flex items-center justify-center gap-3 rounded-full border border-white/15 bg-white/5 text-sm font-semibold text-white/60">
-        <span class="w-6 h-6 rounded-full bg-white flex items-center justify-center">${raw(GOOGLE_G)}</span>
+    <div id="google-btn" data-testid="google-btn" data-text="${buttonText.startsWith('Đăng ký') ? 'signup_with' : 'signin_with'}" class="google-glass group relative w-full h-12">
+      <div class="google-glass-face absolute inset-0 rounded-full flex items-center justify-center gap-3 text-[0.95rem] font-semibold text-white/90 pointer-events-none">
+        <span class="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow">${raw(GOOGLE_G)}</span>
         <span data-google-text>${buttonText}</span>
       </div>
+      <div data-google-hit class="absolute left-0 top-0 origin-top-left opacity-[0.01] overflow-hidden" aria-hidden="false"></div>
     </div>`;
 }
 
@@ -87,8 +89,8 @@ export async function mountGoogleButton(root, { onSuccess, onError }) {
         }
       }
     });
-    box.querySelector('[data-google-fallback]')?.remove();
-    google.accounts.id.renderButton(box, {
+    const hit = box.querySelector('[data-google-hit]');
+    google.accounts.id.renderButton(hit, {
       type: 'standard',
       theme: 'filled_black',
       size: 'large',
@@ -98,6 +100,16 @@ export async function mountGoogleButton(root, { onSuccess, onError }) {
       locale: 'vi',
       width: Math.min(400, Math.max(200, Math.round(box.clientWidth || 320)))
     });
+    // kéo giãn nút thật (tối đa 400px) cho phủ kín nút kính, kể cả khi đổi cỡ màn hình
+    const fit = () => {
+      const w = hit.offsetWidth;
+      const h = hit.offsetHeight;
+      if (w && h) hit.style.transform = `scale(${box.clientWidth / w}, ${box.clientHeight / h})`;
+    };
+    new MutationObserver(fit).observe(hit, { childList: true, subtree: true });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(box);
+    setTimeout(fit, 300);
+    box.dataset.ready = '1';
   } catch (err) {
     const text = box.querySelector('[data-google-text]');
     if (text) text.textContent = 'Không tải được Google Sign-In';

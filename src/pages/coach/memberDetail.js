@@ -33,7 +33,7 @@ function view(s) {
         </div>
       </div>
       <div class="flex flex-wrap gap-2 md:flex-col md:items-stretch">
-        ${FEATURES.ai ? html`<button type="button" class="btn-lime btn-sm" data-action="ai" data-testid="ai-suggest">${icon('sparkles', 'w-3.5 h-3.5')} Gợi ý bài tập AI</button>` : ''}
+        ${FEATURES.coachAi ? html`<button type="button" class="btn-lime btn-sm" data-action="ai" data-testid="ai-suggest">${icon('sparkles', 'w-3.5 h-3.5')} Gợi ý bài tập AI</button>` : ''}
         <button type="button" class="btn-primary btn-sm" data-action="new-result" data-testid="new-result">${icon('activity', 'w-3.5 h-3.5')} Ghi kết quả</button>
         <button type="button" class="btn-secondary btn-sm" data-action="new-plan" data-testid="new-plan">${icon('clipboard-plus', 'w-3.5 h-3.5')} Giao giáo án</button>
         <button type="button" class="btn-secondary btn-sm" data-action="notify" data-testid="notify-member">${icon('send', 'w-3.5 h-3.5')} Gửi thông báo</button>

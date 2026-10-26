@@ -17,6 +17,30 @@ export function subjectColor(name = '') {
   return SUBJECT_COLORS[h % SUBJECT_COLORS.length];
 }
 
+// ---------- Ảnh lớp ----------
+// imageUrl do BE trả (Cloudinary); lớp cũ chưa có ảnh (null) -> ảnh mặc định theo bộ môn
+const norm = v => String(v ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+const DEFAULT_PHOTOS = [
+  [/yoga|thien|gian co|pilates/, 'yoga.jpg'],
+  [/boi|swim/, 'swim.jpg'],
+  [/tennis|cau long|pickle|badminton/, 'tennis.jpg'],
+  [/bong da|football|soccer|futsal/, 'football.jpg'],
+  [/bong ro|basket/, 'basketball.jpg'],
+  [/boxing|vo|kick|mma/, 'boxing.jpg'],
+  [/gym|ta|the hinh|strength/, 'gym.jpg'],
+  [/aerobic|zumba|fitness|cardio|dance|nhay/, 'fitness.jpg']
+];
+const FALLBACK_PHOTO = '/landing/gym-floor.jpg';
+export const defaultClassImage = subjectName => `/landing/${(DEFAULT_PHOTOS.find(([re]) => re.test(norm(subjectName))) || [, 'gym-floor.jpg'])[1]}`;
+export const classImageUrl = c => c?.imageUrl || defaultClassImage(c?.subjectName);
+
+// <img> ảnh lớp; link hỏng thì đổi sang ảnh mặc định
+export function classImage(c, cls = 'w-full h-full object-cover') {
+  const fallback = defaultClassImage(c?.subjectName);
+  return html`<img src="${classImageUrl(c)}" alt="${c?.subjectName || ''}" loading="lazy" class="${cls}" data-testid="class-image"
+    onerror="this.onerror=null;this.src='${c?.imageUrl ? fallback : FALLBACK_PHOTO}'" />`;
+}
+
 // Lớp còn nhận đăng ký: đang mở, chưa bắt đầu, còn chỗ
 export function isBookable(c) {
   return c.status === 'OPENING' && isFuture(c.startTime) && (c.availableSeats ?? 1) > 0;
@@ -26,8 +50,11 @@ export function isBookable(c) {
 export function classCard(c, footer = '') {
   const seatsPct = c.maxCapacity ? Math.min(100, Math.round(((c.currentEnrolled || 0) / c.maxCapacity) * 100)) : 0;
   return html`
-    <div class="card overflow-hidden flex flex-col" data-testid="class-card" data-class-id="${c.classId}">
-      <div class="h-2 bg-gradient-to-r ${subjectColor(c.subjectName)}"></div>
+    <div class="card overflow-hidden flex flex-col group" data-testid="class-card" data-class-id="${c.classId}">
+      <div class="relative h-40 overflow-hidden bg-gradient-to-br ${subjectColor(c.subjectName)}">
+        ${classImage(c, 'w-full h-full object-cover transition-transform duration-500 group-hover:scale-105')}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent"></div>
+      </div>
       <div class="p-5 flex-1 flex flex-col">
         <div class="flex items-start justify-between gap-3">
           <div>

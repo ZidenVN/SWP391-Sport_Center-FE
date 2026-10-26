@@ -29,9 +29,27 @@ const photoFor = name => `${IMG}/${(PHOTOS.find(([re]) => re.test(norm(name))) |
 const FALLBACK_SUBJECTS = [
   { subjectName: 'Yoga', description: 'Dẻo dai, cân bằng và thư giãn sau ngày dài.' },
   { subjectName: 'Gym', description: 'Tăng cơ, giảm mỡ với HLV hướng dẫn kỹ thuật.' },
-  { subjectName: 'Bơi lội', description: 'Hồ bơi trong nhà, lớp cho người mới và nâng cao.' }
+  { subjectName: 'Bơi lội', description: 'Hồ bơi trong nhà, lớp cho người mới và nâng cao.' },
+  { subjectName: 'Boxing', description: 'Đốt mỡ cường độ cao, rèn phản xạ và sức bền.' }
 ];
-const RIBBON = ['Yoga', 'Gym', 'Boxing', 'Bơi lội', 'Tennis', 'Bóng rổ', 'Bóng đá'];
+// trang giới thiệu chỉ giới thiệu 4 môn chính: Gym, Yoga, Boxing, Bơi lội (lọc cả danh sách bộ môn BE trả về)
+const HOME_SUBJECT = /gym|the hinh|yoga|boxing|boi/;
+const homeSubjects = list => {
+  const picked = (list || []).filter(x => HOME_SUBJECT.test(norm(x.subjectName)));
+  return picked.length ? picked : FALLBACK_SUBJECTS;
+};
+
+// nhãn ngắn theo bộ môn cho thẻ bộ môn
+const SUBJECT_TAGS = [
+  [/yoga|thien|gian co/, ['Thư giãn', 'Dẻo dai']],
+  [/boi|swim/, ['Toàn thân', 'Sức bền']],
+  [/tennis|cau long|pickle|badminton/, ['Kỹ thuật', 'Phản xạ']],
+  [/bong da|football|soccer|futsal|bong ro|basket/, ['Đồng đội', 'Thể lực']],
+  [/boxing|vo|kick|mma/, ['Cường độ cao', 'Đốt mỡ']],
+  [/gym|ta|the hinh|strength/, ['Tăng cơ', 'Sức mạnh']]
+];
+const tagsFor = name => (SUBJECT_TAGS.find(([re]) => re.test(norm(name))) || [, ['Mọi trình độ', 'Có HLV']])[1];
+const RIBBON = ['Yoga', 'Gym', 'Boxing', 'Bơi lội'];
 
 const FEATURES = [
   ['medal', 'HLV chuyên môn', 'Giáo án riêng cho từng mục tiêu, theo dõi tiến độ sau mỗi buổi.'],
@@ -62,9 +80,9 @@ function header(s) {
               class="px-4 py-1.5 rounded-full text-sm font-semibold ${i === 0 ? 'bg-white/90 text-slate-900' : 'text-white/85 hover:text-white'}">${label}</button>`)}
         </nav>
         <div class="flex items-center gap-2">
-          <a href="#/login" class="hidden sm:inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-900 hover:bg-white/90" data-testid="landing-login">
-            <span class="w-5 h-5 rounded-full flex items-center justify-center" style="background:${DARK};color:${LIME}">${icon('arrow-right', 'w-3 h-3')}</span> Đăng nhập
-          </a>
+          <!-- cùng kiểu 2 nút trong banner: viền kính trong suốt + nền trắng -->
+          <a href="#/login" class="hb-nav-ghost hidden sm:inline-flex" data-testid="landing-login">${icon('log-in', 'w-4 h-4')} Đăng nhập</a>
+          <a href="#/register" class="hb-nav-solid hidden sm:inline-flex" data-testid="landing-register">Đăng ký ${icon('arrow-up-right', 'w-4 h-4')}</a>
           <button type="button" class="md:hidden p-2 rounded-xl text-white bg-white/10" data-action="menu" aria-label="Mở menu">${icon(s.menuOpen ? 'x' : 'menu', 'w-5 h-5')}</button>
         </div>
       </div>
@@ -79,86 +97,273 @@ function header(s) {
     </header>`;
 }
 
+// ---------- Phần đầu trang: banner ảnh lớn dạng slideshow (kiểu "Into the Wild") ----------
+// Mỗi cảnh: ảnh nền + slogan 2 tầng + mô tả. Tự chuyển 6 giây/cảnh, nút phát/tạm dừng, chấm và ảnh nhỏ xem trước để chọn cảnh.
+const SLIDE_MS = 6000;
+const SLIDES = [
+  { img: 'fitness.jpg', thumb: 'fitness.jpg', label: 'Sport Center', pre: 'Một nơi', title: 'Mọi môn', text: 'Gym, Yoga, Boxing và Bơi lội — hàng chục lớp mỗi tuần cùng huấn luyện viên chuyên môn, một gói tập cho cả 4 bộ môn.' },
+  { img: 'gym-floor.jpg', thumb: 'gym.jpg', label: 'Gym & Thể hình', pre: 'Bứt phá', title: 'Giới hạn', text: 'Khu tạ tự do, máy tập hiện đại và huấn luyện viên kèm từng động tác — tăng cơ, giảm mỡ đúng kỹ thuật ngay từ buổi đầu.' },
+  { img: 'swim.jpg', thumb: 'swim.jpg', label: 'Bơi lội', pre: 'Hòa mình', title: 'Làn nước', text: 'Hồ bơi trong nhà quanh năm, lớp cho người mới bắt đầu đến luyện thi đấu. Rèn sức bền toàn thân, nhẹ nhàng cho khớp.' },
+  { img: 'yoga.jpg', thumb: 'yoga.jpg', label: 'Yoga', pre: 'Tìm lại', title: 'Cân bằng', text: 'Những buổi Yoga lúc bình minh và chiều tối giúp cơ thể dẻo dai, tâm trí thư thái sau một ngày dài.' },
+  { img: 'boxing.jpg', thumb: 'boxing.jpg', label: 'Boxing', pre: 'Đánh thức', title: 'Bản lĩnh', text: 'Cường độ cao, đốt mỡ nhanh và rèn phản xạ — xả hết căng thẳng cùng HLV võ thuật giàu kinh nghiệm.' },
+];
+
+// chữ tách từng ký tự để hiện dần (CSS .hero-char), khoảng trắng giữ nguyên
+const splitChars = (text, start = 0) => [...text].map((ch, i) =>
+  ch === ' ' ? ' ' : html`<span class="hero-char" style="animation-delay:${(start + i) * 0.035}s">${ch}</span>`);
+
 function hero(s) {
-  const subjects = s.subjects.length ? s.subjects : FALLBACK_SUBJECTS;
+  const subjects = homeSubjects(s.subjects);
   return html`
-    <section id="top" class="relative">
-      <div class="relative min-h-[560px] sm:min-h-[620px] rounded-b-[2.5rem] overflow-hidden" style="background:${DARK}">
-        <img src="${IMG}/hero.jpg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-55" />
-        <div class="absolute inset-0" style="background:linear-gradient(90deg, ${DARK} 0%, rgba(23,63,49,.75) 45%, rgba(23,63,49,.15) 100%)"></div>
-        <div class="relative max-w-6xl mx-auto px-4 sm:px-6 pt-36 sm:pt-44 pb-28">
-          <h1 class="font-display font-extrabold text-white uppercase leading-[0.9] text-6xl sm:text-8xl lg:text-9xl tracking-tight" data-testid="hero-title">
-            Sống khỏe<br />mỗi ngày
-          </h1>
-          <p class="mt-5 text-lg sm:text-xl font-semibold" style="color:${LIME}">Trung tâm thể thao dành cho mọi lứa tuổi</p>
-          <p class="mt-3 max-w-lg text-white/80">Hàng chục lớp mỗi tuần cùng huấn luyện viên chuyên môn. Đăng ký gói tập, đặt lớp và theo dõi tiến độ — tất cả trong một ứng dụng.</p>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <a href="#/register" class="btn !px-6 !py-3 text-slate-900 hover:brightness-95" style="background:${LIME}" data-testid="hero-register">${icon('user-plus', 'w-4 h-4')} Đăng ký hội viên</a>
-            <button type="button" data-action="scroll" data-target="pricing" class="btn !px-6 !py-3 bg-white/10 text-white border border-white/30 hover:bg-white/20">Xem bảng giá</button>
+    <section id="top" class="relative px-2 sm:px-4 pt-2 sm:pt-4">
+      <div class="hb hb-enter relative h-[680px] sm:h-[760px] rounded-[1.75rem] sm:rounded-[2.25rem] overflow-hidden" data-hero data-testid="hero">
+        <!-- ảnh nền các cảnh: đổi bằng class .is-active, ảnh đang hiện phóng to chậm (Ken Burns) -->
+        <div class="hb-bg absolute inset-0">
+          ${SLIDES.map((sl, i) => html`<div class="hb-slide ${i === 0 ? 'is-active' : ''}" data-slide="${i}"><img src="${IMG}/${sl.img}" alt="" class="hb-img" ${i ? '' : 'fetchpriority="high"'} /></div>`)}
+        </div>
+        <div class="absolute inset-0 hb-shade pointer-events-none"></div>
+
+        <div class="hb-copy-wrap relative z-10 h-full max-w-6xl mx-auto px-5 sm:px-10 flex flex-col justify-center pt-10 pb-16">
+          ${SLIDES.map((sl, i) => html`
+            <div class="hb-copy ${i === 0 ? 'is-active' : ''}" data-copy="${i}" ${i ? 'aria-hidden="true"' : ''}>
+              <div class="flex items-center gap-3 text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-white/80 hb-fade" style="animation-delay:.15s">
+                <span class="w-8 h-px bg-white/60"></span> ${String(i + 1).padStart(2, '0')} · ${sl.label}
+              </div>
+              <h1 class="font-display font-extrabold uppercase text-white leading-[0.85] mt-4" ${i === 0 ? 'data-testid="hero-title"' : ''} aria-label="${sl.pre} ${sl.title}">
+                <span aria-hidden="true" class="block text-4xl sm:text-6xl tracking-wide">${splitChars(sl.pre)}</span>
+                <span aria-hidden="true" class="block text-7xl sm:text-[9.5rem] tracking-tight">${splitChars(sl.title, sl.pre.length)}</span>
+              </h1>
+              <p class="hb-fade mt-6 max-w-md text-sm sm:text-base text-white/85 leading-relaxed border-l-2 pl-4" style="border-color:${LIME};animation-delay:.6s">${sl.text}</p>
+            </div>`)}
+          <div class="hb-fade mt-8 flex flex-wrap gap-3" style="animation-delay:.75s">
+            <a href="#/register" class="hb-btn-solid" data-testid="hero-register">Đăng ký hội viên ${icon('arrow-right', 'w-4 h-4')}</a>
+            <button type="button" data-action="scroll" data-target="pricing" class="hb-btn-ghost">Xem bảng giá</button>
+          </div>
+          <div class="hb-fade mt-8 hidden sm:flex flex-wrap gap-2" style="animation-delay:.9s">
+            ${subjects.slice(0, 5).map(x => html`<span class="px-3 py-1 rounded-full text-xs font-semibold text-white/85 bg-white/10 border border-white/15 backdrop-blur">${x.subjectName}</span>`)}
+          </div>
+        </div>
+
+        <!-- góc trái dưới: phát / tạm dừng + thanh tiến độ cảnh + số cảnh -->
+        <div class="absolute left-5 sm:left-10 bottom-6 sm:bottom-8 z-10 flex items-center gap-4 hb-fade" style="animation-delay:1s">
+          <button type="button" class="w-10 h-10 rounded-full bg-white/15 border border-white/30 backdrop-blur text-white flex items-center justify-center hover:bg-white/25" data-hb-play aria-label="Tạm dừng" data-testid="hero-play">${icon('pause', 'w-4 h-4')}</button>
+          <div class="w-28 sm:w-44 h-0.5 bg-white/25 rounded-full overflow-hidden"><div class="hb-progress h-full" style="background:${LIME};--ms:${SLIDE_MS}ms" data-hb-progress></div></div>
+          <span class="text-white/80 text-xs font-bold tracking-widest" data-hb-count>01 / ${String(SLIDES.length).padStart(2, '0')}</span>
+        </div>
+
+        <!-- góc phải dưới: ảnh nhỏ xem trước + chấm chọn cảnh -->
+        <div class="absolute right-5 sm:right-8 bottom-6 sm:bottom-8 z-10 flex flex-col items-end gap-4">
+          <div class="hidden md:flex gap-3" data-testid="hero-thumbs">
+            ${SLIDES.map((sl, i) => html`
+              <button type="button" class="hb-thumb ${i === 0 ? 'is-active' : ''} hb-thumb-in" style="animation-delay:${1 + i * 0.08}s" data-hb-go="${i}" aria-label="Xem ${sl.label}">
+                <img src="${IMG}/${sl.thumb}" alt="" />
+                <span>${sl.label}</span>
+              </button>`)}
+          </div>
+          <div class="flex gap-2" data-testid="hero-dots">
+            ${SLIDES.map((sl, i) => html`<button type="button" class="hb-dot ${i === 0 ? 'is-active' : ''}" data-hb-go="${i}" aria-label="Cảnh ${i + 1}"></button>`)}
           </div>
         </div>
       </div>
 
-      <form data-action="find" class="relative z-10 -mt-14 max-w-5xl mx-4 lg:mx-auto bg-white rounded-3xl shadow-xl border border-slate-100 p-4 sm:p-5" data-testid="finder">
-        <div class="font-display font-bold text-xl text-slate-900 mb-3 px-1">Tìm lớp phù hợp <span class="font-sans text-sm font-medium text-slate-500">— đăng nhập để xem lịch và đặt chỗ</span></div>
-        <div class="grid sm:grid-cols-[1fr_auto] gap-3">
-          <label class="relative">
-            <span class="sr-only">Bộ môn</span>
-            <span class="absolute left-3 top-2.5 text-slate-400">${icon('dumbbell', 'w-4 h-4')}</span>
-            <select name="subject" class="input pl-9 !rounded-full">
-              <option value="">Tất cả bộ môn</option>
-              ${subjects.map(x => html`<option>${x.subjectName}</option>`)}
-            </select>
-          </label>
-          <button type="submit" class="btn !px-6 text-white" style="background:${DARK}" data-testid="finder-submit">${icon('search', 'w-4 h-4')} Tìm lớp</button>
-        </div>
-      </form>
     </section>`;
 }
 
+// Điều khiển slideshow ngay trên DOM (không vẽ lại cả trang): đổi cảnh, tự chạy, phát/tạm dừng, parallax khi cuộn.
+// Trả về { index, stop } để khi trang vẽ lại (mở menu) thì gắn lại đúng cảnh đang xem.
+function mountHero(root, startIndex = 0) {
+  const hero = root.querySelector('[data-hero]');
+  if (!hero) return null;
+  const q = sel => [...hero.querySelectorAll(sel)];
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let index = 0;
+  let playing = !reduced;
+  let timer = 0;
+  const progress = hero.querySelector('[data-hb-progress]');
+  const playBtn = hero.querySelector('[data-hb-play]');
+
+  const restartProgress = () => {
+    progress.classList.remove('is-running');
+    void progress.offsetWidth; // chạy lại animation từ đầu
+    if (playing) progress.classList.add('is-running');
+  };
+  const show = i => {
+    index = (i + SLIDES.length) % SLIDES.length;
+    q('[data-slide]').forEach(n => n.classList.toggle('is-active', Number(n.dataset.slide) === index));
+    q('[data-copy]').forEach(n => {
+      const on = Number(n.dataset.copy) === index;
+      // gỡ rồi gắn lại class để chữ chạy lại hiệu ứng xuất hiện
+      n.classList.remove('is-active');
+      n.setAttribute('aria-hidden', String(!on));
+      if (on) { void n.offsetWidth; n.classList.add('is-active'); }
+    });
+    q('.hb-thumb').forEach(n => n.classList.toggle('is-active', Number(n.dataset.hbGo) === index));
+    q('.hb-dot').forEach(n => n.classList.toggle('is-active', Number(n.dataset.hbGo) === index));
+    const two = n => String(n).padStart(2, '0');
+    hero.querySelector('[data-hb-count]').textContent = `${two(index + 1)} / ${two(SLIDES.length)}`;
+    restartProgress();
+    schedule();
+  };
+  const schedule = () => {
+    clearTimeout(timer);
+    if (playing && !document.hidden) timer = setTimeout(() => show(index + 1), SLIDE_MS);
+  };
+  const setPlaying = on => {
+    playing = on;
+    playBtn.setAttribute('aria-label', on ? 'Tạm dừng' : 'Phát');
+    playBtn.innerHTML = String(icon(on ? 'pause' : 'play', 'w-4 h-4'));
+    window.lucide?.createIcons();
+    restartProgress();
+    schedule();
+  };
+  const onClick = e => {
+    const go = e.target.closest('[data-hb-go]');
+    if (go) { show(Number(go.dataset.hbGo)); return; }
+    if (e.target.closest('[data-hb-play]')) setPlaying(!playing);
+  };
+  const onVisibility = () => schedule();
+  // cuộn: ảnh trôi chậm hơn trang, chữ mờ dần và đi lên (--hp: 0..1)
+  let raf = 0;
+  const onScroll = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const p = Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight || 1)));
+      hero.style.setProperty('--hp', p.toFixed(4));
+    });
+  };
+  hero.addEventListener('click', onClick);
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  if (startIndex) { hero.classList.remove('hb-enter'); show(startIndex); } else { restartProgress(); schedule(); }
+  if (!playing) setPlaying(false);
+
+  return {
+    get index() { return index; },
+    stop() {
+      clearTimeout(timer);
+      cancelAnimationFrame(raf);
+      hero.removeEventListener('click', onClick);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('scroll', onScroll);
+    }
+  };
+}
+
+// Từng từ trồi lên từ dưới mặt nạ khi khu cha [data-reveal] có .is-visible
+const maskWords = (text, start = 0) => text.split(' ').map((w, i) =>
+  html`<span class="mw"><span style="--w:${start + i}">${w}</span></span>${' '}`);
+
+// Bộ môn nổi bật: dải ảnh co giãn — dải đang chọn mở rộng (tên, mô tả, nút), các dải khác thu hẹp hiện tên dọc.
+// Rê chuột / chạm để chọn dải; khi cuộn tới các dải mở màn lần lượt; ảnh trôi lệch nhịp và chữ nền chạy theo cuộn.
 function subjectsSection(s) {
-  const list = (s.subjects.length ? s.subjects : FALLBACK_SUBJECTS).slice(0, 6);
+  const list = homeSubjects(s.subjects);
+  const marquee = [...list, ...list, ...list].map(x => x.subjectName);
   return html`
-    <section id="subjects" class="max-w-6xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24">
-      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
-        <div>
-          <h2 class="font-display font-extrabold text-4xl sm:text-5xl text-slate-900">Bộ môn nổi bật</h2>
-          <p class="text-slate-600 mt-2 max-w-xl">Từ thư giãn nhẹ nhàng đến cường độ cao — chọn môn hợp với bạn, lớp mở mỗi ngày trong tuần.</p>
-        </div>
+    <section id="subjects" class="sx-section relative pt-20 sm:pt-28 pb-4 overflow-hidden" data-sx>
+      <div class="sx-marquee" aria-hidden="true">
+        ${marquee.map(t => html`<span>${t}</span><span class="sx-dot"></span>`)}
       </div>
-      <div class="flex flex-wrap justify-center gap-5" data-testid="subject-cards">
-        ${list.map(x => html`
-          <article class="group w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.84rem)] rounded-3xl border border-slate-200 bg-white p-3 hover:shadow-xl transition-shadow" data-testid="subject-card">
-            <div class="h-48 rounded-2xl overflow-hidden"><img src="${photoFor(x.subjectName)}" alt="${x.subjectName}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
-            <div class="px-2 pt-4 pb-2">
-              <h3 class="font-display font-bold text-2xl text-slate-900">${x.subjectName}</h3>
-              <p class="text-sm text-slate-500 mt-1 line-clamp-2 min-h-[2.5rem]">${x.description || 'Lớp mở hằng tuần cùng huấn luyện viên chuyên môn.'}</p>
-              <div class="flex items-center justify-between mt-4">
-                <div class="flex gap-2 text-slate-500">
-                  ${['users', 'calendar-days', 'medal'].map(i => html`<span class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center">${icon(i, 'w-3.5 h-3.5')}</span>`)}
-                </div>
-                <a href="#/register" class="text-sm font-bold flex items-center gap-1" style="color:${DARK}">Tập thử ${icon('arrow-right', 'w-4 h-4')}</a>
-              </div>
+      <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8" data-reveal>
+          <div>
+            <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em]" style="color:#2F6B55">
+              <span class="anim-line h-px" style="background:#2F6B55;--lw:1.5rem"></span> Bộ môn
             </div>
-          </article>`)}
+            <h2 class="font-display font-extrabold text-4xl sm:text-6xl text-slate-900 mt-2 leading-none" aria-label="Bộ môn nổi bật"><span aria-hidden="true">${maskWords('Bộ môn nổi bật')}</span></h2>
+            <p class="anim-fade text-slate-600 mt-3 max-w-xl" style="--d:.45s">Từ thư giãn nhẹ nhàng đến cường độ cao — chọn môn hợp với bạn, lớp mở mỗi ngày trong tuần.</p>
+          </div>
+          <div class="flex items-center gap-3 text-sm text-slate-500">
+            <span class="font-display font-extrabold text-5xl text-slate-900 leading-none" data-count="${list.length}">${String(list.length).padStart(2, '0')}</span>
+            <span>bộ môn<br />đang mở lớp</span>
+          </div>
+        </div>
+
+        <div class="sx-track" data-reveal data-testid="subject-cards">
+          ${list.map((x, i) => html`
+            <article class="sx-panel ${i === 0 ? 'is-active' : ''}" style="--i:${i}" data-sx-panel tabindex="0" data-testid="subject-card" aria-label="${x.subjectName}">
+              <div class="sx-media"><img src="${photoFor(x.subjectName)}" alt="${x.subjectName}" loading="lazy" class="sx-img" /></div>
+              <div class="sx-shade"></div>
+              <span class="sx-index">${String(i + 1).padStart(2, '0')}</span>
+              <span class="sx-vtitle">${x.subjectName}</span>
+              <div class="sx-body">
+                <div class="flex flex-wrap gap-2">
+                  ${tagsFor(x.subjectName).map(t => html`<span class="sx-chip">${t}</span>`)}
+                </div>
+                <h3 class="font-display font-extrabold text-4xl sm:text-5xl text-white leading-none mt-4">${x.subjectName}</h3>
+                <p class="text-white/80 text-sm mt-3 max-w-sm line-clamp-2">${x.description || 'Lớp mở hằng tuần cùng huấn luyện viên chuyên môn.'}</p>
+                <div class="flex items-center gap-4 mt-6">
+                  <a href="#/register" class="sx-cta" data-testid="subject-try">Tập thử ${icon('arrow-up-right', 'w-4 h-4')}</a>
+                  <span class="hidden sm:flex items-center gap-1.5 text-xs text-white/70">${icon('users', 'w-3.5 h-3.5')} Có HLV hướng dẫn</span>
+                </div>
+              </div>
+            </article>`)}
+        </div>
       </div>
     </section>`;
 }
+
+// Khu "Trở thành hội viên" kiểu poster: tiêu đề khổng lồ có ảnh lồng giữa chữ, 2 dòng trượt ngược chiều khi cuộn (--sx),
+// chữ trồi lên + viên ảnh giãn ra khi khu hiện ra, 3 lợi ích đánh số, dải ảnh bộ môn chạy ngang liên tục ở đáy.
+const CTA_PERKS = [
+  ['Miễn phí', 'Tạo tài khoản trong một phút, không ràng buộc'],
+  ['Linh hoạt', 'Mua gói qua VNPay hoặc tại quầy lễ tân'],
+  ['Mọi bộ môn', 'Đặt lớp Gym, Yoga, Bơi, Boxing…']
+];
+const CTA_STRIP = [['gym.jpg', 'Gym'], ['yoga.jpg', 'Yoga'], ['boxing.jpg', 'Boxing'], ['swim.jpg', 'Bơi lội']];
+
+// 1 từ trong tiêu đề: chữ trồi lên từ dưới mặt nạ (thứ tự --w để so le)
+const ctaWord = (text, w, cls = '') => html`<span class="cta-word ${cls}" aria-hidden="true"><span style="--w:${w}">${text}</span></span>`;
+// viên ảnh lồng giữa chữ, giãn từ 0 ra khi khu hiện ra
+const ctaPill = (img, w) => html`<span class="cta-pill" aria-hidden="true" style="--w:${w}"><img src="${IMG}/${img}" alt="" loading="lazy" /></span>`;
 
 function ctaBanner() {
+  const strip = Array(4).fill(CTA_STRIP).flat();
   return html`
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-20">
-      <div class="relative rounded-[2rem] overflow-hidden px-6 sm:px-12 py-12 grid lg:grid-cols-[1fr_1.2fr_1fr] gap-8 items-center" style="background:${DARK}">
-        <div class="hidden lg:block h-56 rounded-3xl overflow-hidden -rotate-3"><img src="${IMG}/football.jpg" alt="" class="w-full h-full object-cover" /></div>
-        <div class="text-center">
-          <h2 class="font-display font-extrabold text-4xl sm:text-5xl" style="color:${LIME}">Trở thành hội viên</h2>
-          <p class="text-white/75 mt-3">Tạo tài khoản miễn phí, mua gói online qua VNPay và đặt lớp ngay trên điện thoại.</p>
-          <div class="flex flex-wrap justify-center gap-3 mt-6">
-            <a href="#/register" class="btn !px-5 text-slate-900" style="background:${LIME}">${icon('user-plus', 'w-4 h-4')} Đăng ký miễn phí</a>
-            <a href="#/login" class="btn !px-5 bg-white/10 text-white border border-white/30 hover:bg-white/20">${icon('log-in', 'w-4 h-4')} Đã có tài khoản</a>
-          </div>
+    <!-- nền tràn toàn màn, nội dung canh trong khung 6xl như các khu khác -->
+    <section class="cta relative overflow-hidden mt-20 sm:mt-28" data-sx data-reveal data-testid="cta-banner">
+      <div class="cta-glow" aria-hidden="true"></div>
+      <div class="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
+        <div class="flex flex-wrap items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.3em] text-white/60">
+          <span class="flex items-center gap-3"><span class="anim-line h-px bg-white/50" style="--lw:2rem"></span> Hội viên</span>
+          <span class="anim-fade-left hidden sm:inline" style="--d:.35s" data-testid="cta-slogan">Bắt đầu hôm nay · Bứt phá mỗi ngày</span>
         </div>
-        <div class="hidden lg:block h-56 rounded-3xl overflow-hidden rotate-3"><img src="${IMG}/tennis.jpg" alt="" class="w-full h-full object-cover" /></div>
+
+        <h2 class="cta-head font-display font-extrabold uppercase text-white mt-6" aria-label="Trở thành hội viên">
+          <span class="cta-line cta-line-a" aria-hidden="true">
+            ${ctaWord('Trở', 0)}${ctaPill('gym.jpg', 1)}${ctaWord('thành', 2)}
+          </span>
+          <span class="cta-line cta-line-b">
+            ${ctaPill('yoga.jpg', 3)}${ctaWord('Hội', 4, 'cta-lime')}${ctaWord('viên', 5, 'cta-lime')}
+          </span>
+          <!-- dòng 3: viên nút cùng dáng viên ảnh (chữ + nút tròn mũi tên) -->
+          <span class="cta-line cta-line-c">
+            <a href="#/register" class="cta-join" style="--w:6" data-testid="cta-join">
+              <span class="cta-join-text">Tham gia ngay</span>
+              <span class="cta-join-arrow">${icon('arrow-up-right', 'w-1/2 h-1/2')}</span>
+            </a>
+          </span>
+        </h2>
+
+        <div class="mt-12 sm:mt-16 pb-14 sm:pb-16 border-b border-white/10">
+          <ol class="grid sm:grid-cols-3 gap-6 sm:gap-0">
+            ${CTA_PERKS.map(([title, text], i) => html`
+              <li class="cta-perk sm:px-6 sm:first:pl-0 sm:border-l sm:first:border-l-0 border-white/15" style="--k:${i}">
+                <div class="font-display font-extrabold text-3xl" style="color:${LIME}" data-count="${i + 1}">0${i + 1}</div>
+                <div class="font-bold text-white mt-1">${title}</div>
+                <div class="text-sm text-white/65 mt-1">${text}</div>
+              </li>`)}
+          </ol>
+        </div>
+      </div>
+
+      <!-- dải ảnh bộ môn chạy ngang liên tục, nghiêng nhẹ; rê chuột thì dừng -->
+      <div class="cta-strip-wrap" aria-hidden="true">
+        <div class="cta-strip">
+          ${strip.map(([img, label]) => html`
+            <figure class="cta-strip-item"><img src="${IMG}/${img}" alt="" loading="lazy" /><figcaption>${label}</figcaption></figure>`)}
+        </div>
       </div>
     </section>`;
 }
@@ -168,7 +373,7 @@ function pricing(s) {
   const best = bestValueId(plans);
   return html`
     <section id="pricing" class="max-w-6xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24">
-      <div class="text-center mb-10">
+      <div class="text-center mb-10" data-reveal>
         <h2 class="font-display font-extrabold text-4xl sm:text-5xl text-slate-900">Bảng giá gói tập</h2>
         <p class="text-slate-600 mt-2">Tập không giới hạn số buổi trong thời hạn gói. Gia hạn được cộng nối tiếp, không mất ngày.</p>
       </div>
@@ -177,7 +382,7 @@ function pricing(s) {
           ${plans.map(p => {
             const hot = p.packageId === best;
             return html`
-              <div class="relative rounded-3xl p-7 flex flex-col ${hot ? 'text-white shadow-2xl' : 'bg-white border border-slate-200'}" style="${hot ? `background:${DARK}` : ''}" data-testid="price-card">
+              <div class="tilt-card relative rounded-3xl p-7 flex flex-col ${hot ? 'text-white shadow-2xl' : 'bg-white border border-slate-200'}" style="${hot ? `background:${DARK}` : ''}" data-testid="price-card" data-reveal data-tilt>
                 ${hot ? html`<span class="absolute -top-3 left-7 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase text-slate-900" style="background:${LIME}">Tiết kiệm nhất</span>` : ''}
                 <div class="flex items-center justify-between">
                   <span class="font-bold">${p.packageName}</span>
@@ -210,7 +415,7 @@ function about() {
           <p class="text-slate-700 mt-4">Sport Center kết nối hội viên, huấn luyện viên và lễ tân trên cùng một hệ thống: lịch lớp luôn cập nhật, giáo án theo từng người, thanh toán minh bạch.</p>
           <div class="grid sm:grid-cols-2 gap-4 mt-8">
             ${FEATURES.map(([ic, title, text]) => html`
-              <div class="rounded-2xl bg-white/70 p-4">
+              <div class="rounded-2xl bg-white/70 p-4" data-reveal>
                 <span class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:${DARK};color:${LIME}">${icon(ic, 'w-4 h-4')}</span>
                 <div class="font-bold mt-3">${title}</div>
                 <div class="text-sm text-slate-600 mt-1">${text}</div>
@@ -237,7 +442,7 @@ function steps() {
       <h2 class="font-display font-extrabold text-4xl sm:text-5xl text-slate-900">Bắt đầu chỉ với 3 bước</h2>
       <div class="grid md:grid-cols-3 gap-5 mt-8">
         ${STEPS.map(([ic, title, text], i) => html`
-          <div class="rounded-3xl border border-slate-200 bg-white p-6">
+          <div class="tilt-card rounded-3xl border border-slate-200 bg-white p-6" data-reveal data-tilt>
             <div class="flex items-center justify-between">
               <span class="w-11 h-11 rounded-2xl flex items-center justify-center" style="background:#469B7E1A;color:#2F6B55">${icon(ic, 'w-5 h-5')}</span>
               <span class="font-display font-extrabold text-5xl text-slate-200">0${i + 1}</span>
@@ -287,8 +492,92 @@ function view(s) {
     </div>`;
 }
 
+// hiện dần khi cuộn tới: thêm .is-visible cho phần tử [data-reveal]
+function observeReveal(root, io) {
+  root.querySelectorAll('[data-reveal]:not(.is-visible)').forEach((n, i) => {
+    n.style.setProperty('--reveal-delay', `${(i % 4) * 0.08}s`);
+    io.observe(n);
+  });
+}
+
+// số đếm từ 00 lên giá trị trong data-count (dạng 2 chữ số)
+function countUp(node) {
+  const to = Number(node.dataset.count) || 0;
+  if (!to || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const start = performance.now();
+  const dur = 900 + to * 60;
+  const step = now => {
+    const t = Math.min(1, (now - start) / dur);
+    node.textContent = String(Math.round(to * (1 - Math.pow(1 - t, 3)))).padStart(2, '0');
+    if (t < 1) requestAnimationFrame(step);
+  };
+  node.textContent = '00';
+  requestAnimationFrame(step);
+}
+
+// nghiêng 3D + vệt sáng theo con trỏ cho [data-tilt]
+function onTilt(e) {
+  const card = e.target.closest?.('[data-tilt]');
+  document.querySelectorAll('[data-tilt].is-tilting').forEach(n => { if (n !== card) { n.classList.remove('is-tilting'); n.style.transform = ''; } });
+  if (!card || e.pointerType === 'touch') return;
+  const r = card.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width;
+  const y = (e.clientY - r.top) / r.height;
+  card.classList.add('is-tilting');
+  card.style.transform = `perspective(900px) rotateX(${(0.5 - y) * 8}deg) rotateY(${(x - 0.5) * 10}deg) translateY(-4px)`;
+  card.style.setProperty('--gx', `${x * 100}%`);
+  card.style.setProperty('--gy', `${y * 100}%`);
+}
+
+// chọn dải bộ môn (rê chuột, chạm hoặc tab tới)
+function onPanelEnter(e) {
+  const panel = e.target.closest?.('[data-sx-panel]');
+  if (!panel || panel.classList.contains('is-active')) return;
+  panel.parentElement.querySelectorAll('[data-sx-panel].is-active').forEach(n => n.classList.remove('is-active'));
+  panel.classList.add('is-active');
+}
+
+// tiến độ cuộn qua từng khu [data-sx] -> --sx (0..1) cho chữ nền, ảnh trôi lệch nhịp, cụm ảnh hội viên
+function makeScrollFx(el) {
+  let raf = 0;
+  const update = () => {
+    raf = 0;
+    const vh = window.innerHeight || 1;
+    el.querySelectorAll('[data-sx]').forEach(sec => {
+      const r = sec.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
+      sec.style.setProperty('--sx', p.toFixed(4));
+    });
+  };
+  const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  return { update, stop() { cancelAnimationFrame(raf); window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); } };
+}
+
 export default function LandingPage(el, { navigate }) {
-  return mountPage(el, {
+  const scrollFx = makeScrollFx(el);
+  el.addEventListener('pointerover', onPanelEnter);
+  el.addEventListener('focusin', onPanelEnter);
+  let heroCtl = null;
+  const io = 'IntersectionObserver' in window
+    ? new IntersectionObserver(entries => entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      en.target.classList.add('is-visible');
+      en.target.querySelectorAll('[data-count]').forEach(countUp);
+      io.unobserve(en.target);
+    }), { threshold: 0.15 })
+    : null;
+  document.addEventListener('pointermove', onTilt, { passive: true });
+  const unmount = mountPage(el, {
+    afterRender: () => {
+      scrollFx.update();
+      if (io) observeReveal(el, io); else el.querySelectorAll('[data-reveal]').forEach(n => n.classList.add('is-visible'));
+      // trang vẽ lại (mở menu...) -> gắn lại slideshow, giữ đúng cảnh đang xem
+      const at = heroCtl ? heroCtl.index : 0;
+      heroCtl?.stop();
+      heroCtl = mountHero(el, at);
+    },
     state: { menuOpen: false },
     load: async () => {
       const data = await settle({
@@ -305,13 +594,16 @@ export default function LandingPage(el, { navigate }) {
         // đóng menu mobile trước (vẽ lại trang) rồi mới tìm phần tử đích trong DOM mới
         if (ctx.state.menuOpen) ctx.set({ menuOpen: false });
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      },
-      // chưa đăng nhập -> đưa tới đăng nhập, xong thì vào thẳng trang chọn lớp đã lọc sẵn bộ môn
-      find: form => {
-        const subject = form.subject.value;
-        sessionStorage.setItem('sc_after_login', subject ? `/member/classes?subject=${encodeURIComponent(subject)}` : '/member/classes');
-        navigate('/login');
       }
     }
   });
+  return () => {
+    heroCtl?.stop();
+    scrollFx.stop();
+    el.removeEventListener('pointerover', onPanelEnter);
+    el.removeEventListener('focusin', onPanelEnter);
+    unmount?.();
+    io?.disconnect();
+    document.removeEventListener('pointermove', onTilt);
+  };
 }
