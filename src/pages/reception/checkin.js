@@ -2,17 +2,18 @@ import { html, icon } from '../../core/dom.js';
 import { pageHeader, emptyState, statCard, toast } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
-import { fullName, phoneText, time, date, timeRange, isoDate, badge } from '../../core/format.js';
+import { fullName, phoneText, time, date, timeRange, isoDate, badge, daysUntil, isToday } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openSellPackage } from '../../components/sellPackage.js';
 
-// Điểm danh hội viên khi đến trung tâm: tìm -> Check-in -> báo gói còn hạn + lớp hôm nay.
-// Mỗi hội viên tính 1 lượt / ngày, cần gói còn hiệu lực (BE kiểm tra).
+// Điểm danh hội viên khi đến trung tâm: tìm -> Check-in (POST /receptionist/members/{id}/check-ins)
+// -> báo gói còn hạn + lớp hôm nay. Mỗi hội viên tính 1 lượt / ngày, cần gói còn hiệu lực, chỉ Lễ tân được check-in (BE kiểm tra).
 
 function resultPanel(s) {
   if (s.last) {
     const c = s.last;
-    const warn = c.daysLeft !== null && c.daysLeft !== undefined && c.daysLeft <= 7;
+    const daysLeft = daysUntil(c.subscriptionEndDate);
+    const warn = daysLeft !== null && daysLeft <= 7;
     return html`
       <div class="rounded-2xl bg-brand-dark text-white p-5 mt-4" data-testid="checkin-success">
         <div class="flex items-center gap-3">
@@ -26,7 +27,7 @@ function resultPanel(s) {
           <div class="rounded-xl bg-white/10 p-3">
             <div class="text-white/60 text-xs">Gói đang dùng</div>
             <div class="font-bold">${c.packageName || '—'}</div>
-            <div class="text-xs ${warn ? 'text-brand-lime font-bold' : 'text-white/70'}">Hết hạn ${date(c.packageEndDate)} · còn ${c.daysLeft} ngày${warn ? ' — nhắc khách gia hạn' : ''}</div>
+            <div class="text-xs ${warn ? 'text-brand-lime font-bold' : 'text-white/70'}">Hết hạn ${date(c.subscriptionEndDate)}${daysLeft !== null ? ` · còn ${Math.max(0, daysLeft)} ngày` : ''}${warn ? ', nhắc khách gia hạn' : ''}</div>
           </div>
           <div class="rounded-xl bg-white/10 p-3" data-testid="checkin-classes">
             <div class="text-white/60 text-xs">Lớp hôm nay</div>
@@ -97,7 +98,7 @@ function todayPanel(s) {
               <span class="font-display text-xl font-extrabold text-brand-dark w-14 shrink-0">${time(c.checkInTime)}</span>
               <div class="min-w-0 flex-1">
                 <div class="font-semibold truncate">${c.memberName}</div>
-                <div class="text-xs text-slate-500 truncate">${phoneText(c.phone)}${c.checkedInBy ? ` · ${c.checkedInBy}` : ''}${c.note ? ` · ${c.note}` : ''}</div>
+                <div class="text-xs text-slate-500 truncate">${phoneText(c.phone)}${c.receptionistName ? ` · ${c.receptionistName}` : ''}${c.packageName ? ` · ${c.packageName}` : ''}</div>
               </div>
               ${icon('chevron-right', 'w-4 h-4 text-slate-300')}
             </a>`)}
@@ -153,6 +154,11 @@ export default function ReceptionCheckIn(el) {
         btn.disabled = true;
         try {
           const res = await receptionApi.checkIn(m.memberId);
+          // BE không trả lớp hôm nay -> lấy từ lịch đăng ký của hội viên để lễ tân chỉ phòng tập
+          const regs = await receptionApi.registrations(m.memberId).catch(() => []);
+          res.todayClasses = regs
+            .filter(r => r.status === 'REGISTERED' && isToday(r.startTime))
+            .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
           toast(`Đã check-in ${fullName(m)}`);
           // về lại hôm nay để thấy lượt vừa ghi
           ctx.state.date = today;

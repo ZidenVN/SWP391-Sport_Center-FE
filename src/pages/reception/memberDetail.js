@@ -4,6 +4,7 @@ import { mountPage, settle } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
 import { fullName, genderLabel, badge, money, date, dateTime, timeRange, daysUntil, isFuture, paymentMethodLabel, toDate, phoneText, time, weekday, isToday } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
+import { FEATURES } from '../../core/features.js';
 import { openSellPackage } from '../../components/sellPackage.js';
 import { openBookClass } from '../../components/bookClass.js';
 import { openInvoice } from '../../components/invoice.js';
@@ -70,14 +71,13 @@ function classesTab(s) {
       <button type="button" class="btn-secondary btn-sm" data-action="book">${icon('calendar-plus', 'w-3.5 h-3.5')} Đặt lớp hộ</button>
     </div>
     ${table({
-      columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Trạng thái' }, { label: 'Điểm danh' }, { label: '', cls: 'text-right' }],
+      columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
       rows: regs.map(r => [
         html`<div class="font-semibold">${r.subjectName}</div><div class="text-xs text-slate-500">HLV ${r.coachName}</div>`,
         html`${date(r.startTime)}<div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)}</div>`,
         r.roomName,
-        r.classStatus === 'CANCELLED' ? badge('CLASS_CANCELLED') : badge(r.status),
-        r.attendanceStatus ? badge(r.attendanceStatus) : html`<span class="text-xs text-slate-300">—</span>`,
-        r.status === 'REGISTERED' && r.classStatus !== 'CANCELLED' && isFuture(r.startTime)
+        badge(r.status),
+        r.status === 'REGISTERED' && isFuture(r.startTime)
           ? html`<button type="button" class="btn-ghost btn-sm text-rose-600" data-action="cancel-reg" data-id="${r.registrationId}" data-testid="cancel-reg">Hủy</button>` : ''
       ]),
       empty: 'Chưa đăng ký lớp nào'
@@ -88,7 +88,7 @@ function classesTab(s) {
 function checkinsTab(s) {
   return table({
     columns: [{ label: 'Thời gian' }, { label: 'Thứ' }, { label: 'Lễ tân ghi nhận' }, { label: 'Ghi chú' }],
-    rows: s.checkIns.map(c => [dateTime(c.checkInTime), weekday(c.checkInTime), c.checkedInBy || '—', c.note || '—']),
+    rows: s.checkIns.map(c => [dateTime(c.checkInTime), weekday(c.checkInTime), c.receptionistName || '—', c.packageName || '—']),
     empty: 'Hội viên chưa check-in lần nào'
   });
 }
@@ -111,7 +111,8 @@ function ticketsTab(s) {
     })}`;
 }
 
-const checkedToday = s => s.checkIns.find(c => isToday(c.checkInTime));
+// check-in hôm nay: lấy từ danh sách lượt đến trong ngày (BE chưa có lịch sử theo hội viên, FE-TODO #11)
+const checkedToday = s => s.todayCheckIns.find(c => String(c.memberId) === String(s.member.memberId));
 
 function view(s) {
   const m = s.member;
@@ -129,7 +130,7 @@ function view(s) {
             </div>
             <div class="text-sm text-slate-500 mt-0.5">Mã hội viên #${m.memberId}</div>
           </div>
-          <button type="button" class="btn-secondary btn-sm" data-action="edit">${icon('pencil', 'w-3.5 h-3.5')} Sửa thông tin</button>
+          ${FEATURES.receptionEditMember ? html`<button type="button" class="btn-secondary btn-sm" data-action="edit">${icon('pencil', 'w-3.5 h-3.5')} Sửa thông tin</button>` : ''}
         </div>
         <dl class="grid sm:grid-cols-3 gap-4 mt-6 text-sm">
           <div><dt class="text-xs text-slate-500">Số điện thoại</dt><dd class="font-semibold font-mono">${phoneText(m.phone)}</dd></div>
@@ -155,7 +156,7 @@ function view(s) {
           { id: 'subs', label: 'Gói tập', count: s.subscriptions.length },
           { id: 'payments', label: 'Thanh toán', count: s.payments.length },
           { id: 'classes', label: 'Lớp học', count: upcoming },
-          { id: 'checkins', label: 'Lượt đến', count: s.checkIns.length },
+          ...(FEATURES.checkInHistory ? [{ id: 'checkins', label: 'Lượt đến', count: s.checkIns.length }] : []),
           { id: 'tickets', label: 'Hỗ trợ', count: openTickets }
         ], s.tab)}
       </div>
@@ -200,7 +201,8 @@ export default function ReceptionMemberDetail(el, { params, query }) {
         payments: [() => receptionApi.payments(id), []],
         registrations: [() => receptionApi.registrations(id), []],
         tickets: [() => receptionApi.tickets(id), []],
-        checkIns: [() => receptionApi.memberCheckIns(id), []]
+        checkIns: [() => (FEATURES.checkInHistory ? receptionApi.memberCheckIns(id) : []), []],
+        todayCheckIns: [() => receptionApi.checkInsByDate(), []]
       });
       if (res.memberError) throw res.memberError;
       return res;

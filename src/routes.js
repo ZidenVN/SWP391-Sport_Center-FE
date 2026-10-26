@@ -1,4 +1,6 @@
 // Khai báo route. nav: hiện trên sidebar; roles: role nào được vào.
+import { FEATURES } from './core/features.js';
+
 export const HOME_BY_ROLE = {
   MEMBER: '/member/home',
   RECEPTIONIST: '/reception/members',
@@ -26,6 +28,8 @@ export const ROUTES = [
   { path: '/register', public: true, load: () => import('./pages/auth/register.js') },
   // hồ sơ cá nhân dùng chung cho Lễ tân/HLV/Quản lý, vào từ menu ở header (không có trong sidebar)
   { path: '/profile', roles: [...R, ...C, ...CM], load: () => import('./pages/shared/myProfile.js') },
+  // đổi mật khẩu cho mọi vai trò, vào từ menu tài khoản ở header
+  { path: '/account/password', roles: [...M, ...R, ...C, ...CM], load: () => import('./pages/shared/changePassword.js') },
 
   // ----- Member -----
   { path: '/member/home', roles: M, nav: { label: 'Tổng quan', icon: 'layout-dashboard' }, load: () => import('./pages/member/home.js') },
@@ -33,10 +37,12 @@ export const ROUTES = [
   { path: '/member/schedule', roles: M, nav: { label: 'Lịch tập của tôi', icon: 'calendar-check' }, load: () => import('./pages/member/schedule.js') },
   { path: '/member/packages', roles: M, nav: { label: 'Gói tập', icon: 'package' }, load: () => import('./pages/member/packages.js') },
   { path: '/member/training', roles: M, nav: { label: 'Tập luyện', icon: 'dumbbell' }, load: () => import('./pages/member/training.js') },
-  { path: '/member/assistant', roles: M, nav: { label: 'Trợ lý AI', icon: 'sparkles' }, load: () => import('./pages/member/assistant.js') },
+  // Trợ lý AI chỉ dành cho hội viên (BE chặn 403 với vai khác) -> menu chỉ có ở vai hội viên
+  ...(FEATURES.ai ? [{ path: '/member/assistant', roles: M, nav: { label: 'Trợ lý AI', icon: 'sparkles' }, load: () => import('./pages/member/assistant.js') }] : []),
   { path: '/member/payments', roles: M, nav: { label: 'Thanh toán', icon: 'receipt' }, load: () => import('./pages/member/payments.js') },
   { path: '/member/notifications', roles: M, nav: { label: 'Thông báo', icon: 'bell' }, load: () => import('./pages/member/notifications.js') },
   { path: '/member/profile', roles: M, nav: { label: 'Hồ sơ', icon: 'user' }, load: () => import('./pages/member/profile.js') },
+  { path: '/member/onboarding', roles: M, navParent: '/member/packages', load: () => import('./pages/member/onboarding.js') },
   { path: '/member/checkout/:id', roles: M, navParent: '/member/packages', load: () => import('./pages/member/checkout.js') },
   // open: vào được cả khi chưa đăng nhập (điện thoại quét QR thanh toán xong được VNPay chuyển về đây)
   { path: '/member/payment-result', roles: M, open: true, navParent: '/member/packages', load: () => import('./pages/member/paymentResult.js') },

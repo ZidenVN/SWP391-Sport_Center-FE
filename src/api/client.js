@@ -104,22 +104,24 @@ async function doFetch(url, options, timeoutMs) {
   }
 }
 
-export async function request(method, path, { query, body, timeoutMs = DEFAULT_TIMEOUT_MS, auth = true } = {}) {
+export async function request(method, path, { query, body, timeoutMs = DEFAULT_TIMEOUT_MS, auth = true, handle401 = true } = {}) {
   const headers = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // FormData (upload file): không tự đặt Content-Type để trình duyệt thêm boundary multipart
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   const token = auth ? tokenProvider() : null;
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await doFetch(buildUrl(path, query), {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
+    body: body === undefined ? undefined : isForm ? body : JSON.stringify(body)
   }, timeoutMs);
 
   const data = parseBody(await res.text());
   if (!res.ok) {
     const error = toApiError(res.status, data);
-    if (res.status === 401 && auth && token) unauthorizedHandler(error);
+    if (res.status === 401 && auth && token && handle401) unauthorizedHandler(error);
     throw error;
   }
   return data;

@@ -5,6 +5,8 @@ import { packageApi, memberApi } from '../../api/endpoints.js';
 import { money, date, daysUntil, toDate } from '../../core/format.js';
 import { expiryBanner } from '../../components/memberAlerts.js';
 import { latestActive, bestValueId, vnpayMark } from '../../components/billing.js';
+import { session } from '../../core/session.js';
+import { quizStore, recommendPackage } from '../../core/quiz.js';
 
 function membershipHero(current, latest) {
   if (!latest) {
@@ -42,7 +44,7 @@ function membershipHero(current, latest) {
     </div>`;
 }
 
-function planCard(p, { best, isRenewal }) {
+function planCard(p, { best, isRenewal, suggested }) {
   const perDay = p.durationDays ? Math.round(p.price / p.durationDays) : null;
   const perks = [
     `${p.durationDays} ngày tập kể từ ngày kích hoạt`,
@@ -54,7 +56,10 @@ function planCard(p, { best, isRenewal }) {
   return html`
     <div class="relative rounded-3xl ${best ? 'bg-brand-dark text-white shadow-2xl shadow-brand-dark/20' : 'bg-white border border-brand-line shadow-sm'} p-6 sm:p-7 flex flex-col hover-lift"
       data-testid="package-card" data-package-id="${p.packageId}">
-      ${best ? html`<span class="absolute -top-3 left-6 px-3 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase tracking-wide shadow">Tiết kiệm nhất</span>` : ''}
+      <div class="absolute -top-3 left-6 flex gap-2">
+        ${suggested ? html`<span class="px-3 py-1 rounded-full bg-amber-400 text-brand-dark text-[11px] font-extrabold uppercase tracking-wide shadow flex items-center gap-1" data-testid="suggested-badge">${icon('sparkles', 'w-3 h-3')} Phù hợp với bạn</span>` : ''}
+        ${best ? html`<span class="px-3 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase tracking-wide shadow">Tiết kiệm nhất</span>` : ''}
+      </div>
       <div class="flex items-center justify-between">
         <div class="text-sm font-bold ${best ? 'text-white' : 'text-slate-900'}">${p.packageName}</div>
         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${best ? 'bg-white/15' : 'bg-brand-sand text-slate-700'}">${p.durationDays} ngày</span>
@@ -85,9 +90,18 @@ function view(s) {
   const plans = s.packages.filter(p => p.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays);
   const latest = latestActive(s.subscriptions);
   const best = bestValueId(plans);
+  const answers = quizStore.answers(session.get()?.email);
+  const suggestedId = recommendPackage(answers, plans)?.best.packageId;
   return html`
     ${expiryBanner(latest)}
     ${membershipHero(s.current, latest)}
+    <a href="#/member/onboarding${answers ? '?redo=1' : ''}" class="mt-5 flex items-center gap-3 rounded-2xl border border-brand-line bg-white p-4 hover:border-brand/60" data-testid="quiz-link">
+      <span class="w-10 h-10 rounded-xl bg-brand-sand text-brand-dark flex items-center justify-center shrink-0">${icon('sparkles', 'w-5 h-5')}</span>
+      <span class="flex-1 text-sm">${answers
+        ? html`<b>Gói có nhãn "Phù hợp với bạn"</b> được gợi ý từ quiz của bạn. <span class="text-brand-deep font-semibold">Làm lại quiz</span>`
+        : html`<b>Chưa biết chọn gói nào?</b> Trả lời 4 câu hỏi nhanh để nhận gợi ý.`}</span>
+      ${icon('chevron-right', 'w-5 h-5 text-slate-400')}
+    </a>
     <div class="flex items-end justify-between mt-10 mb-5">
       <div>
         <h2 class="font-display text-3xl font-extrabold text-brand-dark">${latest ? 'Gia hạn gói tập' : 'Chọn gói tập'}</h2>
@@ -97,7 +111,7 @@ function view(s) {
     </div>
     ${plans.length ? html`
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-3">
-        ${plans.map(p => planCard(p, { best: p.packageId === best, isRenewal: Boolean(latest) }))}
+        ${plans.map(p => planCard(p, { best: p.packageId === best, isRenewal: Boolean(latest), suggested: p.packageId === suggestedId }))}
       </div>` : emptyState('Hiện chưa có gói tập nào đang mở bán', 'package')}
     <div class="grid sm:grid-cols-3 gap-4 mt-10">
       ${TRUST.map(([ic, title, text]) => html`

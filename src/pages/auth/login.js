@@ -2,8 +2,9 @@ import { html, render, bindActions, readForm } from '../../core/dom.js';
 import { authApi, memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { HOME_BY_ROLE } from '../../routes.js';
-import { authLayout, iconInput, togglePassword } from './authLayout.js';
+import { authLayout, iconInput, togglePassword, markAuthSwitch } from './authLayout.js';
 import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
+import { shouldAskQuiz } from '../../core/quiz.js';
 
 // Đăng nhập + chuẩn bị session (member cần memberId cho các màn sau)
 export async function loginAndStart(email, password) {
@@ -18,7 +19,7 @@ export async function startSession(auth, email) {
   if (auth.role === 'MEMBER') {
     try {
       const me = await memberApi.me();
-      session.update({ memberId: me.memberId, firstName: me.firstName, lastName: me.lastName });
+      session.update({ memberId: me.memberId, firstName: me.firstName, lastName: me.lastName, email: me.email || session.get().email });
     } catch {
       // không chặn đăng nhập nếu lỗi tải hồ sơ
     }
@@ -29,6 +30,11 @@ export async function startSession(auth, email) {
 export function goAfterLogin(navigate) {
   const saved = sessionStorage.getItem('sc_after_login');
   sessionStorage.removeItem('sc_after_login');
+  // hội viên mới: mở quiz gợi ý gói tập trước khi vào trang chủ
+  if (session.role() === 'MEMBER' && shouldAskQuiz(session.get().email, Boolean(session.get().packageName))) {
+    navigate('/member/onboarding', { replace: true });
+    return;
+  }
   const home = HOME_BY_ROLE[session.role()];
   const allowedPrefix = home.split('/').slice(0, 2).join('/');
   navigate(saved && saved.startsWith(allowedPrefix) ? saved : home, { replace: true });
@@ -44,7 +50,7 @@ export default function LoginPage(el, { navigate }) {
     </form>
     ${googleSection('hoặc tiếp tục với')}
     <p class="text-sm text-white/65 text-center mt-7">
-      Chưa có tài khoản? <a href="#/register" class="font-bold text-white hover:underline ml-1">Đăng ký</a>
+      Chưa có tài khoản? <a href="#/register" data-action="auth-switch" data-to="register" class="font-bold text-white hover:underline ml-1">Đăng ký</a>
     </p>
   `, { active: 'login' }));
 
@@ -58,6 +64,7 @@ export default function LoginPage(el, { navigate }) {
 
   return bindActions(el, {
     'toggle-pw': togglePassword,
+    'auth-switch': a => { markAuthSwitch(a.dataset.to); location.hash = a.getAttribute('href'); },
     login: async () => {
       const { email, password } = readForm(form);
       errorBox.classList.add('hidden');

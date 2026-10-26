@@ -10,14 +10,14 @@ export function memberAvatar(m, size = 'w-10 h-10 text-sm') {
 // bỏ dấu để gõ "nguyen" vẫn ra "Nguyễn"
 const norm = v => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
 
-// Hộp chọn hội viên: mở ra là thấy danh sách, gõ tên / SĐT / email để lọc. onPick(member) có thể trả Promise.
+// Hộp chọn hội viên: có danh sách đầy đủ thì lọc tại chỗ, chưa có thì tìm qua BE. onPick(member) có thể trả Promise.
 export function openMemberPicker({ title = 'Chọn hội viên', onPick }) {
   let all = null;
   let results = [];
   let keyword = '';
 
   const listView = () => html`
-    <div class="text-xs text-slate-500 mb-2">${keyword.trim() ? `${results.length} kết quả` : `${all.length} hội viên`}</div>
+    <div class="text-xs text-slate-500 mb-2">${keyword.trim() ? `${results.length} kết quả` : `${results.length} hội viên`}</div>
     <ul class="divide-y divide-slate-100 max-h-80 overflow-y-auto -mx-2" data-testid="picker-results">
       ${results.map(m => html`
         <li>
@@ -34,18 +34,44 @@ export function openMemberPicker({ title = 'Chọn hội viên', onPick }) {
 
   const setResults = content => render(modal.el.querySelector('#picker-body'), content);
 
+  let timer = null;
+
   function filter() {
+    // BE chưa trả danh sách đầy đủ (FE-TODO #8) -> tìm trực tiếp trên BE khi gõ từ 2 ký tự
+    if (!all.length) {
+      remoteSearch();
+      return;
+    }
     const kw = norm(keyword.trim());
     results = !kw ? all : all.filter(m => [fullName(m), m.phone, m.email, m.memberId].some(v => norm(v).includes(kw)));
-    setResults(results.length
-      ? listView()
-      : emptyState(all.length ? `Không tìm thấy hội viên "${keyword.trim()}"` : 'Chưa có hội viên nào', 'user-x'));
+    setResults(results.length ? listView() : emptyState(`Không tìm thấy hội viên "${keyword.trim()}"`, 'user-x'));
+  }
+
+  function remoteSearch() {
+    clearTimeout(timer);
+    const kw = keyword.trim();
+    if (kw.length < 2) {
+      results = [];
+      setResults(emptyState('Gõ ít nhất 2 ký tự: tên, số điện thoại hoặc email', 'search'));
+      return;
+    }
+    setResults(loading('Đang tìm...'));
+    timer = setTimeout(async () => {
+      try {
+        const found = (await receptionApi.search(kw)).filter(m => m.status !== 'INACTIVE');
+        if (keyword.trim() !== kw) return;
+        results = found;
+        setResults(results.length ? listView() : emptyState(`Không tìm thấy hội viên "${kw}"`, 'user-x'));
+      } catch (err) {
+        setResults(errorState(err, 'retry'));
+      }
+    }, 300);
   }
 
   async function load() {
     setResults(loading('Đang tải hội viên...'));
     try {
-      all = (await receptionApi.allMembers()).filter(m => m.status !== 'INACTIVE');
+      all = (await receptionApi.allMembers().catch(() => [])).filter(m => m.status !== 'INACTIVE');
       filter();
     } catch (err) {
       setResults(errorState(err, 'retry'));

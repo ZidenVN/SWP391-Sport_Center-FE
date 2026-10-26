@@ -19,7 +19,7 @@ function view(s) {
           placeholder="Tìm theo tên, số điện thoại hoặc email..." autocomplete="off" data-testid="member-search" />
       </div>
       <div class="text-xs text-slate-500 mt-2">
-        ${searching ? (s.searching ? 'Đang tìm...' : `Tìm thấy ${list.length} hội viên`) : `Tổng ${s.all.length} hội viên · gõ ít nhất 2 ký tự để tìm`}
+        ${searching ? (s.searching ? 'Đang tìm...' : `Tìm thấy ${list.length} hội viên`) : s.all.length ? `Tổng ${s.all.length} hội viên · gõ ít nhất 2 ký tự để tìm` : 'Gõ ít nhất 2 ký tự để tìm hội viên'}
       </div>
     </div>
     <div class="card" data-testid="member-table">
@@ -38,7 +38,7 @@ function view(s) {
             <a href="#/reception/members/${m.memberId}" class="btn-ghost btn-sm">Chi tiết ${icon('chevron-right', 'w-3.5 h-3.5')}</a>
           </div>`
         ])
-      }) : emptyState(searching ? `Không tìm thấy hội viên "${s.keyword}"` : 'Chưa có hội viên nào', 'users')}
+      }) : emptyState(searching ? `Không tìm thấy hội viên "${s.keyword}"` : 'Nhập tên, số điện thoại hoặc email để tìm hội viên', 'search')}
     </div>`;
 }
 
@@ -95,7 +95,8 @@ export default function ReceptionMembers(el) {
   let timer = null;
   const dispose = mountPage(el, {
     state: { keyword: '', results: [], searching: false },
-    load: async () => ({ all: await receptionApi.allMembers() }),
+    // BE hiện chỉ trả kết quả khi có từ khóa (FE-TODO #8); lỗi hay rỗng thì trang vẫn dùng ô tìm kiếm bình thường
+    load: async () => ({ all: await receptionApi.allMembers().catch(() => []) }),
     view,
     actions: {
       search: (t, e, ctx) => {

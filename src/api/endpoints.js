@@ -5,19 +5,22 @@ export const authApi = {
   login: (email, password) => http.post('/auth/login', { email, password }, { auth: false }),
   register: payload => http.post('/auth/register', payload, { auth: false }),
   // payload: { token } (ID token) hoặc { accessToken } (nút Google tự thiết kế)
-  google: payload => http.post('/auth/google', payload, { auth: false })
+  google: payload => http.post('/auth/google', payload, { auth: false }),
+  // đổi mật khẩu: BE trả token mới, token cũ bị vô hiệu
+  changePassword: (currentPassword, newPassword) => http.put('/auth/change-password', { currentPassword, newPassword }),
+  // vô hiệu token phía server (token lộ ra ngoài cũng không dùng được nữa)
+  logout: () => http.post('/auth/logout', undefined, { handle401: false })
 };
 
 export const userApi = {
-  list: () => http.get('/users'),
+  // chỉ Quản lý; BE trả trang { content, totalElements, totalPages, number, size }
+  // query: { keyword, role (CENTER_MANAGER|COACH|RECEPTIONIST|MEMBER), status (ACTIVE|INACTIVE), page (từ 0), size (tối đa 100) }
+  page: query => http.get('/users', query),
+  list: query => http.get('/users', { size: 100, ...query }).then(page => page.content || []),
   get: id => http.get(`/users/${id}`),
   update: (id, payload) => http.put(`/users/${id}`, payload),
   toggleStatus: id => http.patch(`/users/${id}/status`),
-  assignRole: (userId, roleId) => http.patch(`/users/${userId}/role/${roleId}`),
-  // hồ sơ của chính mình (mọi vai trò), theo quyền VIEW_OWN_PROFILE / UPDATE_OWN_PROFILE
-  me: () => http.get('/users/me'),
-  updateMe: payload => http.put('/users/me', payload),
-  myPermissions: () => http.get('/users/me/permissions')
+  assignRole: (userId, roleId) => http.patch(`/users/${userId}/role/${roleId}`)
 };
 
 export const roleApi = {
@@ -61,11 +64,30 @@ export const subjectApi = {
   remove: id => http.delete(`/subjects/${id}`)
 };
 
+// BE main trả DANH SÁCH gói đang hiệu lực (gói tự do / gói lớp theo buổi có thể song song).
+// Các màn hình dùng 1 gói "hiện tại": lấy gói hết hạn muộn nhất, kèm cả danh sách ở .all; không có gói -> null.
+function pickCurrent(list) {
+  if (!Array.isArray(list)) return list || null;
+  if (!list.length) return null;
+  const sorted = [...list].sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+  return { ...sorted[0], all: sorted };
+}
+
+function classForm(payload, image) {
+  const fd = new FormData();
+  fd.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+  if (image) fd.append('image', image);
+  return fd;
+}
+
 export const classApi = {
   list: () => http.get('/classes'),
+  // tìm lớp có lọc + phân trang: { fromDate, toDate (yyyy-MM-dd), subjectId, coachId, roomId, status (OPENING|CANCELLED|COMPLETED), available, page, size }
+  search: query => http.get('/classes/search', query),
   get: id => http.get(`/classes/${id}`),
-  create: payload => http.post('/classes', payload),
-  update: (id, payload) => http.put(`/classes/${id}`, payload),
+  // multipart: part "data" là JSON lớp, part "image" là file ảnh (tạo lớp bắt buộc, sửa lớp không gửi = giữ ảnh cũ)
+  create: (payload, image) => http.post('/classes', classForm(payload, image)),
+  update: (id, payload, image) => http.put(`/classes/${id}`, classForm(payload, image)),
   assignCoach: (classId, coachId) => http.put(`/classes/${classId}/coach/${coachId}`),
   // hủy lớp: giữ lịch sử, hủy các đăng ký và báo học viên; xóa chỉ dùng cho lớp tạo nhầm
   cancel: (id, reason) => http.patch(`/classes/${id}/cancel`, { reason }),
@@ -77,7 +99,7 @@ export const memberApi = {
   me: () => http.get('/members/me'),
   updateMe: payload => http.put('/members/me', payload),
   subscriptions: () => http.get('/members/me/subscriptions'),
-  currentSubscription: () => http.get('/members/me/subscriptions/current'),
+  currentSubscription: () => http.get('/members/me/subscriptions/current').then(pickCurrent),
   payments: () => http.get('/members/me/payments'),
   invoice: paymentId => http.get(`/members/me/payments/${paymentId}/invoice`),
   register: classId => http.post('/members/me/registrations', { classId }),
@@ -88,10 +110,19 @@ export const memberApi = {
   workoutResults: () => http.get('/members/me/workout-results'),
   progress: () => http.get('/members/me/progress'),
   notifications: () => http.get('/members/me/notifications'),
+  // lịch sử điểm danh theo từng buổi học
+  attendances: () => http.get('/members/me/attendances'),
+  // FE-TODO #11: lịch sử check-in của hội viên (đang ẩn bằng FEATURES.checkInHistory)
   checkIns: () => http.get('/members/me/check-ins'),
-  aiChat: payload => http.post('/members/me/ai-chat', payload, { timeoutMs: 120000 }),
   classWorkoutPlans: classId => http.get(`/coaches/classes/${classId}/workout-plans`),
   profileById: memberId => http.get(`/members/${memberId}`)
+};
+
+// Trợ lý AI của hội viên. BE có thể mất tới 1–2 phút khi chuyển sang model dự phòng -> chờ tối đa 150 giây.
+export const aiApi = {
+  chat: (conversationId, message) => http.post('/ai/chat', { conversationId, message }, { timeoutMs: 150000 }),
+  conversations: () => http.get('/ai/conversations'),
+  messages: id => http.get(`/ai/conversations/${id}/messages`)
 };
 
 export const vnpayApi = {
@@ -107,17 +138,17 @@ export const vnpayApi = {
 
 export const receptionApi = {
   search: keyword => http.get('/receptionist/members', { keyword }),
-  // BE search bắt buộc có keyword -> danh sách đầy đủ lấy từ /users (lễ tân có quyền VIEW_USER), lọc role MEMBER
-  allMembers: async () => (await http.get('/users'))
-    .filter(u => u.roleName === 'MEMBER')
-    .map(u => ({ memberId: u.id, firstName: u.firstName, lastName: u.lastName, gender: u.gender, email: u.email, phone: u.phone, status: u.status }))
-    .sort((a, b) => b.memberId - a.memberId),
-  updateMember: (memberId, payload) => http.put(`/users/${memberId}`, payload),
+  // /users giờ chỉ Quản lý gọi được. BE đang trả rỗng khi keyword trống; khi BE cập nhật (FE-TODO #8)
+  // keyword trống sẽ trả mọi hội viên và danh sách tự hiện, không phải sửa FE
+  // (keyword để thẳng trong đường dẫn vì client bỏ tham số rỗng, mà BE bắt buộc phải có keyword)
+  allMembers: async () => (await http.get('/receptionist/members?keyword=')).sort((a, b) => b.memberId - a.memberId),
+  // BE chưa có API sửa hội viên cho Lễ tân (FE-TODO #9, dự kiến PUT /receptionist/members/{id}); nút sửa đang ẩn
+  updateMember: (memberId, payload) => http.put(`/receptionist/members/${memberId}`, payload),
   member: id => http.get(`/receptionist/members/${id}`),
   registerWalkIn: payload => http.post('/receptionist/members', payload),
   subscribe: (memberId, packageId, paymentMethod) => http.post(`/receptionist/members/${memberId}/subscriptions`, { packageId, paymentMethod }),
   subscriptions: memberId => http.get(`/receptionist/members/${memberId}/subscriptions`),
-  currentSubscription: memberId => http.get(`/receptionist/members/${memberId}/subscriptions/current`),
+  currentSubscription: memberId => http.get(`/receptionist/members/${memberId}/subscriptions/current`).then(pickCurrent),
   payments: memberId => http.get(`/receptionist/members/${memberId}/payments`),
   invoice: paymentId => http.get(`/receptionist/payments/${paymentId}/invoice`),
   // bán gói tạo giao dịch PENDING; lễ tân xác nhận đã thu thì gói mới ACTIVE
@@ -131,9 +162,10 @@ export const receptionApi = {
   resolveTicket: ticketId => http.patch(`/receptionist/tickets/${ticketId}/resolve`),
   // danh sách giao dịch tại quầy (lọc ngày, trạng thái, phương thức, từ khóa), có phân trang
   allPayments: query => http.get('/receptionist/payments', query),
-  // điểm danh hội viên khi đến trung tâm
-  checkIn: (memberId, note) => http.post('/receptionist/check-ins', { memberId, note }),
+  // điểm danh hội viên khi đến trung tâm (không có body)
+  checkIn: memberId => http.post(`/receptionist/members/${memberId}/check-ins`),
   checkInsByDate: date => http.get('/receptionist/check-ins', date ? { date } : undefined),
+  // BE chưa có (FE-TODO #11)
   memberCheckIns: memberId => http.get(`/receptionist/members/${memberId}/check-ins`)
 };
 
@@ -144,7 +176,7 @@ export const coachApi = {
   takeAttendance: (classId, records) => http.post(`/coaches/me/classes/${classId}/attendances`, { records }),
   attendances: classId => http.get(`/coaches/me/classes/${classId}/attendances`),
   createPlan: payload => http.post('/coaches/me/workout-plans', payload),
-  // AI gợi ý bài tập theo mục tiêu + lịch sử tập của học viên (Claude hoặc bộ luật dự phòng); chờ lâu hơn mặc định
+  // BE chưa có: nút gợi ý AI của HLV đang ẩn bằng FEATURES.coachAi
   aiSuggest: (memberId, payload) => http.post(`/coaches/members/${memberId}/ai-suggestions`, payload, { timeoutMs: 120000 }),
   myPlans: () => http.get('/coaches/me/workout-plans'),
   memberPlans: memberId => http.get(`/coaches/members/${memberId}/workout-plans`),

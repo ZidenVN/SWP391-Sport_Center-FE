@@ -83,7 +83,7 @@ export default function ManagerCoaches(el) {
   return mountPage(el, {
     state: { keyword: '' },
     load: async () => {
-      const [coaches, classes, users] = await Promise.all([coachAdminApi.list(), classApi.list().catch(() => []), userApi.list().catch(() => [])]);
+      const [coaches, classes, users] = await Promise.all([coachAdminApi.list(), classApi.list().catch(() => []), userApi.list({ role: 'COACH' }).catch(() => [])]);
       return { coaches, classes, statusById: Object.fromEntries(users.map(u => [u.id, u.status])) };
     },
     view,

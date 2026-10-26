@@ -1,10 +1,11 @@
 import { html, render, bindActions, readForm } from '../../core/dom.js';
 import { field, input, GENDER_OPTIONS, showFormErrors, toast } from '../../core/ui.js';
 import { authApi } from '../../api/endpoints.js';
-import { authLayout, iconInput, togglePassword } from './authLayout.js';
+import { authLayout, iconInput, togglePassword, markAuthSwitch } from './authLayout.js';
 import { darkSelect, mountDarkSelects } from '../../components/darkSelect.js';
 import { loginAndStart, goAfterLogin } from './login.js';
 import { googleSection, mountGoogleButton } from '../../components/googleLogin.js';
+import { quizStore } from '../../core/quiz.js';
 
 // Cùng luật với RegisterRequestDTO phía BE để báo lỗi sớm
 export function validateRegister(data) {
@@ -39,7 +40,7 @@ export default function RegisterPage(el, { navigate }) {
     </form>
     ${googleSection('hoặc tiếp tục với', 'Đăng ký bằng Google')}
     <p class="text-sm text-white/65 text-center mt-7">
-      Đã có tài khoản? <a href="#/login" class="font-bold text-white hover:underline ml-1">Đăng nhập</a>
+      Đã có tài khoản? <a href="#/login" data-action="auth-switch" data-to="login" class="font-bold text-white hover:underline ml-1">Đăng nhập</a>
     </p>
   `, { active: 'register', wide: true }));
 
@@ -48,6 +49,7 @@ export default function RegisterPage(el, { navigate }) {
   const unmountSelects = mountDarkSelects(el);
   const unbind = bindActions(el, {
     'toggle-pw': togglePassword,
+    'auth-switch': a => { markAuthSwitch(a.dataset.to); location.hash = a.getAttribute('href'); },
     register: async () => {
       const data = readForm(form);
       const errors = validateRegister(data);
@@ -60,6 +62,7 @@ export default function RegisterPage(el, { navigate }) {
       try {
         const { confirmPassword, ...payload } = data;
         await authApi.register(payload);
+        quizStore.markPending(payload.email);
         toast('Đăng ký thành công! Đang đăng nhập...');
         await loginAndStart(payload.email, payload.password);
         goAfterLogin(navigate);

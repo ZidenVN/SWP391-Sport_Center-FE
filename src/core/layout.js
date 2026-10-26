@@ -4,7 +4,7 @@ import { html, render, icon } from './dom.js';
 import { roleLabel } from './format.js';
 import { refreshNotificationBadge } from '../components/notificationBadge.js';
 import { brandMark } from '../components/brand.js';
-import { syncPermissions } from '../components/permissionSync.js';
+import { authApi } from '../api/endpoints.js';
 
 // Một bộ nhận diện cho mọi vai trò, cùng tông trang giới thiệu: nền xanh rừng, điểm nhấn vàng chanh
 const SIDEBAR_BG = 'bg-brand-dark';
@@ -46,7 +46,14 @@ function sidebar(role) {
           ${g.name ? html`<div class="px-3.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/40">${g.name}</div>` : ''}
           ${g.items.map(navLink)}
         </div>`)}
-    </nav>`;
+    </nav>
+    <!-- đăng xuất cố định ở đáy sidebar (mọi vai trò) -->
+    <div class="px-3 pb-4 pt-3 shrink-0 border-t border-white/10">
+      <button type="button" id="logout-btn" data-testid="menu-logout"
+        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-rose-200 hover:bg-rose-500/15 hover:text-white transition-colors disabled:opacity-60">
+        ${icon('log-out', 'w-4 h-4')} Đăng xuất
+      </button>
+    </div>`;
 }
 
 export function renderShell(root) {
@@ -88,11 +95,10 @@ export function renderShell(root) {
                   class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                   ${icon('user', 'w-4 h-4 text-slate-400')} Thông tin cá nhân
                 </a>
-                <div class="h-px bg-slate-100 my-1"></div>
-                <button type="button" id="logout-btn" data-testid="menu-logout" role="menuitem"
-                  class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50">
-                  ${icon('log-out', 'w-4 h-4')} Đăng xuất
-                </button>
+                <a href="#/account/password" data-testid="menu-password" role="menuitem"
+                  class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  ${icon('key-round', 'w-4 h-4 text-slate-400')} Đổi mật khẩu
+                </a>
               </div>
             </div>
           </div>
@@ -124,7 +130,11 @@ export function renderShell(root) {
   menu.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
   document.addEventListener('click', () => setMenu(false));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
-  root.querySelector('#logout-btn').addEventListener('click', () => {
+  // gọi BE vô hiệu token trước; mất mạng / lỗi thì vẫn đăng xuất ở trình duyệt
+  root.querySelector('#logout-btn').addEventListener('click', async e => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    await authApi.logout().catch(() => {});
     session.end();
     window.location.hash = '#/login';
   });
@@ -134,7 +144,6 @@ export function renderShell(root) {
 }
 
 export function setActiveNav(path) {
-  syncPermissions();
   document.querySelectorAll('[data-nav]').forEach(a => {
     const active = path === a.dataset.nav || path.startsWith(`${a.dataset.nav}/`);
     a.classList.toggle('bg-brand-lime', active);

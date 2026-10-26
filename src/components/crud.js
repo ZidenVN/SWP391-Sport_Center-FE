@@ -3,10 +3,11 @@ import { openModal, withBusy, toast, showFormErrors, confirmDialog } from '../co
 
 // Hộp form dùng chung cho các màn quản lý.
 // fields: html`` các ô nhập; validate(data) -> { field: 'lỗi' }; submit(data) -> Promise kết quả
-export function openFormModal({ title, fields, submitText = 'Lưu', size = 'max-w-lg', validate, submit, success, onDone }) {
+export function openFormModal({ title, fields, submitText = 'Lưu', size = 'max-w-lg', validate, submit, success, onDone, onMount }) {
   const modal = openModal({
     title,
     size,
+    onMount,
     body: html`
       <form data-action="save" class="space-y-4" novalidate data-testid="crud-form">
         ${fields}
