@@ -1488,3 +1488,21 @@ html.theme-dark .cal-ev-more { background: rgba(255,255,255,0.05); color: #8fd3b
 html.theme-dark .cal-eyebrow { color: #8fd3b4; }
 html.theme-dark .cal-day-head.is-today .cal-day-count { color: #D7F25B; }
 html.theme-dark .cal-day-wd, html.theme-dark .cal-day-count, html.theme-dark .cal-hour { color: #7f948a; }
+
+/* ô chọn trên trang đăng ký (darkSelect): kính xám khói cùng tông form, nhấn vàng chanh */
+.auth-glass .ds-trigger[aria-expanded="true"] { border-bottom-color: rgba(215, 242, 91, 0.85); box-shadow: 0 1px 0 0 rgba(215, 242, 91, 0.85); }
+.ds-panel { padding: 0.4rem; border-radius: 1rem; list-style: none;
+  background: linear-gradient(180deg, rgb(36, 39, 38), rgb(22, 24, 23));
+  border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 24px 50px -18px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  transform-origin: top center; animation: ds-in 0.18s ease-out both; }
+@keyframes ds-in { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
+.ds-opt { position: relative; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.65rem 0.85rem; border-radius: 0.7rem; font-size: 0.875rem; font-weight: 500; color: rgba(255, 255, 255, 0.75); text-align: left;
+  transition: background 0.15s, color 0.15s, padding 0.2s; }
+.ds-opt::before { content: ''; position: absolute; left: 0.35rem; top: 50%; width: 3px; height: 0; border-radius: 3px; background: #D7F25B; transform: translateY(-50%); transition: height 0.2s; }
+.ds-opt:hover, .ds-opt:focus-visible { outline: none; background: rgba(255, 255, 255, 0.08); color: #fff; padding-left: 1.1rem; }
+.ds-opt:hover::before, .ds-opt:focus-visible::before { height: 1rem; }
+.ds-opt[aria-selected="true"] { color: #fff; font-weight: 700; background: rgba(215, 242, 91, 0.1); }
+.ds-opt [data-ds-check] { color: #D7F25B; }
+@media (prefers-reduced-motion: reduce) { .ds-panel { animation: none; } .ds-opt { transition: none; } }

@@ -10,18 +10,17 @@ export function darkSelect(name, options, { label, placeholder = 'Chọn', value
       <span class="block text-sm leading-5 font-medium text-white/85 mb-2" id="${name}-label">${label}</span>
       <div class="relative" data-field-wrap data-dark-select data-testid="${name}-select">
         <input type="hidden" name="${name}" value="${current ? current.value : ''}" />
-        <button type="button" class="input flex items-center justify-between gap-2 text-left" data-ds-trigger
+        <button type="button" class="input ds-trigger flex items-center justify-between gap-2 text-left" data-ds-trigger
           aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${name}-label">
           <span data-ds-text class="${current ? '' : 'text-white/40'}">${current ? current.label : placeholder}</span>
           <span class="text-white/55 transition-transform" data-ds-chevron>${icon('chevron-down', 'w-4 h-4')}</span>
         </button>
         <ul role="listbox" aria-labelledby="${name}-label" data-ds-list
-          class="hidden absolute z-30 left-0 right-0 mt-2 p-1.5 rounded-xl border border-white/15 shadow-2xl"
-          style="background:rgba(31,51,41,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)">
+          class="ds-panel hidden absolute z-30 left-0 right-0 mt-2">
           ${options.map(o => html`
             <li>
               <button type="button" role="option" data-ds-option data-value="${o.value}" aria-selected="${String(o.value) === String(value)}"
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-white/85 hover:bg-white/10 focus:bg-white/10 focus:outline-none aria-selected:text-[#D7F25B] aria-selected:font-semibold">
+                class="ds-opt">
                 ${o.label}<span class="${String(o.value) === String(value) ? '' : 'invisible'}" data-ds-check>${icon('check', 'w-4 h-4')}</span>
               </button>
             </li>`)}
