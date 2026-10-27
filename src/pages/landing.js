@@ -51,6 +51,9 @@ const SUBJECT_TAGS = [
 const tagsFor = name => (SUBJECT_TAGS.find(([re]) => re.test(norm(name))) || [, ['Mọi trình độ', 'Có HLV']])[1];
 const RIBBON = ['Yoga', 'Gym', 'Boxing', 'Bơi lội'];
 
+// ảnh minh họa đi kèm từng tính năng (cùng thứ tự FEATURES)
+const FEATURE_IMG = ['gym.jpg', 'yoga.jpg', 'swim.jpg', 'boxing.jpg'];
+
 const FEATURES = [
   ['medal', 'HLV chuyên môn', 'Giáo án riêng cho từng mục tiêu, theo dõi tiến độ sau mỗi buổi.'],
   ['calendar-check', 'Đặt lớp online', 'Chọn lớp theo giờ rảnh, hủy trước giờ học chỉ với một chạm.'],
@@ -404,78 +407,141 @@ function pricing(s) {
     </section>`;
 }
 
+// "Nâng tầm buổi tập": danh sách tính năng tự chạy (thanh tiến độ) + ảnh đổi theo tính năng đang chọn.
+// Rê chuột vào danh sách thì tạm dừng; bấm một mục để chọn. Ảnh mở màn kiểu kéo rèm, trôi theo cuộn (--sx).
 function about() {
-  const ribbon = [...RIBBON, ...RIBBON];
+  const ribbon = [...RIBBON, ...RIBBON, ...RIBBON, ...RIBBON];
+  const ribbonItems = list => list.map(t => html`<span class="ab-rib-item">${t}<span class="ab-rib-dot"></span></span>`);
   return html`
-    <section id="about" class="mt-20 sm:mt-24 overflow-hidden" style="background:#EFE9DC">
+    <section id="about" class="ab mt-20 sm:mt-24 overflow-hidden" data-sx data-testid="about">
       <div class="grid lg:grid-cols-2 items-stretch">
         <!-- chữ thẳng hàng với khung 6xl của trang, ảnh thì tràn ra sát mép phải màn hình -->
-        <div class="px-4 sm:px-6 py-14 lg:py-20 lg:pr-12 lg:pl-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]">
-          <h2 class="font-display font-extrabold text-4xl sm:text-5xl text-slate-900 leading-tight">Nâng tầm<br />buổi tập của bạn</h2>
-          <p class="text-slate-700 mt-4">Sport Center kết nối hội viên, huấn luyện viên và lễ tân trên cùng một hệ thống: lịch lớp luôn cập nhật, giáo án theo từng người, thanh toán minh bạch.</p>
-          <div class="grid sm:grid-cols-2 gap-4 mt-8">
-            ${FEATURES.map(([ic, title, text]) => html`
-              <div class="rounded-2xl bg-white/70 p-4" data-reveal>
-                <span class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:${DARK};color:${LIME}">${icon(ic, 'w-4 h-4')}</span>
-                <div class="font-bold mt-3">${title}</div>
-                <div class="text-sm text-slate-600 mt-1">${text}</div>
-              </div>`)}
-          </div>
+        <div class="ab-col relative px-4 sm:px-6 py-14 lg:py-20 lg:pr-14 lg:pl-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]" data-reveal>
+          <div class="ab-eyebrow">Vì sao chọn Sport Center</div>
+          <h2 class="font-display font-extrabold text-4xl sm:text-6xl text-slate-900 leading-[0.95] mt-4">${maskWords('Nâng tầm')}<br />${maskWords('buổi tập của bạn', 2)}</h2>
+          <p class="ab-fade text-slate-700 mt-5 max-w-lg">Sport Center kết nối hội viên, huấn luyện viên và lễ tân trên cùng một hệ thống: lịch lớp luôn cập nhật, giáo án theo từng người, thanh toán minh bạch.</p>
+          <ol class="ab-list mt-8" role="tablist" aria-label="Tính năng nổi bật">
+            ${FEATURES.map(([ic, title, text], i) => html`
+              <li role="presentation">
+                <button type="button" class="ab-item ${i ? '' : 'is-active'}" style="--k:${i}" data-ab="${i}" role="tab" aria-selected="${i ? 'false' : 'true'}" data-testid="about-item">
+                  <span class="ab-num">0${i + 1}</span>
+                  <span class="ab-ic">${icon(ic, 'w-5 h-5')}</span>
+                  <span class="ab-body">
+                    <span class="ab-title">${title}</span>
+                    <span class="ab-text"><span><span class="block pt-1.5">${text}</span></span></span>
+                  </span>
+                  <span class="ab-arrow">${icon('arrow-up-right', 'w-4 h-4')}</span>
+                  <span class="ab-bar" aria-hidden="true"></span>
+                </button>
+              </li>`)}
+          </ol>
         </div>
-        <div class="relative min-h-[320px] lg:min-h-full overflow-hidden">
-          <img src="${IMG}/boxing.jpg" alt="" class="absolute inset-0 w-full h-full object-cover" />
-          <div class="absolute inset-y-0 left-0 w-24 hidden lg:block" style="background:linear-gradient(90deg,#EFE9DC,transparent)"></div>
-          <div class="absolute hidden lg:flex justify-center gap-6 whitespace-nowrap font-display font-extrabold text-2xl py-2.5" style="left:56px;top:50%;width:1100px;transform:translate(-50%,-50%) rotate(-68deg);background:${DARK};color:#fff" aria-hidden="true">
-            ${ribbon.map(t => html`<span class="flex items-center gap-6">${t}<span class="w-2.5 h-2.5 rounded-full" style="background:${LIME}"></span></span>`)}
+        <div class="ab-media relative min-h-[360px] sm:min-h-[460px] lg:min-h-[640px] overflow-hidden" data-reveal>
+          <!-- rèm mở ảnh nằm ở lớp trong: khung ngoài không bị che nên vẫn được theo dõi khi cuộn tới -->
+          <div class="ab-curtain">
+            ${FEATURE_IMG.map((f, i) => html`<img src="${IMG}/${f}" alt="" class="ab-img ${i ? '' : 'is-active'}" data-ab-img="${i}" />`)}
+            <div class="ab-shade" aria-hidden="true"></div>
+            <div class="ab-ribbon hidden lg:block" aria-hidden="true"><div class="ab-rib-track">${ribbonItems(ribbon)}</div></div>
+          </div>
+          <div class="ab-caption" aria-live="polite">
+            <span class="ab-cap-num"><b data-ab-count>01</b><span>/ 0${FEATURES.length}</span></span>
+            <span class="ab-cap-title" data-ab-title>${FEATURES[0][1]}</span>
           </div>
         </div>
       </div>
-      <div class="lg:hidden flex gap-5 whitespace-nowrap overflow-hidden font-display font-extrabold text-xl py-2 px-4" style="background:${DARK};color:#fff" aria-hidden="true">
-        ${ribbon.map(t => html`<span class="flex items-center gap-5">${t}<span class="w-2 h-2 rounded-full" style="background:${LIME}"></span></span>`)}
-      </div>
+      <div class="ab-ribbon-m lg:hidden" aria-hidden="true"><div class="ab-rib-track">${ribbonItems(ribbon)}</div></div>
     </section>`;
 }
 
+// chọn tính năng thứ i (vòng lại khi vượt cuối)
+function setAbout(root, i) {
+  const sec = root.querySelector('.ab');
+  if (!sec) return;
+  const n = FEATURES.length;
+  const k = ((i % n) + n) % n;
+  sec.querySelectorAll('[data-ab]').forEach(b => {
+    const on = Number(b.dataset.ab) === k;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  sec.querySelectorAll('[data-ab-img]').forEach(im => im.classList.toggle('is-active', Number(im.dataset.abImg) === k));
+  const cap = sec.querySelector('.ab-caption');
+  cap.querySelector('[data-ab-count]').textContent = `0${k + 1}`;
+  cap.querySelector('[data-ab-title]').textContent = FEATURES[k][1];
+  cap.classList.remove('is-swap');
+  void cap.offsetWidth; // chạy lại hiệu ứng đổi chữ
+  cap.classList.add('is-swap');
+}
+
+// 3 bước: đường thời gian tự vẽ khi cuộn tới, mốc 01-02-03 sáng lần lượt, thẻ trồi lên theo nhịp (cùng kiểu khu "Nâng tầm")
 function steps() {
   return html`
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-24">
-      <h2 class="font-display font-extrabold text-4xl sm:text-5xl text-slate-900">Bắt đầu chỉ với 3 bước</h2>
-      <div class="grid md:grid-cols-3 gap-5 mt-8">
-        ${STEPS.map(([ic, title, text], i) => html`
-          <div class="tilt-card rounded-3xl border border-slate-200 bg-white p-6" data-reveal data-tilt>
-            <div class="flex items-center justify-between">
-              <span class="w-11 h-11 rounded-2xl flex items-center justify-center" style="background:#469B7E1A;color:#2F6B55">${icon(ic, 'w-5 h-5')}</span>
-              <span class="font-display font-extrabold text-5xl text-slate-200">0${i + 1}</span>
-            </div>
-            <div class="font-bold text-lg mt-4">${title}</div>
-            <p class="text-sm text-slate-600 mt-1">${text}</p>
-          </div>`)}
+    <section class="st max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28" data-reveal data-testid="steps">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+        <div>
+          <div class="ab-eyebrow">Bắt đầu dễ dàng</div>
+          <h2 class="font-display font-extrabold text-4xl sm:text-6xl text-slate-900 leading-[0.95] mt-4">${maskWords('Bắt đầu chỉ với')} <span class="st-hl">${maskWords('3 bước', 3)}</span></h2>
+        </div>
+        <p class="ab-fade text-slate-600 max-w-sm md:text-right">Từ lúc tạo tài khoản đến buổi tập đầu tiên — mọi thứ đều làm được ngay trên điện thoại.</p>
+      </div>
+      <div class="st-track mt-12 sm:mt-14">
+        <div class="st-line" aria-hidden="true"><span></span></div>
+        <ol class="st-grid">
+          ${STEPS.map(([ic, title, text], i) => html`
+            <li class="st-step" style="--k:${i}" data-testid="step-card">
+              <span class="st-node" aria-hidden="true">0${i + 1}</span>
+              <div class="st-card">
+                <span class="st-ghost" aria-hidden="true">0${i + 1}</span>
+                <span class="st-ic">${icon(ic, 'w-5 h-5')}</span>
+                <div class="font-bold text-lg text-slate-900 mt-5">${title}</div>
+                <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">${text}</p>
+                <span class="st-bar" aria-hidden="true"></span>
+              </div>
+            </li>`)}
+        </ol>
       </div>
     </section>`;
 }
 
+// Chân trang: khối kêu gọi đăng ký có quầng sáng theo chuột, chữ trồi, dải bộ môn chạy ngang
 function footer() {
+  const ribbon = [...RIBBON, ...RIBBON, ...RIBBON, ...RIBBON];
   return html`
     <footer class="px-4 sm:px-6 pb-6">
-      <div class="max-w-6xl mx-auto rounded-[2rem] px-6 sm:px-12 pt-12 pb-8 text-white" style="background:${DARK}">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <h2 class="font-display font-extrabold text-4xl sm:text-5xl leading-tight">Chọn môn yêu thích,<br /><span style="color:${LIME}">bắt đầu ngay hôm nay!</span></h2>
-          <a href="#/register" class="btn self-start !px-5 text-slate-900" style="background:${LIME}">${icon('arrow-right', 'w-4 h-4')} Đăng ký hội viên</a>
+      <div class="ft max-w-6xl mx-auto rounded-[2rem] text-white" data-reveal data-testid="footer-cta">
+        <div class="ft-glow" aria-hidden="true"></div>
+        <div class="relative px-6 sm:px-12 pt-12 sm:pt-14">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+            <h2 class="font-display font-extrabold text-4xl sm:text-6xl leading-[0.95]">${maskWords('Chọn môn yêu thích,')}<br /><span style="color:${LIME}">${maskWords('bắt đầu ngay hôm nay!', 3)}</span></h2>
+            <a href="#/register" class="ft-join self-start md:self-auto" data-testid="footer-join">
+              <span>Đăng ký hội viên</span>
+              <span class="ft-join-arrow">${icon('arrow-up-right', 'w-5 h-5')}</span>
+            </a>
+          </div>
         </div>
-        <div class="h-px bg-white/15 my-8"></div>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-white/70">
-          <div class="flex items-center gap-2.5 text-white">
+        <div class="ft-ribbon" aria-hidden="true"><div class="ab-rib-track">${ribbon.map(t => html`<span class="ab-rib-item">${t}<span class="ab-rib-dot"></span></span>`)}</div></div>
+        <div class="relative px-6 sm:px-12 pb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-white/70">
+          <a href="#/" class="ft-brand flex items-center gap-2.5 text-white">
             ${brandMark('w-9 h-9 ring-1 ring-white/20')}
             <span class="font-display font-extrabold text-xl tracking-wide">SPORT CENTER</span>
-          </div>
+          </a>
           <div class="flex flex-wrap gap-x-6 gap-y-2">
-            ${nav.slice(1).map(([id, label]) => html`<button type="button" data-action="scroll" data-target="${id}" class="hover:text-white">${label}</button>`)}
-            <a href="#/login" class="hover:text-white">Đăng nhập</a>
+            ${nav.slice(1).map(([id, label]) => html`<button type="button" data-action="scroll" data-target="${id}" class="ft-link">${label}</button>`)}
+            <a href="#/login" class="ft-link">Đăng nhập</a>
           </div>
           <div>© ${new Date().getFullYear()} Sport Center · SWP391</div>
         </div>
       </div>
     </footer>`;
+}
+
+// quầng sáng chân trang đi theo chuột
+function onFooterGlow(e) {
+  const ft = e.target.closest?.('.ft');
+  if (!ft) return;
+  const r = ft.getBoundingClientRect();
+  ft.style.setProperty('--mx', `${e.clientX - r.left}px`);
+  ft.style.setProperty('--my', `${e.clientY - r.top}px`);
 }
 
 function view(s) {
@@ -569,6 +635,19 @@ export default function LandingPage(el, { navigate }) {
     }), { threshold: 0.15 })
     : null;
   document.addEventListener('pointermove', onTilt, { passive: true });
+  // khu tính năng: bấm để chọn, thanh tiến độ chạy hết thì sang mục kế, rê chuột vào danh sách thì tạm dừng
+  const onAboutClick = e => { const b = e.target.closest?.('[data-ab]'); if (b) setAbout(el, Number(b.dataset.ab)); };
+  const onAboutEnd = e => {
+    if (e.animationName !== 'ab-progress') return;
+    const cur = e.target.closest?.('[data-ab]');
+    if (cur) setAbout(el, Number(cur.dataset.ab) + 1);
+  };
+  // chỉ chuột mới tạm dừng (chạm trên điện thoại không có 'rời chuột' nên sẽ dừng mãi)
+  const onAboutHover = e => { if (e.pointerType === 'mouse') el.querySelector('.ab')?.classList.toggle('is-paused', !!e.target.closest?.('.ab-list')); };
+  el.addEventListener('click', onAboutClick);
+  el.addEventListener('animationend', onAboutEnd);
+  el.addEventListener('pointerover', onAboutHover);
+  el.addEventListener('pointermove', onFooterGlow, { passive: true });
   const unmount = mountPage(el, {
     afterRender: () => {
       scrollFx.update();
@@ -605,5 +684,9 @@ export default function LandingPage(el, { navigate }) {
     unmount?.();
     io?.disconnect();
     document.removeEventListener('pointermove', onTilt);
+    el.removeEventListener('click', onAboutClick);
+    el.removeEventListener('animationend', onAboutEnd);
+    el.removeEventListener('pointerover', onAboutHover);
+    el.removeEventListener('pointermove', onFooterGlow);
   };
 }

@@ -106,14 +106,10 @@ export function chipState(c, registeredIds, isBookable) {
   return isBookable(c) ? 'open' : 'closed';
 }
 
-// Màu theo trạng thái: chip (lịch tháng), card (lịch tuần), dot (chấm trên điện thoại), sub (dòng sĩ số)
+// Màu theo trạng thái: lớp CSS tone-* (css/styles.css, mục "LỊCH LỚP HỌC") đặt biến màu cho thẻ, chấm, chú thích
 const TONES = {
-  registered: { chip: 'bg-brand-dark text-brand-lime hover:bg-brand-deep', card: 'bg-brand-dark text-white border-brand-dark hover:bg-brand-deep', dot: 'bg-brand-dark', sub: 'text-brand-lime', legend: 'bg-brand-dark' },
-  open: { chip: '', card: 'bg-cyan-50 text-slate-800 border-cyan-200 hover:bg-cyan-100', dot: 'bg-sky-400', sub: 'text-cyan-700', legend: 'bg-sky-200' },
-  pending: { chip: 'bg-amber-100 text-amber-800 hover:bg-amber-200', card: 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100', dot: 'bg-amber-400', sub: 'text-amber-700', legend: 'bg-amber-300' },
-  done: { chip: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100', card: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100', dot: 'bg-emerald-400', sub: 'text-emerald-700', legend: 'bg-emerald-200' },
-  closed: { chip: 'bg-slate-100 text-slate-400 hover:bg-slate-200', card: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100', dot: 'bg-slate-300', sub: '', legend: 'bg-slate-200' },
-  cancelled: { chip: 'bg-rose-50 text-rose-400 line-through hover:bg-rose-100', card: 'bg-rose-50 text-rose-400 border-rose-200 hover:bg-rose-100 line-through', dot: 'bg-rose-300', sub: '', legend: 'bg-rose-200' }
+  registered: 'tone-registered', open: 'tone-open', pending: 'tone-pending',
+  done: 'tone-done', closed: 'tone-closed', cancelled: 'tone-cancelled'
 };
 
 const statusText = (c, st) => ({
@@ -124,19 +120,19 @@ const statusText = (c, st) => ({
 export const MEMBER_LEGEND = [['registered', 'Đã đăng ký'], ['open', 'Còn nhận đăng ký'], ['closed', 'Đã qua / hết chỗ']];
 export const MANAGER_LEGEND = [['open', 'Sắp diễn ra'], ['closed', 'Đã đủ chỗ'], ['pending', 'Chờ chốt buổi'], ['done', 'Đã hoàn thành']];
 
+// thẻ lớp gọn (lịch tháng + danh sách theo ngày trên điện thoại)
 function chip(c, st, compact) {
-  const cls = st === 'open' ? chipColor(c.subjectId) : TONES[st].chip;
   return html`
     <button type="button" data-action="cal-class" data-id="${c.classId}" data-testid="cal-chip" title="${c.subjectName} · ${time(c.startTime)}–${time(c.endTime)} · ${c.roomName}"
-      class="w-full text-left rounded-md px-2 ${compact ? 'py-1' : 'py-1.5'} text-[11px] font-semibold leading-tight truncate transition-colors ${cls}">
-      ${st === 'registered' ? icon('check', 'w-3 h-3 inline -mt-0.5') : ''} <span class="opacity-80">${time(c.startTime)}</span> ${c.subjectName}
-      ${compact ? '' : html`<div class="font-normal opacity-75 truncate">${c.dayTotal ? `Ngày ${c.dayIndex}/${c.dayTotal} · ` : ''}${c.coachName} · ${c.roomName}</div>`}
+      class="cal-chip ${TONES[st]} ${compact ? 'is-compact' : ''}">
+      <span class="cal-chip-line"><span class="cal-chip-time">${time(c.startTime)}</span><span class="cal-chip-name">${st === 'registered' ? icon('check', 'w-3 h-3 inline -mt-0.5') : ''} ${c.subjectName}</span></span>
+      ${compact ? '' : html`<span class="cal-chip-sub">${c.dayTotal ? `Ngày ${c.dayIndex}/${c.dayTotal} · ` : ''}${c.coachName} · ${c.roomName}</span>`}
     </button>`;
 }
 
 const legendBar = items => html`
-  <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500" data-testid="cal-legend">
-    ${items.map(([st, label]) => html`<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded ${TONES[st].legend}"></span> ${label}</span>`)}
+  <div class="cal-legend" data-testid="cal-legend">
+    ${items.map(([st, label]) => html`<span class="cal-legend-item ${TONES[st]}"><span class="cal-dot"></span>${label}</span>`)}
   </div>`;
 
 // Lưới lịch. classes: lớp trong khoảng; stateOf(c): trạng thái màu của lớp; legend: chú thích màu
@@ -151,52 +147,52 @@ export function calendarGrid(s, classes, { stateOf, legend = MEMBER_LEGEND }) {
   });
   const days = [];
   for (let d = new Date(start); d <= end; d = addDays(d, 1)) days.push(d);
-  const isWeek = s.mode === 'week';
-  if (isWeek) {
+  if (s.mode === 'week') {
     return html`
       ${weekAgenda(days, byDay, stateOf, today)}
       ${timeGrid(days, byDay, stateOf, today)}
-      <div class="mt-3">${legendBar(legend)}</div>`;
+      ${legendBar(legend)}`;
   }
   return html`
-    <div class="card overflow-hidden ${isWeek ? 'hidden sm:block' : ''}" data-testid="class-calendar" data-mode="${s.mode}">
-      <div class="grid grid-cols-7 border-b border-brand-line/70 bg-brand-cream/60">
-        ${WEEKDAYS.map((w, i) => html`<div class="px-1 sm:px-3 py-2.5 text-xs sm:text-sm font-bold text-slate-600 text-center sm:text-left ${i ? 'border-l border-brand-line/50' : ''}"><span class="sm:hidden">${SHORT_WEEKDAYS[i]}</span><span class="hidden sm:inline">${w}</span>${isWeek ? html`<span class="ml-1 font-normal text-slate-400">${days[i].getDate()}/${days[i].getMonth() + 1}</span>` : ''}</div>`)}
+    <div class="card cal-shell overflow-hidden" data-testid="class-calendar" data-mode="${s.mode}">
+      <div class="cal-month-head grid grid-cols-7">
+        ${WEEKDAYS.map((w, i) => html`<div class="cal-month-wd ${i >= 5 ? 'is-weekend' : ''}"><span class="sm:hidden">${SHORT_WEEKDAYS[i]}</span><span class="hidden sm:inline">${w}</span></div>`)}
       </div>
       <div class="grid grid-cols-7">
         ${days.map((d, i) => {
           const list = byDay.get(isoDate(d)) || [];
-          const outside = !isWeek && d.getMonth() !== anchor.getMonth();
+          const outside = d.getMonth() !== anchor.getMonth();
           const isToday = sameDay(d, today);
           const past = startOfDay(d) < startOfDay(today);
           const mine = list.filter(c => stateOf(c) === 'registered').length;
-          const shown = isWeek ? list : list.slice(0, MONTH_CHIPS);
+          const shown = list.slice(0, MONTH_CHIPS);
           return html`
-            <div class="relative ${isWeek ? 'min-h-[22rem]' : 'min-h-[6.5rem] sm:min-h-[8.5rem]'} p-1.5 sm:p-2 flex flex-col gap-1 ${i % 7 ? 'border-l' : ''} ${i >= 7 ? 'border-t' : ''} border-brand-line/50 ${outside ? 'bg-slate-50/70' : past ? 'bg-white' : 'bg-white'} ${isToday ? 'ring-2 ring-inset ring-brand/50 bg-brand-lime/10' : ''}"
-              data-testid="cal-day" data-date="${isoDate(d)}">
+            <div class="cal-cell ${i % 7 ? 'has-l' : ''} ${i >= 7 ? 'has-t' : ''} ${outside ? 'is-outside' : ''} ${past ? 'is-past' : ''} ${isToday ? 'is-today' : ''} ${i % 7 >= 5 ? 'is-weekend' : ''}"
+              style="--i:${i}" data-testid="cal-day" data-date="${isoDate(d)}">
+              <div class="flex items-center justify-between gap-1 pointer-events-none">
+                <span class="cal-cell-num">${String(d.getDate()).padStart(2, '0')}</span>
+                ${list.length ? html`<span class="cal-cell-count hidden sm:inline-flex">${list.length} lớp${mine ? html` · <b>${mine} của bạn</b>` : ''}</span>` : ''}
+              </div>
               <!-- màn nhỏ: chấm màu + bấm cả ô để xem danh sách lớp trong ngày -->
               ${list.length ? html`
                 <button type="button" class="sm:hidden absolute inset-0" data-action="cal-day" data-date="${isoDate(d)}" aria-label="Xem lớp ngày ${isoDate(d)}"></button>
-                <div class="sm:hidden flex flex-wrap gap-1 mt-1 pointer-events-none">
-                  ${list.slice(0, 6).map(c => html`<span class="w-2 h-2 rounded-full ${TONES[stateOf(c)].dot}"></span>`)}
+                <div class="sm:hidden flex flex-wrap gap-1 mt-1.5 pointer-events-none">
+                  ${list.slice(0, 6).map(c => html`<span class="cal-dot ${TONES[stateOf(c)]}"></span>`)}
                 </div>` : ''}
-              <div class="hidden sm:flex flex-col gap-1">
-                ${shown.map(c => chip(c, stateOf(c), !isWeek))}
-                ${list.length > shown.length ? html`<button type="button" data-action="cal-day" data-date="${isoDate(d)}" class="text-left text-[11px] font-bold text-brand-deep hover:underline px-1" data-testid="cal-more">+${list.length - shown.length} lớp khác</button>` : ''}
-              </div>
-              <div class="mt-auto flex items-end justify-between pt-1 pointer-events-none">
-                <span class="hidden sm:flex text-[11px] text-slate-400 items-center gap-1">${list.length ? html`${icon('calendar-days', 'w-3 h-3')} ${list.length}` : ''}${mine ? html`<span class="ml-1 text-brand-deep font-bold">· ${mine} của bạn</span>` : ''}</span>
-                <span class="font-display text-lg sm:text-2xl font-extrabold leading-none ${isToday ? 'w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand-dark text-brand-lime flex items-center justify-center text-base sm:text-lg' : outside ? 'text-slate-300' : 'text-slate-700'}">${String(d.getDate()).padStart(2, '0')}</span>
+              <div class="hidden sm:flex flex-col gap-1 mt-1.5">
+                ${shown.map(c => chip(c, stateOf(c), true))}
+                ${list.length > shown.length ? html`<button type="button" data-action="cal-day" data-date="${isoDate(d)}" class="cal-more-link" data-testid="cal-more">+${list.length - shown.length} lớp khác</button>` : ''}
               </div>
             </div>`;
         })}
       </div>
     </div>
-    <div class="mt-3">${legendBar(legend)}</div>`;
+    ${legendBar(legend)}`;
 }
 
 // ===== Lịch tuần dạng khung giờ (cột giờ bên trái, thẻ lớp đặt theo giờ bắt đầu/kết thúc) =====
-const HOUR_PX = 72;
+// 104px mỗi giờ: lớp 1 tiếng (98px) đủ chỗ hiện HLV, phòng (mỗi thứ 1 dòng), sĩ số như lớp 1 tiếng 30
+const HOUR_PX = 104;
 const minutesOf = d => d.getHours() * 60 + d.getMinutes();
 const hourLabel = h => `${String(h).padStart(2, '0')}:00`;
 
@@ -230,26 +226,30 @@ function layoutDay(list) {
   return out;
 }
 
-function timeCard(x, st, fromHour) {
+function timeCard(x, st, fromHour, order) {
   const c = x.c;
   const top = ((x.s - fromHour * 60) / 60) * HOUR_PX;
   const height = Math.max(((x.e - x.s) / 60) * HOUR_PX - 6, 30);
   const width = 100 / x.lanes;
   // thẻ hẹp (đang chia làn) chỉ hiện tên môn + giờ; thẻ đủ rộng và cao mới hiện HLV, phòng, sĩ số
   const narrow = x.lanes > 1;
-  const roomy = height >= 70 && !narrow;
+  const roomy = height >= 92 && !narrow;
+  const fill = c.maxCapacity ? Math.min(100, Math.round((c.currentEnrolled / c.maxCapacity) * 100)) : 0;
   return html`
     <button type="button" data-action="cal-class" data-id="${c.classId}" data-testid="cal-chip"
-      class="absolute rounded-xl border px-2.5 py-1.5 text-left overflow-hidden shadow-sm transition-colors flex flex-col justify-start ${TONES[st].card}"
-      style="top:${top + 3}px;height:${height}px;left:calc(${x.lane * width}% + 4px);width:calc(${width}% - 8px)"
+      class="cal-ev ${TONES[st]} ${narrow ? 'is-narrow' : ''}"
+      style="top:${top + 3}px;height:${height}px;left:calc(${x.lane * width}% + 5px);width:calc(${width}% - 10px);--o:${order}"
       title="${c.subjectName} · ${time(c.startTime)} – ${time(c.endTime)} · ${c.coachName} · ${c.roomName}">
-      <div class="text-xs font-bold leading-tight ${narrow ? 'line-clamp-2 break-words' : 'truncate'}">${st === 'registered' ? html`${icon('check', 'w-3 h-3 inline -mt-0.5 text-brand-lime')} ` : ''}${c.subjectName}</div>
-      <div class="text-[11px] leading-tight mt-0.5 ${st === 'registered' ? 'text-white/70' : 'opacity-80'}">${narrow ? time(c.startTime) : `${time(c.startTime)} – ${time(c.endTime)}`}${c.dayTotal && !narrow ? ` · Ngày ${c.dayIndex}/${c.dayTotal}` : ''}</div>
+      <span class="cal-ev-head">
+        <span class="cal-ev-title ${narrow ? 'line-clamp-2 break-words' : 'truncate'}">${st === 'registered' ? html`${icon('check', 'w-3 h-3 inline -mt-0.5')} ` : ''}${c.subjectName}</span>
+        ${c.dayTotal && !narrow ? html`<span class="cal-ev-badge" title="Ngày ${c.dayIndex}/${c.dayTotal}">${c.dayIndex}/${c.dayTotal}</span>` : ''}
+      </span>
+      <span class="cal-ev-time">${icon('clock', 'w-3 h-3 shrink-0')}<span class="truncate">${narrow ? time(c.startTime) : `${time(c.startTime)} – ${time(c.endTime)}`}</span></span>
       ${roomy ? html`
-        <div class="text-[11px] leading-tight mt-1 truncate ${st === 'registered' ? 'text-white/70' : 'opacity-75'}">${c.coachName} · ${c.roomName}</div>
-        <div class="flex items-center gap-1.5 mt-1.5 text-[11px] font-semibold ${TONES[st].sub}">
-          ${icon('users', 'w-3 h-3')} ${c.currentEnrolled}/${c.maxCapacity} · ${statusText(c, st)}
-        </div>` : ''}
+        <span class="cal-ev-meta">${icon('user-round', 'w-3 h-3 shrink-0')}<span class="truncate">${c.coachName}</span></span>
+        <span class="cal-ev-meta">${icon('map-pin', 'w-3 h-3 shrink-0')}<span class="truncate">${c.roomName}</span></span>
+        <span class="cal-ev-status">${icon('users', 'w-3 h-3 shrink-0')}<span class="truncate">${c.currentEnrolled}/${c.maxCapacity} · ${statusText(c, st)}</span></span>
+        <span class="cal-ev-meter" aria-hidden="true"><i style="width:${fill}%"></i></span>` : ''}
     </button>`;
 }
 
@@ -276,8 +276,8 @@ function moreCard(x, day, fromHour) {
   const width = 100 / x.lanes;
   return html`
     <button type="button" data-action="cal-day" data-date="${isoDate(day)}" data-testid="cal-more"
-      class="absolute rounded-xl border border-dashed border-brand/50 bg-white/90 text-brand-deep text-xs font-bold hover:bg-brand-sand flex flex-col items-center justify-center leading-tight"
-      style="top:${top + 3}px;height:${((x.e - x.s) / 60) * HOUR_PX - 6}px;left:calc(${x.lane * width}% + 4px);width:calc(${width}% - 8px)">+${x.more}<span class="font-semibold">lớp</span></button>`;
+      class="cal-ev-more"
+      style="top:${top + 3}px;height:${((x.e - x.s) / 60) * HOUR_PX - 6}px;left:calc(${x.lane * width}% + 5px);width:calc(${width}% - 10px)">+${x.more}<span>lớp</span></button>`;
 }
 
 function timeGrid(days, byDay, stateOf, today) {
@@ -290,38 +290,41 @@ function timeGrid(days, byDay, stateOf, today) {
   const firstClass = all.length ? Math.min(...all.map(c => minutesOf(toDate(c.startTime)))) : 7 * 60;
   const scrollTo = Math.max(0, ((Math.min(firstClass, 8 * 60) - fromHour * 60) / 60) * HOUR_PX - 12);
   const nowMin = minutesOf(today);
+  const showNow = days.some(d => sameDay(d, today)) && nowMin >= fromHour * 60 && nowMin <= toHour * 60;
+  const nowTop = ((nowMin - fromHour * 60) / 60) * HOUR_PX;
+  let order = 0;
   return html`
-    <div class="card overflow-hidden hidden sm:block" data-testid="class-calendar" data-mode="week">
+    <div class="card cal-shell overflow-hidden hidden sm:block" data-testid="class-calendar" data-mode="week">
       <!-- tiêu đề nằm chung khung cuộn (sticky) để cột tiêu đề và cột lịch luôn cùng bề rộng, kể cả khi có thanh cuộn -->
-      <div class="overflow-y-auto max-h-[70vh]" data-testid="time-grid-scroll" data-scroll="${Math.round(scrollTo)}">
-      <div class="sticky top-0 z-20 grid grid-cols-[4rem_repeat(7,minmax(0,1fr))] border-b border-brand-line/70 bg-white">
-        <div></div>
+      <div class="cal-scroll overflow-y-auto max-h-[70vh]" data-testid="time-grid-scroll" data-scroll="${Math.round(scrollTo)}">
+      <div class="cal-week-head sticky top-0 z-20 grid grid-cols-[4.25rem_repeat(7,minmax(0,1fr))]">
+        <div class="cal-gutter-head">GMT+7</div>
         ${days.map((d, i) => {
           const isToday = sameDay(d, today);
+          const count = (byDay.get(isoDate(d)) || []).length;
           return html`
-            <div class="px-2 py-3 text-center border-l border-brand-line/50">
-              <div class="text-[11px] font-bold uppercase tracking-wide ${isToday ? 'text-brand' : 'text-slate-400'}">${WEEKDAYS[i]}</div>
-              <div class="font-display text-2xl font-extrabold leading-none mt-1 ${isToday ? 'inline-flex w-9 h-9 items-center justify-center rounded-full bg-brand-dark text-brand-lime text-lg' : 'text-slate-700'}">${String(d.getDate()).padStart(2, '0')}</div>
+            <div class="cal-day-head ${isToday ? 'is-today' : ''} ${i >= 5 ? 'is-weekend' : ''}">
+              <div class="cal-day-wd">${WEEKDAYS[i]}</div>
+              <div class="cal-day-num">${String(d.getDate()).padStart(2, '0')}</div>
+              <div class="cal-day-count">${count ? `${count} lớp` : isToday ? 'Hôm nay' : html`&nbsp;`}</div>
             </div>`;
         })}
       </div>
-        <div class="grid grid-cols-[4rem_repeat(7,minmax(0,1fr))] relative" style="height:${hours.length * HOUR_PX}px">
+        <div class="cal-week-body grid grid-cols-[4.25rem_repeat(7,minmax(0,1fr))] relative" style="height:${hours.length * HOUR_PX}px;--hour:${HOUR_PX}px">
           <div class="relative">
-            ${hours.map((h, i) => html`<div class="absolute right-2 text-[11px] font-semibold text-slate-400 -translate-y-1/2" style="top:${i * HOUR_PX}px">${i ? hourLabel(h) : ''}</div>`)}
+            ${hours.map((h, i) => html`<div class="cal-hour" style="top:${i * HOUR_PX}px">${i ? hourLabel(h) : ''}</div>`)}
+            ${showNow ? html`<div class="cal-now-badge" style="top:${nowTop}px">${time(today)}</div>` : ''}
           </div>
-          ${days.map(d => {
+          ${days.map((d, i) => {
             const isToday = sameDay(d, today);
             const placed = layoutDay(byDay.get(isoDate(d)) || []);
             return html`
-              <div class="relative border-l border-brand-line/50 ${isToday ? 'bg-brand-lime/5' : ''}" data-testid="cal-day" data-date="${isoDate(d)}">
-                ${hours.map((h, i) => html`<div class="absolute inset-x-0 border-t border-brand-line/40" style="top:${i * HOUR_PX}px"></div>`)}
+              <div class="cal-col ${isToday ? 'is-today' : ''} ${i >= 5 ? 'is-weekend' : ''}" data-testid="cal-day" data-date="${isoDate(d)}">
                 ${visibleCards(placed).map(x => (x.more
                   ? moreCard(x, d, fromHour)
-                  : timeCard(x, stateOf(x.c), fromHour)))}
-                ${isToday && nowMin >= fromHour * 60 && nowMin <= toHour * 60 ? html`
-                  <div class="absolute inset-x-0 z-10 pointer-events-none" style="top:${((nowMin - fromHour * 60) / 60) * HOUR_PX}px" data-testid="now-line">
-                    <div class="h-0.5 bg-rose-500"></div><div class="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500"></div>
-                  </div>` : ''}
+                  : timeCard(x, stateOf(x.c), fromHour, order++)))}
+                ${isToday && showNow ? html`
+                  <div class="cal-now" style="top:${nowTop}px" data-testid="now-line"><span></span></div>` : ''}
               </div>`;
           })}
         </div>
@@ -341,18 +344,18 @@ export function scrollTimeGrid(root) {
 // Màn nhỏ ở chế độ tuần: 7 cột quá chật -> danh sách theo ngày
 function weekAgenda(days, byDay, stateOf, today) {
   return html`
-    <div class="sm:hidden space-y-3" data-testid="week-agenda">
+    <div class="sm:hidden space-y-2.5" data-testid="week-agenda">
       ${days.map(d => {
         const list = byDay.get(isoDate(d)) || [];
         const isToday = sameDay(d, today);
         return html`
-          <div class="card p-3 flex gap-3 ${isToday ? 'ring-2 ring-brand/50' : ''}">
-            <div class="w-12 shrink-0 text-center">
-              <div class="text-[11px] font-bold uppercase text-slate-400">${SHORT_WEEKDAYS[(d.getDay() + 6) % 7]}</div>
-              <div class="font-display text-2xl font-extrabold leading-none ${isToday ? 'text-brand' : 'text-slate-700'}">${String(d.getDate()).padStart(2, '0')}</div>
+          <div class="card cal-agenda ${isToday ? 'is-today' : ''}">
+            <div class="cal-agenda-date">
+              <div class="cal-day-wd">${SHORT_WEEKDAYS[(d.getDay() + 6) % 7]}</div>
+              <div class="cal-day-num">${String(d.getDate()).padStart(2, '0')}</div>
             </div>
             <div class="flex-1 min-w-0 space-y-1.5">
-              ${list.length ? list.map(c => chip(c, stateOf(c), false)) : html`<div class="text-xs text-slate-400 py-2">Không có lớp</div>`}
+              ${list.length ? list.map(c => chip(c, stateOf(c), false)) : html`<div class="text-xs text-slate-400 py-2.5">Không có lớp</div>`}
             </div>
           </div>`;
       })}
@@ -364,14 +367,15 @@ export function calendarToolbar(s) {
   return html`
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-4">
       <div>
-        <div class="text-xs font-bold uppercase tracking-widest text-brand">Hôm nay</div>
-        <div class="font-display text-3xl sm:text-4xl font-extrabold text-brand-dark leading-none mt-1" data-testid="cal-today">${DAY_NAMES[today.getDay()]}, ${today.getDate()} tháng ${today.getMonth() + 1}</div>
+        <div class="cal-eyebrow">Hôm nay</div>
+        <div class="font-display text-3xl sm:text-4xl font-extrabold text-brand-dark leading-none mt-2" data-testid="cal-today">${DAY_NAMES[today.getDay()]}, ${today.getDate()} tháng ${today.getMonth() + 1}</div>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button type="button" class="btn-secondary btn-sm" data-action="cal-nav" data-delta="0">Hôm nay</button>
-        <button type="button" class="btn-secondary btn-sm" data-action="cal-nav" data-delta="-1" aria-label="Trước">${icon('chevron-left', 'w-4 h-4')}</button>
-        <div class="font-bold text-sm min-w-[9.5rem] text-center" data-testid="cal-title">${calendarTitle(s.mode, s.calOffset)}</div>
-        <button type="button" class="btn-secondary btn-sm" data-action="cal-nav" data-delta="1" aria-label="Sau">${icon('chevron-right', 'w-4 h-4')}</button>
+      <div class="cal-nav">
+        <button type="button" class="cal-nav-today" data-action="cal-nav" data-delta="0">${icon('crosshair', 'w-3.5 h-3.5')} Hôm nay</button>
+        <span class="cal-nav-sep" aria-hidden="true"></span>
+        <button type="button" class="cal-nav-btn" data-action="cal-nav" data-delta="-1" aria-label="Trước">${icon('chevron-left', 'w-4 h-4')}</button>
+        <div class="cal-nav-title" data-testid="cal-title">${calendarTitle(s.mode, s.calOffset)}</div>
+        <button type="button" class="cal-nav-btn" data-action="cal-nav" data-delta="1" aria-label="Sau">${icon('chevron-right', 'w-4 h-4')}</button>
       </div>
     </div>`;
 }
@@ -380,9 +384,9 @@ export function calendarToolbar(s) {
 export function viewModeTabs(mode) {
   const items = [['week', 'Tuần', 'calendar-range'], ['month', 'Tháng', 'calendar-days'], ['list', 'Danh sách', 'layout-grid']];
   return html`
-    <div class="inline-flex rounded-xl bg-brand-sand/80 p-1" role="tablist" data-testid="view-modes">
+    <div class="cal-tabs" role="tablist" data-testid="view-modes">
       ${items.map(([id, label, ic]) => html`
         <button type="button" role="tab" aria-selected="${mode === id}" data-action="view-mode" data-mode="${id}" data-testid="mode-${id}"
-          class="px-3 sm:px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 ${mode === id ? 'bg-white text-brand-dark shadow-sm' : 'text-slate-500 hover:text-slate-800'}">${icon(ic, 'w-4 h-4')} ${label}</button>`)}
+          class="cal-tab ${mode === id ? 'is-active' : ''}">${icon(ic, 'w-4 h-4')} ${label}</button>`)}
     </div>`;
 }
