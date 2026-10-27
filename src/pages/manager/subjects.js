@@ -1,16 +1,24 @@
 import { html, icon } from '../../core/dom.js';
-import { pageHeader, emptyState, field, input, textarea } from '../../core/ui.js';
+import { pageHeader, emptyState, field, input, textarea, select } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { subjectApi } from '../../api/endpoints.js';
 import { subjectColor } from '../../components/classCard.js';
 import { openFormModal, requireFields, confirmAction, rowActions, matches, searchBox } from '../../components/crud.js';
 
+// areaAccess: OPEN = có khu tập chung (gói tự do của môn vào được), CLASS_ONLY = chỉ học theo lớp (chỉ gói lớp của môn)
+export const AREA_ACCESS = [
+  { value: 'OPEN', label: 'Có khu tập tự do', hint: 'Gói tự do và gói lớp của môn đều vào tập được (VD: Gym, Bơi)' },
+  { value: 'CLASS_ONLY', label: 'Chỉ học theo lớp', hint: 'Chỉ hội viên có gói lớp của môn mới vào được (VD: Boxing)' }
+];
+const areaLabel = v => AREA_ACCESS.find(a => a.value === v)?.label || 'Có khu tập tự do';
+
 const form = (s = {}) => html`
   ${field('Tên bộ môn', input('subjectName', { value: s.subjectName, required: true, placeholder: 'VD: Boxing' }))}
+  ${field('Khu tập', select('areaAccess', AREA_ACCESS, s.areaAccess || 'OPEN', { required: true }), 'Có khu tập tự do: gói tự do vào được · Chỉ học theo lớp: chỉ gói lớp của môn')}
   ${field('Mô tả', textarea('description', s.description, { rows: 3, placeholder: 'Giới thiệu ngắn về bộ môn' }))}`;
 
 const validate = d => requireFields(d, ['subjectName']);
-const payload = d => ({ subjectName: d.subjectName, description: d.description || '' });
+const payload = d => ({ subjectName: d.subjectName, description: d.description || '', areaAccess: d.areaAccess || 'OPEN' });
 
 function view(s) {
   const list = s.subjects.filter(x => x.status !== 'INACTIVE' && matches(s.keyword, [x.subjectName, x.description]));
@@ -24,7 +32,10 @@ function view(s) {
           <div class="card overflow-hidden flex flex-col" data-testid="subject-card">
             <div class="h-2 bg-gradient-to-r ${subjectColor(x.subjectName)}"></div>
             <div class="p-5 flex-1 flex flex-col">
-              <div class="font-bold text-lg">${x.subjectName}</div>
+              <div class="flex items-start justify-between gap-2">
+                <div class="font-bold text-lg">${x.subjectName}</div>
+                <span class="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full ${x.areaAccess === 'CLASS_ONLY' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}" data-testid="area-access">${areaLabel(x.areaAccess)}</span>
+              </div>
               <p class="text-sm text-slate-600 mt-1 flex-1">${x.description || 'Chưa có mô tả'}</p>
               <div class="mt-4">${rowActions(x.subjectId)}</div>
             </div>

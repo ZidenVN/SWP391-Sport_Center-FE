@@ -181,7 +181,8 @@ function editForm(m) {
         ${field('Giới tính', select('gender', GENDER_OPTIONS, (m.gender || '').toUpperCase(), { required: true }))}
         ${field('Số điện thoại', input('phone', { type: 'tel', value: m.phone, required: true }))}
       </div>
-      ${field('Email', input('email', { type: 'email', value: m.email, required: true }))}
+      ${field('Email', input('email', { type: 'email', value: m.email, attrs: 'disabled' }), 'Email đăng nhập không đổi được')}
+      ${field('Mục tiêu tập luyện', textarea('trainingGoal', m.trainingGoal, { rows: 2, required: true, placeholder: 'VD: Giảm cân, tăng cơ...' }))}
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" data-action="cancel" class="btn-secondary">Hủy</button>
         <button type="submit" class="btn bg-brand-dark text-white hover:bg-emerald-800">Lưu</button>
@@ -253,11 +254,13 @@ export default function ReceptionMemberDetail(el, { params, query }) {
             save: async form => {
               const data = readForm(form);
               const errors = {};
-              ['firstName', 'lastName', 'gender', 'phone', 'email'].forEach(k => { if (!data[k]) errors[k] = 'Không được để trống'; });
+              ['firstName', 'lastName', 'gender', 'phone', 'trainingGoal'].forEach(k => { if (!data[k]) errors[k] = 'Không được để trống'; });
               if (data.phone && !/^(0|\+84)[0-9]{9}$/.test(data.phone)) errors.phone = 'Số điện thoại không hợp lệ';
               showFormErrors(form, { fields: errors });
               if (Object.keys(errors).length) return;
-              const res = await withBusy(form, () => receptionApi.updateMember(m.memberId, data));
+              // PUT /receptionist/members/{id} nhận MemberProfileUpdateDTO: không có email
+              const { firstName, lastName, gender, phone, trainingGoal } = data;
+              const res = await withBusy(form, () => receptionApi.updateMember(m.memberId, { firstName, lastName, gender, phone, trainingGoal }));
               if (res) { toast('Đã cập nhật thông tin'); modal.close(); ctx.reload(); }
             }
           }

@@ -5,21 +5,28 @@ import { roleLabel } from './format.js';
 import { refreshNotificationBadge } from '../components/notificationBadge.js';
 import { brandMark } from '../components/brand.js';
 import { authApi } from '../api/endpoints.js';
+import { isDark, toggleTheme } from './theme.js';
 
-// Một bộ nhận diện cho mọi vai trò, cùng tông trang giới thiệu: nền xanh rừng, điểm nhấn vàng chanh
-const SIDEBAR_BG = 'bg-brand-dark';
+// Một bộ nhận diện cho mọi vai trò: khung kính mờ tone sáng (glass) trên nền mảnh kính nhạt, điểm nhấn xanh rừng + vàng chanh
+const SIDEBAR_BG = 'glass-panel';
 const AVATAR = 'bg-brand-lime text-brand-dark';
 
 function navItems(role) {
   return ROUTES.filter(r => r.nav && r.roles?.includes(role));
 }
 
+// Thu gọn sidebar (chỉ còn cột biểu tượng) — nhớ theo trình duyệt
+const COLLAPSE_KEY = 'sc_sidebar_collapsed';
+const isCollapsed = () => { try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; } };
+
 function navLink(route) {
   return html`
-    <a href="#${route.path}" data-nav="${route.path}"
-      class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-      ${icon(route.nav.icon, 'w-4 h-4 shrink-0')}<span class="flex-1">${route.nav.label}</span>
-      ${route.path === '/member/notifications' ? html`<span data-notification-count class="hidden min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center"></span>` : ''}
+    <a href="#${route.path}" data-nav="${route.path}" title="${route.nav.label}"
+      class="nav-link sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold text-slate-600 hover:bg-white/80 hover:text-brand-dark transition-colors">
+      <span class="relative shrink-0">${icon(route.nav.icon, 'w-[18px] h-[18px]')}
+        ${route.path === '/member/notifications' ? html`<span data-notification-count class="sb-dot hidden absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold items-center justify-center"></span>` : ''}</span>
+      <span class="sb-text flex-1 truncate">${route.nav.label}</span>
+      ${route.path === '/member/notifications' ? html`<span data-notification-count class="sb-text hidden min-w-5 h-5 px-1.5 rounded-full bg-brand-dark text-brand-lime text-[11px] font-bold flex items-center justify-center"></span>` : ''}
     </a>`;
 }
 
@@ -33,25 +40,35 @@ function sidebar(role) {
     g.items.push(item);
   });
   return html`
-    <div class="flex items-center gap-3 px-4 h-16 shrink-0">
-      ${brandMark('w-10 h-10 ring-1 ring-white/20')}
-      <div>
-        <div class="font-display font-extrabold text-xl tracking-wide text-white leading-none">SPORT CENTER</div>
-        <div class="text-[11px] font-bold uppercase tracking-wider text-brand-lime mt-0.5">${roleLabel(role)}</div>
-      </div>
+    <!-- nút thu gọn / mở rộng nằm trên mép phải -->
+    <button type="button" id="sidebar-collapse" class="sb-collapse hidden lg:flex" aria-label="Thu gọn menu"><span class="sb-grip" aria-hidden="true"><i></i><i></i><i></i></span>${icon('chevron-left', 'w-4 h-4 sb-chev')}</button>
+    <div class="px-5 pt-4 shrink-0">
+      <a href="#/" class="sb-brand flex items-center gap-2.5 mt-1" title="Sport Center">
+        ${brandMark('w-9 h-9 ring-1 ring-white shadow-md shrink-0')}
+        <span class="sb-text min-w-0 leading-none">
+          <span class="block font-display font-extrabold text-2xl tracking-[0.12em] text-transparent bg-clip-text bg-gradient-to-r from-brand-dark to-brand">SPORT CENTER</span>
+          <span class="block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-deep mt-1" data-testid="sb-role">${roleLabel(role)}</span>
+        </span>
+      </a>
     </div>
-    <nav class="px-3 pb-3 space-y-4 overflow-y-auto flex-1" aria-label="Điều hướng">
-      ${groups.map(g => html`
-        <div class="space-y-1">
-          ${g.name ? html`<div class="px-3.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/40">${g.name}</div>` : ''}
+    <div class="mx-3 mt-4 h-px bg-gradient-to-r from-transparent via-brand-line to-transparent shrink-0"></div>
+    <nav class="relative px-3 pb-3 pt-3 space-y-3 overflow-y-auto flex-1" aria-label="Điều hướng" data-sb-nav>
+      <!-- viên chọn trượt tới mục đang chọn (vị trí do setActiveNav tính) -->
+      <span class="sb-indicator" aria-hidden="true"></span>
+      ${groups.map((g, i) => html`
+        <div class="space-y-1 ${i ? 'pt-3 border-t border-white/80' : ''}">
+          <div class="sb-text px-3.5 pb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">${g.name || 'Menu'}</div>
           ${g.items.map(navLink)}
         </div>`)}
     </nav>
     <!-- đăng xuất cố định ở đáy sidebar (mọi vai trò) -->
-    <div class="px-3 pb-4 pt-3 shrink-0 border-t border-white/10">
-      <button type="button" id="logout-btn" data-testid="menu-logout"
-        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-rose-200 hover:bg-rose-500/15 hover:text-white transition-colors disabled:opacity-60">
-        ${icon('log-out', 'w-4 h-4')} Đăng xuất
+    <div class="px-3 pb-4 pt-3 shrink-0 border-t border-white/80">
+      <button type="button" id="logout-btn" data-testid="menu-logout" title="Đăng xuất" class="sb-logout sb-item">
+        <span class="sb-logout-icon" data-logout-icon>${icon('power', 'w-[18px] h-[18px]')}</span>
+        <span class="sb-text flex-1 min-w-0 text-left leading-tight">
+          <span class="block text-sm font-bold" data-logout-label>Đăng xuất</span>
+        </span>
+        <span class="sb-text sb-logout-arrow">${icon('arrow-right', 'w-4 h-4')}</span>
       </button>
     </div>`;
 }
@@ -64,16 +81,20 @@ export function renderShell(root) {
   }
   root.dataset.shell = role;
   render(root, html`
-    <div class="min-h-screen flex gap-0 lg:gap-3 lg:p-3">
-      <aside id="sidebar" class="hidden lg:flex fixed lg:sticky top-0 lg:top-3 z-30 h-screen lg:h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col ${SIDEBAR_BG} lg:rounded-3xl shadow-xl">
+    <div class="app-shell min-h-screen flex gap-0 lg:gap-3 lg:p-3">
+      <div class="app-bg" aria-hidden="true"></div>
+      <aside id="sidebar" class="hidden lg:flex fixed lg:sticky top-0 lg:top-3 z-30 h-screen lg:h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col ${SIDEBAR_BG} lg:rounded-3xl sb ${isCollapsed() ? 'sb-collapsed' : ''}" data-testid="sidebar">
         ${sidebar(role)}
       </aside>
       <div id="sidebar-backdrop" class="hidden fixed inset-0 z-20 bg-slate-900/40 lg:hidden"></div>
       <div class="flex-1 min-w-0 flex flex-col gap-3 px-3 pt-3 lg:px-0 lg:pt-0">
-        <header class="sticky top-3 z-10 h-16 shrink-0 bg-white rounded-2xl shadow-sm border border-brand-line/70 flex items-center justify-between px-4 sm:px-6">
+        <header class="glass-panel sticky top-3 z-10 h-16 shrink-0 rounded-2xl flex items-center justify-between px-4 sm:px-6">
           <button type="button" id="menu-toggle" class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100" aria-label="Mở menu">${icon('menu', 'w-5 h-5')}</button>
           <div class="hidden lg:block"></div>
           <div class="flex items-center gap-3">
+            <button type="button" id="theme-toggle" class="theme-toggle" data-testid="theme-toggle" aria-label="Đổi giao diện sáng / tối" title="Đổi giao diện sáng / tối">
+              <span class="theme-toggle-knob">${icon('sun', 'w-4 h-4 theme-ic-sun')}${icon('moon', 'w-4 h-4 theme-ic-moon')}</span>
+            </button>
             ${role === 'MEMBER' ? html`
               <a href="#/member/notifications" id="notif-bell" class="relative p-2.5 rounded-full text-slate-500 hover:bg-slate-100" aria-label="Thông báo" title="Thông báo">
                 ${icon('bell', 'w-5 h-5')}
@@ -115,10 +136,49 @@ export function renderShell(root) {
     aside.classList.toggle('flex', open);
     backdrop.classList.toggle('hidden', !open);
   };
-  root.querySelector('#menu-toggle').addEventListener('click', () => toggle(aside.classList.contains('hidden')));
+  // menu trên điện thoại đang ẩn thì không đo được vị trí -> đặt lại viên chọn khi mở
+  root.querySelector('#menu-toggle').addEventListener('click', () => { toggle(aside.classList.contains('hidden')); moveIndicator(aside.querySelector('.nav-active')); });
   backdrop.addEventListener('click', () => toggle(false));
   aside.addEventListener('click', e => {
     if (e.target.closest('a') && window.innerWidth < 1024) toggle(false);
+  });
+  // gợn sóng lan ra từ chỗ bấm trên mục menu
+  aside.addEventListener('pointerdown', e => {
+    const link = e.target.closest('.nav-link, #logout-btn');
+    if (!link) return;
+    const r = link.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 2;
+    const wave = document.createElement('span');
+    wave.className = 'sb-ripple';
+    wave.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px`;
+    link.appendChild(wave);
+    wave.addEventListener('animationend', () => wave.remove());
+  });
+  const reposition = () => moveIndicator(aside.querySelector('.nav-active'));
+  aside.addEventListener('transitionend', e => { if (e.target === aside) reposition(); });
+  window.addEventListener('resize', reposition);
+  // biểu tượng / font tải xong làm đổi chiều cao mục menu -> đặt lại viên chọn
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => reposition());
+    aside.querySelectorAll('.nav-link').forEach(a => ro.observe(a));
+  }
+  document.fonts?.ready.then(reposition);
+  // sáng / tối
+  const themeBtn = root.querySelector('#theme-toggle');
+  const syncThemeBtn = () => themeBtn.setAttribute('aria-pressed', String(isDark()));
+  syncThemeBtn();
+  themeBtn.addEventListener('click', () => { toggleTheme(); syncThemeBtn(); });
+  // thu gọn / mở rộng (chỉ màn rộng)
+  const collapseBtn = root.querySelector('#sidebar-collapse');
+  const applyCollapse = on => {
+    aside.classList.toggle('sb-collapsed', on);
+    collapseBtn.setAttribute('aria-label', on ? 'Mở rộng menu' : 'Thu gọn menu');
+  };
+  applyCollapse(isCollapsed());
+  collapseBtn.addEventListener('click', () => {
+    const on = !aside.classList.contains('sb-collapsed');
+    try { localStorage.setItem(COLLAPSE_KEY, on ? '1' : '0'); } catch { /* bỏ qua */ }
+    applyCollapse(on);
   });
   const trigger = root.querySelector('#profile-trigger');
   const menu = root.querySelector('#profile-menu');
@@ -134,6 +194,9 @@ export function renderShell(root) {
   root.querySelector('#logout-btn').addEventListener('click', async e => {
     const btn = e.currentTarget;
     btn.disabled = true;
+    btn.classList.add('is-busy');
+    const label = btn.querySelector('[data-logout-label]');
+    if (label) label.textContent = 'Đang đăng xuất...';
     await authApi.logout().catch(() => {});
     session.end();
     window.location.hash = '#/login';
@@ -144,13 +207,36 @@ export function renderShell(root) {
 }
 
 export function setActiveNav(path) {
+  let current = null;
   document.querySelectorAll('[data-nav]').forEach(a => {
     const active = path === a.dataset.nav || path.startsWith(`${a.dataset.nav}/`);
-    a.classList.toggle('bg-brand-lime', active);
-    a.classList.toggle('text-brand-dark', active);
-    a.classList.toggle('hover:bg-white/10', !active);
-    a.classList.toggle('hover:text-white', !active);
-    a.classList.toggle('text-white/70', !active);
+    const was = a.classList.contains('nav-active');
+    a.classList.toggle('nav-active', active);
+    a.classList.toggle('hover:bg-white/80', !active);
+    a.classList.toggle('hover:text-brand-dark', !active);
+    a.classList.toggle('text-slate-600', !active);
     a.setAttribute('aria-current', active ? 'page' : 'false');
+    if (active) current = a;
+    // biểu tượng của mục vừa được chọn nảy 1 nhịp
+    if (active && !was) {
+      a.classList.remove('nav-pop');
+      void a.offsetWidth;
+      a.classList.add('nav-pop');
+    }
   });
+  moveIndicator(current);
+}
+
+// đặt viên chọn trùng vị trí mục đang chọn; lần đầu đặt thẳng, các lần sau trượt (CSS transition)
+function moveIndicator(link) {
+  const nav = document.querySelector('[data-sb-nav]');
+  const bar = nav?.querySelector('.sb-indicator');
+  if (!bar) return;
+  if (!link) { bar.style.opacity = '0'; return; }
+  const first = !bar.dataset.ready;
+  if (first) bar.style.transition = 'none';
+  bar.style.transform = `translateY(${link.offsetTop}px)`;
+  bar.style.height = `${link.offsetHeight}px`;
+  bar.style.opacity = '1';
+  if (first) { void bar.offsetWidth; bar.style.transition = ''; bar.dataset.ready = '1'; }
 }

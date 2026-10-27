@@ -43,16 +43,17 @@ export function openModal({ title, body, actions = {}, size = 'max-w-lg', onClos
   wrapper.setAttribute('role', 'dialog');
   wrapper.setAttribute('aria-modal', 'true');
   render(wrapper, html`
-    <div class="fixed inset-0 bg-brand-dark/50 backdrop-blur-sm" data-action="__close"></div>
-    <div class="relative w-full ${size} bg-white rounded-3xl shadow-2xl border border-brand-line my-8 animate-fade-in">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-        <h3 class="font-display font-extrabold text-brand-dark text-2xl leading-none">${title}</h3>
-        <button type="button" data-action="__close" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Đóng">${icon('x', 'w-5 h-5')}</button>
+    <div class="sc-backdrop fixed inset-0" data-action="__close"></div>
+    <div class="sc-modal relative w-full ${size} my-8">
+      <div class="sc-modal-head">
+        <h3 class="sc-modal-title font-display font-extrabold text-2xl leading-none">${title}</h3>
+        <button type="button" data-action="__close" class="sc-modal-close" aria-label="Đóng">${icon('x', 'w-4 h-4')}</button>
       </div>
-      <div class="px-6 py-5 modal-body">${body}</div>
+      <div class="px-6 pt-4 pb-6 modal-body">${body}</div>
     </div>
   `);
   host.appendChild(wrapper);
+  refreshIcons(); // render() chạy khi popup chưa gắn vào trang nên icon chưa được vẽ
 
   let closed = false;
   const close = () => {
@@ -104,6 +105,7 @@ export async function withBusy(button, fn) {
   if (btn) {
     if (btn.disabled) return undefined;
     btn.disabled = true;
+    btn.querySelectorAll('.btn-ripple').forEach(n => n.remove()); // không lưu gợn sóng vào nhãn nút
     btn.dataset.label = btn.innerHTML;
     btn.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin align-middle"></span>';
   }
@@ -183,7 +185,7 @@ const STAT_TONES = { amber: 'bg-amber-50 text-amber-600', rose: 'bg-rose-50 text
 
 export function statCard(label, value, iconName, color = 'emerald', hint = '') {
   return html`
-    <div class="card p-5 flex items-start gap-4 rounded-3xl">
+    <div class="card stat-card p-5 flex items-start gap-4 rounded-3xl">
       <div class="w-12 h-12 rounded-2xl ${STAT_TONES[color] || 'bg-brand-sand text-brand-deep'} flex items-center justify-center shrink-0">${icon(iconName, 'w-5 h-5')}</div>
       <div class="min-w-0">
         <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">${label}</div>
@@ -227,9 +229,9 @@ export function table({ columns, rows, empty = 'Chưa có dữ liệu' }) {
 export function field(label, input, hint = '') {
   return html`
     <label class="block">
-      <span class="block text-xs font-bold text-slate-600 mb-1">${label}</span>
+      <span class="field-label block text-xs font-bold text-slate-600 mb-1">${label}</span>
       ${input}
-      ${hint ? html`<span class="block text-[11px] text-slate-400 mt-1">${hint}</span>` : ''}
+      ${hint ? html`<span class="field-hint block text-[11px] text-slate-400 mt-1">${hint}</span>` : ''}
     </label>`;
 }
 
@@ -313,7 +315,7 @@ export const GENDER_OPTIONS = [
 
 export function formActions(submitText = 'Lưu') {
   return html`
-    <div class="flex justify-end gap-2 pt-2">
+    <div class="modal-actions flex justify-end gap-2 pt-2">
       <button type="button" data-action="cancel" class="btn-secondary">Hủy</button>
       <button type="submit" class="btn-primary">${submitText}</button>
     </div>`;

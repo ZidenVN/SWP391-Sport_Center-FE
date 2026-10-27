@@ -16,6 +16,9 @@ export const userApi = {
   // chỉ Quản lý; BE trả trang { content, totalElements, totalPages, number, size }
   // query: { keyword, role (CENTER_MANAGER|COACH|RECEPTIONIST|MEMBER), status (ACTIVE|INACTIVE), page (từ 0), size (tối đa 100) }
   page: query => http.get('/users', query),
+  // hồ sơ của chính nhân viên (Lễ tân / HLV / Quản lý); email không đổi được
+  me: () => http.get('/users/me'),
+  updateMe: payload => http.put('/users/me', payload),
   list: query => http.get('/users', { size: 100, ...query }).then(page => page.content || []),
   get: id => http.get(`/users/${id}`),
   update: (id, payload) => http.put(`/users/${id}`, payload),
@@ -100,6 +103,8 @@ export const memberApi = {
   updateMe: payload => http.put('/members/me', payload),
   subscriptions: () => http.get('/members/me/subscriptions'),
   currentSubscription: () => http.get('/members/me/subscriptions/current').then(pickCurrent),
+  // trước khi thanh toán: ngày bắt đầu / hết hạn dự kiến + cảnh báo gói trùng khu tập
+  purchasePreview: packageId => http.get('/members/me/subscriptions/preview', { packageId }),
   payments: () => http.get('/members/me/payments'),
   invoice: paymentId => http.get(`/members/me/payments/${paymentId}/invoice`),
   register: classId => http.post('/members/me/registrations', { classId }),
@@ -126,10 +131,8 @@ export const aiApi = {
 };
 
 export const vnpayApi = {
-  // bankCode: VNBANK | INTCARD | VNPAYQR (bỏ trống = VNPay cho chọn); returnUrl: trang kết quả khác mặc định (vd IP LAN khi quét QR)
-  createUrl: (packageId, { bankCode, returnUrl } = {}) => http.post(`/payments/vnpay/create-url?${new URLSearchParams(
-    Object.entries({ packageId, bankCode, returnUrl }).filter(([, v]) => v !== undefined && v !== null && v !== '')
-  )}`),
+  // BE main chỉ nhận packageId; vnp_ReturnUrl do BE cấu hình (vnpay.return-url), phương thức chọn trên trang VNPay
+  createUrl: packageId => http.post('/payments/vnpay/create-url', undefined, { query: { packageId } }),
   // trạng thái 1 giao dịch: dò trong lịch sử thanh toán (BE chưa có API riêng)
   paymentStatus: async paymentId => (await http.get('/members/me/payments')).find(p => p.paymentId === paymentId) || null,
   // query là nguyên chuỗi "?vnp_...=..." VNPay trả về
@@ -147,6 +150,8 @@ export const receptionApi = {
   member: id => http.get(`/receptionist/members/${id}`),
   registerWalkIn: payload => http.post('/receptionist/members', payload),
   subscribe: (memberId, packageId, paymentMethod) => http.post(`/receptionist/members/${memberId}/subscriptions`, { packageId, paymentMethod }),
+  // trước khi bán tại quầy: ngày hiệu lực dự kiến + cảnh báo gói trùng khu tập
+  purchasePreview: (memberId, packageId) => http.get(`/receptionist/members/${memberId}/subscriptions/preview`, { packageId }),
   subscriptions: memberId => http.get(`/receptionist/members/${memberId}/subscriptions`),
   currentSubscription: memberId => http.get(`/receptionist/members/${memberId}/subscriptions/current`).then(pickCurrent),
   payments: memberId => http.get(`/receptionist/members/${memberId}/payments`),
@@ -176,8 +181,6 @@ export const coachApi = {
   takeAttendance: (classId, records) => http.post(`/coaches/me/classes/${classId}/attendances`, { records }),
   attendances: classId => http.get(`/coaches/me/classes/${classId}/attendances`),
   createPlan: payload => http.post('/coaches/me/workout-plans', payload),
-  // BE chưa có: nút gợi ý AI của HLV đang ẩn bằng FEATURES.coachAi
-  aiSuggest: (memberId, payload) => http.post(`/coaches/members/${memberId}/ai-suggestions`, payload, { timeoutMs: 120000 }),
   myPlans: () => http.get('/coaches/me/workout-plans'),
   memberPlans: memberId => http.get(`/coaches/members/${memberId}/workout-plans`),
   classPlans: classId => http.get(`/coaches/classes/${classId}/workout-plans`),

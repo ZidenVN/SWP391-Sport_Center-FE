@@ -2,6 +2,12 @@ import { configureClient } from './api/client.js';
 import { session } from './core/session.js';
 import { startRouter } from './core/router.js';
 import { toast } from './core/ui.js';
+import { applyTheme } from './core/theme.js';
+import { initSelectBoxes } from './core/selectBox.js';
+import { initButtonEffects } from './core/effects.js';
+
+// áp dụng sáng / tối trước khi vẽ trang để không nháy màu
+applyTheme();
 
 configureClient({
   getToken: () => session.token(),
@@ -21,4 +27,6 @@ if (/\/payment-result\/?$/.test(path)) {
   window.history.replaceState(null, '', `${base}#/member/payment-result${window.location.search}`);
 }
 
+initSelectBoxes();
+initButtonEffects();
 startRouter();

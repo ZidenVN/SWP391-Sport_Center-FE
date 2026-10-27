@@ -64,21 +64,6 @@ body {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Đường quét chạy trên mã QR khi đang chờ thanh toán */
-@keyframes qrScan {
-  0%, 100% { transform: translateY(0); opacity: 0.2; }
-  50% { transform: translateY(250px); opacity: 0.9; }
-}
-
-.qr-scanline {
-  animation: qrScan 2.6s ease-in-out infinite;
-  box-shadow: 0 0 12px 2px rgba(70, 155, 126, 0.6);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .qr-scanline { animation: none; display: none; }
-}
-
 /* Micro-interactions & Smooth Transitions */
 .transition-smooth {
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -577,3 +562,566 @@ body {
 .pc-avatar { width: 1.75rem; height: 1.75rem; flex: none; border-radius: 999px; background: #d7f25b; color: #173f31; font-size: 0.7rem; font-weight: 900; display: flex; align-items: center; justify-content: center; }
 .pc-more { display: inline-flex; align-items: center; gap: 0.25rem; flex: none; font-weight: 800; color: #d7f25b; transition: gap 0.2s; }
 .pc:hover .pc-more { gap: 0.5rem; }
+
+/* ---------- Khung giao diện sau đăng nhập: kính mờ tone sáng (glassmorphism) ---------- */
+/* nền: mảnh kính nhạt (public/app-bg.svg) + quầng xanh / vàng chanh trôi chậm */
+.app-shell { position: relative; isolation: isolate; }
+.app-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: #eef4ef url('/app-bg.svg') center / cover no-repeat; }
+.app-bg::before, .app-bg::after { content: ''; position: absolute; border-radius: 999px; filter: blur(80px); }
+.app-bg::before { width: 46vw; height: 46vw; left: -10vw; top: -12vw; background: rgba(70, 155, 126, 0.22); animation: app-blob 22s ease-in-out infinite alternate; }
+.app-bg::after { width: 38vw; height: 38vw; right: -8vw; bottom: -10vw; background: rgba(215, 242, 91, 0.28); animation: app-blob 26s ease-in-out infinite alternate-reverse; }
+@keyframes app-blob { to { transform: translate(6vw, 5vh) scale(1.08); } }
+
+/* tấm kính: sidebar, thanh trên cùng */
+.glass-panel {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.55));
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 50px -25px rgba(23, 63, 49, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+}
+/* mục menu đang chọn */
+.nav-active { background: #173f31; color: #d7f25b !important; box-shadow: 0 10px 22px -12px rgba(23, 63, 49, 0.8); }
+.nav-active:hover { background: #173f31; }
+
+/* thẻ nội dung trong app: kính trắng mờ (thẻ có màu nền riêng như bg-brand-dark giữ nguyên màu) */
+.app-shell .card:not([class*="bg-"]) {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 18px 40px -28px rgba(23, 63, 49, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+/* thẻ số liệu: nhô lên khi rê chuột (như whileHover y:-5) */
+.app-shell .stat-card { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s; }
+.app-shell .stat-card:hover { transform: translateY(-5px); box-shadow: 0 26px 50px -26px rgba(23, 63, 49, 0.55); }
+/* bảng và ô nhập trên kính */
+.app-shell table thead tr { background: rgba(239, 233, 220, 0.55); }
+.app-shell table tbody tr:hover { background: rgba(255, 255, 255, 0.6); }
+.app-shell .input { background-color: rgba(255, 255, 255, 0.85); }
+.app-shell .btn-secondary { background-color: rgba(255, 255, 255, 0.8); }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-bg::before, .app-bg::after { animation: none; }
+  .app-shell .stat-card:hover { transform: none; }
+}
+
+/* ---------- Sidebar kính kiểu bảng điều khiển: thu gọn / mở rộng ---------- */
+.sb { position: relative; transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+/* nút tròn trên mép phải */
+/* tay nắm dọc giữa mép phải: 3 vạch -> rê chuột nở thành viên xanh có mũi tên */
+.sb-collapse {
+  position: absolute; top: 50%; right: -0.55rem; z-index: 5; width: 0.95rem; height: 3.6rem; margin-top: -1.8rem; border-radius: 999px;
+  align-items: center; justify-content: center; overflow: visible; color: #d7f25b;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,246,242,0.9));
+  border: 1px solid rgba(23, 63, 49, 0.12);
+  box-shadow: 0 8px 20px -10px rgba(23, 63, 49, 0.55), inset 0 1px 0 #fff;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: width 0.35s cubic-bezier(0.34, 1.4, 0.5, 1), height 0.35s cubic-bezier(0.34, 1.4, 0.5, 1), margin 0.35s cubic-bezier(0.34, 1.4, 0.5, 1), right 0.35s cubic-bezier(0.34, 1.4, 0.5, 1), background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.sb-grip { display: flex; flex-direction: column; gap: 3px; transition: opacity 0.2s, transform 0.3s; }
+.sb-grip i { display: block; width: 3px; height: 3px; border-radius: 999px; background: #469b7e; }
+.sb-grip i:nth-child(2) { height: 9px; background: #173f31; }
+.sb-collapse .sb-chev { position: absolute; opacity: 0; transform: scale(0.4); transition: opacity 0.2s, transform 0.35s cubic-bezier(0.34, 1.6, 0.5, 1); }
+.sb-collapse:is(:hover, :focus-visible) { width: 1.9rem; height: 4.2rem; margin-top: -2.1rem; right: -1rem; outline: none;
+  background: linear-gradient(180deg, #2f7a5f, #173f31); border-color: rgba(215, 242, 91, 0.5);
+  box-shadow: 0 14px 28px -10px rgba(23, 63, 49, 0.75), 0 0 0 4px rgba(215, 242, 91, 0.22); }
+.sb-collapse:is(:hover, :focus-visible) .sb-grip { opacity: 0; transform: scale(0.5); }
+.sb-collapse:is(:hover, :focus-visible) .sb-chev { opacity: 1; transform: none; animation: sb-nudge 0.9s ease-in-out 0.3s infinite; }
+.sb.sb-collapsed .sb-collapse:is(:hover, :focus-visible) .sb-chev { transform: rotate(180deg); animation-name: sb-nudge-r; }
+.sb-collapse:active { filter: brightness(0.9); }
+@keyframes sb-nudge { 0%, 100% { translate: 0; } 50% { translate: -2px; } }
+@keyframes sb-nudge-r { 0%, 100% { translate: 0; } 50% { translate: 2px; } }
+/* nhãn cạnh tay nắm */
+.sb-collapse::after { content: attr(aria-label); position: absolute; left: calc(100% + 0.55rem); top: 50%; white-space: nowrap; pointer-events: none;
+  padding: 0.3rem 0.65rem; border-radius: 9px; font-size: 11px; font-weight: 700; color: #d7f25b; background: #173f31;
+  box-shadow: 0 8px 18px -8px rgba(23, 63, 49, 0.7); opacity: 0; transform: translate(-6px, -50%); transition: opacity 0.2s 0.1s, transform 0.25s 0.1s; }
+.sb-collapse:is(:hover, :focus-visible)::after { opacity: 1; transform: translate(0, -50%); }
+@media (prefers-reduced-motion: reduce) { .sb-collapse, .sb-collapse .sb-chev { transition: none; } .sb-collapse:hover .sb-chev { animation: none; } }
+/* mục đang chọn: viên kính nổi có viền (trên nền sáng dùng xanh rừng) */
+.sb .nav-active { background: linear-gradient(180deg, #1e4d3c, #173f31); border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 12px 24px -14px rgba(23, 63, 49, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.sb .nav-active [data-notification-count].sb-text { background: #d7f25b; color: #173f31; }
+.sb [data-notification-count].sb-dot { display: none !important; }
+
+/* trạng thái thu gọn (màn rộng): chỉ còn cột biểu tượng */
+@media (min-width: 1024px) {
+  .sb.sb-collapsed { width: 5.25rem; }
+  .sb.sb-collapsed .sb-text { display: none !important; }
+  .sb.sb-collapsed .sb-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  .sb.sb-collapsed .sb-brand { justify-content: center; }
+  .sb.sb-collapsed #sb-user-menu { padding-left: 0; }
+  .sb.sb-collapsed [data-notification-count].sb-dot:not(.hidden) { display: flex !important; }
+}
+
+/* ---------- Hiệu ứng chọn mục trên sidebar ---------- */
+/* viên chọn trượt: mục đang chọn trong suốt để thấy viên phía sau */
+.sb .sb-indicator {
+  position: absolute; left: 0.75rem; right: 0.75rem; top: 0; z-index: 0; opacity: 0; pointer-events: none; border-radius: 1rem;
+  background: linear-gradient(180deg, #1e4d3c, #173f31); border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 12px 24px -14px rgba(23, 63, 49, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.5, 1), height 0.3s ease, opacity 0.2s;
+}
+.sb .sb-indicator::before { content: ''; position: absolute; left: -0.1rem; top: 22%; bottom: 22%; width: 4px; border-radius: 999px; background: #d7f25b; box-shadow: 0 0 12px 2px rgba(215, 242, 91, 0.75); }
+.sb .sb-indicator::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%); background-size: 250% 100%; animation: sb-shine 3.5s ease-in-out infinite; }
+@keyframes sb-shine { 0%, 30% { background-position: 120% 0; } 70%, 100% { background-position: -40% 0; } }
+.sb .nav-link { position: relative; z-index: 1; overflow: hidden; }
+.sb .nav-link.nav-active { background: transparent !important; border-color: transparent; box-shadow: none; }
+.sb .nav-link > .sb-text { transition: transform 0.25s ease; }
+.sb .nav-link:not(.nav-active):hover > .sb-text { transform: translateX(4px); }
+.sb .nav-link > span:first-child { transition: transform 0.25s ease; }
+.sb .nav-link:hover > span:first-child { transform: scale(1.12); }
+/* biểu tượng nảy khi vừa chọn */
+.sb .nav-pop > span:first-child { animation: sb-pop 0.55s cubic-bezier(0.34, 1.6, 0.5, 1); }
+@keyframes sb-pop { 0% { transform: scale(0.6) rotate(-12deg); } 60% { transform: scale(1.25) rotate(6deg); } 100% { transform: none; } }
+/* gợn sóng khi bấm */
+.sb-ripple { position: absolute; border-radius: 999px; pointer-events: none; background: radial-gradient(circle, rgba(215, 242, 91, 0.55) 0%, rgba(70, 155, 126, 0.25) 40%, transparent 70%); transform: scale(0); animation: sb-ripple 0.6s ease-out forwards; z-index: -1; }
+@keyframes sb-ripple { to { transform: scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sb .sb-indicator { transition: none; }
+  .sb .sb-indicator::after, .sb .nav-pop > span:first-child, .sb-ripple { animation: none; }
+}
+
+/* ---------- Nút đăng xuất (đáy sidebar) ---------- */
+.sb-logout {
+  position: relative; isolation: isolate; display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.5rem 0.85rem 0.5rem 0.5rem; overflow: hidden;
+  border-radius: 1.1rem; color: #be123c; text-align: left;
+  background: linear-gradient(135deg, rgba(255, 241, 242, 0.95), rgba(255, 228, 230, 0.7));
+  border: 1px solid rgba(254, 205, 211, 0.9); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 18px -14px rgba(190, 18, 60, 0.6);
+  transition: color 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.15s;
+}
+/* lớp nền đỏ trượt vào khi rê chuột */
+.sb-logout::before { content: ''; position: absolute; inset: 0; z-index: 0; background: linear-gradient(135deg, #f43f5e, #be123c); transform: translateX(-101%); transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.sb-logout > * { position: relative; z-index: 1; }
+.sb-logout-icon { width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.8rem; display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(135deg, #fb7185, #e11d48); box-shadow: 0 6px 14px -6px rgba(225, 29, 72, 0.7); transition: transform 0.45s cubic-bezier(0.34, 1.5, 0.5, 1), background 0.25s; }
+.sb-logout-arrow { opacity: 0.6; transition: transform 0.25s, opacity 0.25s; }
+.sb-logout:hover:not(:disabled) { color: #fff; border-color: transparent; box-shadow: 0 14px 26px -14px rgba(190, 18, 60, 0.8); }
+.sb-logout:hover:not(:disabled)::before { transform: none; }
+.sb-logout:hover:not(:disabled) .sb-logout-icon { transform: rotate(180deg); background: rgba(255, 255, 255, 0.22); box-shadow: none; }
+.sb-logout:hover:not(:disabled) .sb-logout-arrow { transform: translateX(4px); opacity: 1; }
+.sb-logout:active:not(:disabled) { transform: scale(0.98); }
+.sb-logout:focus-visible { outline: 3px solid rgba(244, 63, 94, 0.4); outline-offset: 2px; }
+/* đang đăng xuất: biểu tượng xoay liên tục */
+.sb-logout.is-busy { cursor: wait; }
+.sb-logout.is-busy .sb-logout-icon { animation: sb-logout-spin 0.8s linear infinite; }
+@keyframes sb-logout-spin { to { transform: rotate(360deg); } }
+/* sidebar thu gọn: chỉ còn ô biểu tượng */
+@media (min-width: 1024px) {
+  .sb.sb-collapsed .sb-logout { justify-content: center; padding: 0.4rem; background: transparent; border-color: transparent; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-logout::before, .sb-logout-icon, .sb-logout-arrow { transition: none; }
+  .sb-logout.is-busy .sb-logout-icon { animation: none; }
+}
+
+/* ======================================================================
+   CHẾ ĐỘ TỐI (html.theme-dark) — sinh tự động từ bảng ánh xạ màu, chỉ áp
+   trong khung sau đăng nhập (.app-shell) và popup (#modal-root)
+   ====================================================================== */
+html.theme-dark body { background-color: #08100d; }
+html.theme-dark .app-shell { color: #eef5f1; }
+html.theme-dark .app-bg { background: #08100d url('/app-bg-dark.svg') center / cover no-repeat; }
+html.theme-dark .app-bg::before { background: rgba(70,155,126,0.20); }
+html.theme-dark .app-bg::after { background: rgba(215,242,91,0.08); }
+/* chuyển màu mượt khi bấm đổi chế độ */
+html.theme-switching *, html.theme-switching *::before, html.theme-switching *::after { transition: background-color .35s ease, color .35s ease, border-color .35s ease !important; }
+
+/* tấm kính + thẻ */
+html.theme-dark .glass-panel { background: linear-gradient(160deg, rgba(20,34,28,0.82), rgba(12,22,18,0.7)); border-color: rgba(255,255,255,0.08); box-shadow: 0 20px 50px -25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); }
+html.theme-dark .app-shell .card:not([class*="bg-"]) { background: rgba(18,30,25,0.72); border-color: rgba(255,255,255,0.07); box-shadow: 0 18px 40px -28px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.04); }
+html.theme-dark .app-shell .card { border-color: rgba(255,255,255,0.07); }
+html.theme-dark .app-shell .stat-card:hover { box-shadow: 0 26px 50px -26px rgba(0,0,0,0.95); }
+html.theme-dark .app-shell table thead tr { background: rgba(255,255,255,0.04); }
+html.theme-dark .app-shell table tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+/* ô nhập, nút */
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .input { background-color: #0e1814 !important; border-color: rgba(255,255,255,0.12); color: #eef5f1; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .input::placeholder { color: #6b7f76; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .input:disabled { background-color: #16241f !important; color: #93a89e; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) select.input option { background: #13201b; color: #eef5f1; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .btn-secondary { background-color: rgba(255,255,255,0.06) !important; color: #eef5f1; border-color: rgba(255,255,255,0.12); }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .btn-secondary:hover { background-color: rgba(255,255,255,0.12) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .btn-primary { background-color: #2f7a5f !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .btn-primary:hover { background-color: #3a8e70 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .btn-ghost { color: #c6d4cd; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .btn-ghost:hover { background-color: rgba(255,255,255,0.08); }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .card .border-t, html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-b { border-color: rgba(255,255,255,0.08); }
+
+/* sidebar */
+html.theme-dark .sb .nav-link { color: #c6d4cd; }
+html.theme-dark .sb .sb-indicator { background: linear-gradient(180deg, #2b6a52, #1d4f3d); border-color: rgba(255,255,255,0.12); }
+html.theme-dark .sb-collapse:not(:hover):not(:focus-visible) { background: linear-gradient(180deg, rgba(32,53,44,0.95), rgba(19,32,27,0.95)); border-color: rgba(255,255,255,0.12); box-shadow: 0 8px 20px -10px rgba(0,0,0,0.9); }
+html.theme-dark .sb-grip i { background: #5bb592; }
+html.theme-dark .sb-grip i:nth-child(2) { background: #d7f25b; }
+html.theme-dark .sb-logout { background: linear-gradient(135deg, rgba(244,63,94,0.16), rgba(244,63,94,0.08)); border-color: rgba(244,63,94,0.3); color: #fda4af; }
+
+/* popup */
+html.theme-dark body:has(.app-shell) #modal-root .border-slate-100 { border-color: rgba(255,255,255,0.08) !important; }
+
+/* lịch: hàng tiêu đề dính, ô hôm nay */
+html.theme-dark .app-shell [data-testid=time-grid-scroll] .sticky { background-color: #13201b !important; }
+
+/* nút đổi chế độ (thanh trên cùng) */
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-white,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-white\/90,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-white\/95 { background-color: #13201b !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-white\/70,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-white\/80,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-white\/60 { background-color: rgba(19,32,27,0.7) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-slate-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-cream,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-slate-50\/60,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-cream\/60,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-cream\/40,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-cream\/70 { background-color: #192a23 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-slate-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-sand,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-sand\/70,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-sand\/60,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-sand\/80,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-slate-200 { background-color: #20352c !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-slate-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-slate-100:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-brand-cream:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-brand-cream\/70:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-brand-sand:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-white\/80:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-white\/70:hover { background-color: rgba(255,255,255,0.06) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-dark { background-color: #1f4d3c !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-emerald-800:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-brand-deep:hover { background-color: #2a6650 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-slate-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-slate-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-brand-dark { color: #eef5f1 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-slate-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-slate-600 { color: #c6d4cd !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-slate-500,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-slate-400 { color: #93a89e !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-slate-300 { color: #64786f !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-brand-deep,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-emerald-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-emerald-600,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-emerald-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-teal-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-teal-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-brand { color: #8fd3b4 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:text-slate-900:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:text-slate-800:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:text-brand-dark:hover { color: #ffffff !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-lime { color: #173f31; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-slate-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-slate-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-slate-300,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-brand-line,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-brand-line\/60,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-brand-line\/70,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-brand-line\/50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-slate-200\/70,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-white\/80,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-white\/70 { border-color: rgba(255,255,255,0.08) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .divide-brand-line\/60 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255,255,255,0.08) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:border-slate-300:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:border-brand\/60:hover { border-color: rgba(255,255,255,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-amber-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-amber-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-amber-50\/60 { background-color: rgba(245,158,11,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-amber-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-amber-100:hover { background-color: rgba(245,158,11,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-amber-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-amber-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-amber-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-amber-600 { color: #fcd34d !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-amber-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-amber-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-amber-300 { border-color: rgba(245,158,11,0.35) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-rose-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-rose-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-rose-50\/60 { background-color: rgba(244,63,94,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-rose-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-rose-100:hover { background-color: rgba(244,63,94,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-rose-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-rose-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-rose-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-rose-600 { color: #fda4af !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-rose-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-rose-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-rose-300 { border-color: rgba(244,63,94,0.35) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-sky-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-sky-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-sky-50\/60 { background-color: rgba(14,165,233,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-sky-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-sky-100:hover { background-color: rgba(14,165,233,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-sky-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-sky-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-sky-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-sky-600 { color: #7dd3fc !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-sky-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-sky-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-sky-300 { border-color: rgba(14,165,233,0.35) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-violet-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-violet-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-violet-50\/60 { background-color: rgba(139,92,246,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-violet-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-violet-100:hover { background-color: rgba(139,92,246,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-violet-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-violet-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-violet-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-violet-600 { color: #c4b5fd !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-violet-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-violet-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-violet-300 { border-color: rgba(139,92,246,0.35) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-cyan-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-cyan-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-cyan-50\/60 { background-color: rgba(6,182,212,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-cyan-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-cyan-100:hover { background-color: rgba(6,182,212,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-cyan-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-cyan-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-cyan-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-cyan-600 { color: #67e8f9 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-cyan-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-cyan-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-cyan-300 { border-color: rgba(6,182,212,0.35) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-orange-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-orange-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-orange-50\/60 { background-color: rgba(249,115,22,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-orange-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-orange-100:hover { background-color: rgba(249,115,22,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-orange-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-orange-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-orange-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-orange-600 { color: #fdba74 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-orange-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-orange-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-orange-300 { border-color: rgba(249,115,22,0.35) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-emerald-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-emerald-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-emerald-50\/60 { background-color: rgba(70,155,126,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-emerald-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-emerald-100:hover { background-color: rgba(70,155,126,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-emerald-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-emerald-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-emerald-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-emerald-600 { color: #8fd3b4 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-emerald-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-emerald-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-emerald-300 { border-color: rgba(70,155,126,0.35) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-teal-50,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-teal-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-teal-50\/60 { background-color: rgba(70,155,126,0.14) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-teal-50:hover,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .hover\:bg-teal-100:hover { background-color: rgba(70,155,126,0.22) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-teal-900,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-teal-800,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-teal-700,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-teal-600 { color: #8fd3b4 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-teal-100,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-teal-200,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .border-teal-300 { border-color: rgba(70,155,126,0.35) !important; }
+
+.theme-toggle { position: relative; width: 3.4rem; height: 1.9rem; flex: none; border-radius: 999px; background: linear-gradient(180deg, #e8f1ec, #f7f4ea); border: 1px solid rgba(23,63,49,0.12); box-shadow: inset 0 1px 3px rgba(23,63,49,0.15); transition: background .35s; }
+.theme-toggle-knob { position: absolute; top: 2px; left: 2px; width: 1.55rem; height: 1.55rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #fff; color: #f59e0b; box-shadow: 0 3px 8px -2px rgba(23,63,49,0.35); transition: transform .4s cubic-bezier(0.34,1.4,0.5,1), background .35s, color .35s; }
+.theme-toggle .theme-ic-moon { display: none; }
+html.theme-dark .theme-toggle { background: linear-gradient(180deg, #0c1612, #1a2c25); border-color: rgba(255,255,255,0.12); }
+html.theme-dark .theme-toggle-knob { transform: translateX(1.45rem) rotate(360deg); background: #1f4d3c; color: #d7f25b; }
+html.theme-dark .theme-toggle .theme-ic-sun { display: none; }
+html.theme-dark .theme-toggle .theme-ic-moon { display: block; }
+.theme-toggle:focus-visible { outline: 3px solid rgba(70,155,126,0.4); outline-offset: 2px; }
+/* dark: chữ trên nền vàng chanh giữ màu xanh đậm; màu cố định trong mã */
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-lime,
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .bg-brand-lime :is(.text-brand-dark, .text-slate-900, .text-slate-800, .text-slate-700) { color: #173f31 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-\[\#2F6B55\] { color: #8fd3b4 !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .text-\[\#005BAA\] { color: #5aa9ec !important; }
+html.theme-dark .sb .sb-brand .bg-clip-text { background-image: linear-gradient(90deg, #d7f25b, #8fd3b4); }
+html.theme-dark body:has(.app-shell) #modal-root { color: #eef5f1; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .peer:checked ~ .peer-checked\:bg-brand-sand\/60 { background-color: rgba(70,155,126,0.18) !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .peer:checked ~ .peer-checked\:border-brand-dark { border-color: #469b7e !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .peer:checked ~ .peer-checked\:bg-brand-dark { background-color: #1f4d3c !important; }
+html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .peer:checked ~ .peer-checked\:text-brand-lime { color: #d7f25b !important; }
+
+/* ======================================================================
+   POPUP / FORM — kính sáng tông xanh rừng + vàng chanh (mọi vai trò)
+   ====================================================================== */
+.sc-backdrop { background: radial-gradient(circle at 30% 20%, rgba(70,155,126,0.28), transparent 55%), rgba(14,36,28,0.42); backdrop-filter: blur(10px) saturate(1.1); -webkit-backdrop-filter: blur(10px) saturate(1.1); animation: sc-fade .25s ease both; }
+.sc-modal {
+  border-radius: 28px; overflow: hidden; isolation: isolate;
+  background: linear-gradient(180deg, rgba(255,255,255,0.97), rgba(251,249,242,0.96));
+  border: 1px solid rgba(255,255,255,0.95);
+  box-shadow: 0 50px 100px -40px rgba(14,48,36,0.55), 0 0 0 1px rgba(23,63,49,0.07), inset 0 1px 0 #fff;
+  animation: sc-pop .38s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+}
+/* dải sáng mờ phía trên */
+.sc-modal::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(360px 150px at 0% 0%, rgba(215,242,91,0.38), transparent 70%), radial-gradient(340px 170px at 100% 0%, rgba(70,155,126,0.20), transparent 70%); }
+.sc-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.25rem 1rem 1.5rem; border-bottom: 1px solid rgba(23,63,49,0.07); }
+.sc-modal-title { position: relative; padding-left: 0.85rem; color: #173f31; }
+.sc-modal-title::before { content: ''; position: absolute; left: 0; top: 50%; width: 4px; height: 1.15em; transform: translateY(-50%); border-radius: 4px; background: linear-gradient(180deg, #d7f25b, #469b7e); }
+.sc-modal-close { width: 2.25rem; height: 2.25rem; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: #475569;
+  background: rgba(255,255,255,0.8); border: 1px solid rgba(23,63,49,0.1); transition: transform .3s cubic-bezier(0.34,1.4,0.5,1), background .2s, color .2s; }
+.sc-modal-close:hover { transform: rotate(90deg); background: #173f31; color: #d7f25b; border-color: #173f31; }
+@keyframes sc-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sc-pop { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+/* nhãn + gợi ý */
+.sc-modal .field-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #3d5a4f; margin-bottom: 0.4rem; }
+.sc-modal .field-hint { color: #7c8f86; }
+
+/* ô nhập */
+.sc-modal .input { min-height: 2.75rem; border-radius: 14px; padding-left: 0.95rem; padding-right: 0.95rem;
+  background-color: rgba(255,255,255,0.9); border-color: #e3ddcc; color: #0f2a20; font-weight: 500;
+  box-shadow: 0 1px 2px rgba(23,63,49,0.04); transition: border-color .2s, box-shadow .2s, background-color .2s; }
+.sc-modal .input:hover:not(:disabled) { border-color: #c9d9cf; }
+.sc-modal .input:focus { background-color: #fff; border-color: #469b7e; box-shadow: 0 0 0 4px rgba(70,155,126,0.16); outline: none; }
+.sc-modal textarea.input { padding-top: 0.65rem; padding-bottom: 0.65rem; }
+.sc-modal select.input { appearance: none; -webkit-appearance: none; padding-right: 2.4rem; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23469b7e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.85rem center; background-size: 16px; }
+.sc-modal select.input[data-dt-part] { padding-right: 2rem !important; background-position: right 0.6rem center; }
+.sc-modal .input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.55; filter: invert(43%) sepia(37%) saturate(560%) hue-rotate(108deg); }
+.sc-modal .input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+.sc-modal [data-dt24] .font-bold { color: #469b7e; }
+
+/* khung ghi chú / ô chọn ảnh trong form */
+.sc-note { background: linear-gradient(135deg, rgba(215,242,91,0.22), rgba(70,155,126,0.10)); border: 1px solid rgba(70,155,126,0.22); }
+.sc-modal [data-testid=image-picker] { border-color: #d5dccb; background: rgba(255,255,255,0.55); }
+.sc-modal [data-testid=image-picker]:hover { border-color: #469b7e; background: rgba(70,155,126,0.06); }
+
+/* hàng nút cuối form */
+.sc-modal .modal-body .justify-end:last-child:has(> [class*="btn-"]),
+.sc-modal .modal-actions { margin-top: 1.25rem; padding-top: 1.1rem; border-top: 1px dashed rgba(23,63,49,0.12); }
+.sc-modal :is(.btn-primary, .btn-secondary, .btn-danger) { border-radius: 999px; padding: 0.6rem 1.35rem; font-weight: 700; transition: transform .2s, box-shadow .2s, background .2s; }
+.sc-modal .btn-primary { background: linear-gradient(135deg, #24604a, #173f31); color: #fff; box-shadow: 0 10px 22px -10px rgba(23,63,49,0.7), inset 0 1px 0 rgba(255,255,255,0.15); }
+.sc-modal .btn-primary:hover:not(:disabled) { transform: translateY(-1px); background: linear-gradient(135deg, #2c7258, #1b4a39); color: #d7f25b; box-shadow: 0 14px 26px -10px rgba(23,63,49,0.75); }
+.sc-modal .btn-secondary { background: rgba(255,255,255,0.85); border-color: #e3ddcc; color: #334155; }
+.sc-modal .btn-secondary:hover { background: #fff; border-color: #c9d9cf; }
+.sc-modal .btn-danger { box-shadow: 0 10px 22px -10px rgba(225,29,72,0.6); }
+.sc-modal .btn-danger:hover:not(:disabled) { transform: translateY(-1px); }
+
+/* --- chế độ tối --- */
+html.theme-dark body:has(.app-shell) .sc-backdrop { background: radial-gradient(circle at 30% 20%, rgba(70,155,126,0.18), transparent 55%), rgba(2,8,6,0.6); }
+html.theme-dark body:has(.app-shell) .sc-modal { background: linear-gradient(180deg, rgba(22,37,31,0.98), rgba(14,25,21,0.97)); border-color: rgba(255,255,255,0.08); box-shadow: 0 50px 100px -40px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05); }
+html.theme-dark body:has(.app-shell) .sc-modal::before { background: radial-gradient(360px 150px at 0% 0%, rgba(215,242,91,0.12), transparent 70%), radial-gradient(340px 170px at 100% 0%, rgba(70,155,126,0.16), transparent 70%); }
+html.theme-dark body:has(.app-shell) .sc-modal-head { border-bottom-color: rgba(255,255,255,0.07); }
+html.theme-dark body:has(.app-shell) .sc-modal-title { color: #eef5f1; }
+html.theme-dark body:has(.app-shell) .sc-modal-close { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #c6d4cd; }
+html.theme-dark body:has(.app-shell) .sc-modal-close:hover { background: #d7f25b; color: #173f31; }
+html.theme-dark body:has(.app-shell) .sc-modal .field-label { color: #9fbfb1; }
+html.theme-dark body:has(.app-shell) .sc-modal .field-hint { color: #6f857b; }
+html.theme-dark body:has(.app-shell) .sc-modal .input { border-color: rgba(255,255,255,0.1); box-shadow: none; }
+html.theme-dark body:has(.app-shell) .sc-modal .input:focus { border-color: #5bb592; box-shadow: 0 0 0 4px rgba(91,181,146,0.18); }
+html.theme-dark body:has(.app-shell) .sc-modal .input::-webkit-calendar-picker-indicator { filter: invert(80%) sepia(20%) saturate(500%) hue-rotate(100deg); }
+html.theme-dark body:has(.app-shell) .sc-note { background: linear-gradient(135deg, rgba(215,242,91,0.08), rgba(70,155,126,0.12)); border-color: rgba(70,155,126,0.3); }
+html.theme-dark body:has(.app-shell) .sc-modal [data-testid=image-picker] { border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.03); }
+html.theme-dark body:has(.app-shell) .sc-modal .modal-body .justify-end:last-child:has(> [class*="btn-"]),
+html.theme-dark body:has(.app-shell) .sc-modal .modal-actions { border-top-color: rgba(255,255,255,0.1); }
+html.theme-dark body:has(.app-shell) .sc-modal .btn-primary { background: linear-gradient(135deg, #2f7a5f, #1f5a45) !important; }
+html.theme-dark body:has(.app-shell) .sc-modal .btn-primary:hover:not(:disabled) { color: #d7f25b; }
+html.theme-dark body:has(.app-shell) .sc-modal .btn-secondary { border-color: rgba(255,255,255,0.12); }
+@media (prefers-reduced-motion: reduce) { .sc-modal, .sc-backdrop { animation: none; } }
+.sc-modal .peer:checked ~ .peer-checked\:bg-brand-sand\/60 { background: linear-gradient(135deg, rgba(215,242,91,0.28), rgba(70,155,126,0.10)); border-color: #469b7e; box-shadow: 0 8px 20px -14px rgba(23,63,49,0.6); }
+.sc-modal label:hover > .peer:not(:checked) ~ .rounded-xl { border-color: #c9d9cf; }
+
+/* ======================================================================
+   Ô CHỌN TỰ VẼ (src/core/selectBox.js) — thay danh sách xanh dương của trình duyệt
+   ====================================================================== */
+.sc-dd { position: relative; display: flex !important; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; padding-right: 2.4rem !important; background-image: none !important; }
+.sc-dd .sc-dd-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; margin: 0; }
+.sc-dd-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-dd.is-empty .sc-dd-label { color: #94a3b8; }
+.sc-dd-chev { position: absolute; right: 0.8rem; top: 50%; width: 16px; height: 16px; margin-top: -8px; transition: transform .25s cubic-bezier(0.34,1.4,0.5,1);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23469b7e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / 16px no-repeat; }
+.sc-dd[class*="!pr-8"] .sc-dd-chev { right: 0.55rem; }
+.sc-dd.is-open .sc-dd-chev { transform: rotate(180deg); }
+.sc-dd.is-open, .sc-dd:focus-visible { border-color: #469b7e !important; box-shadow: 0 0 0 4px rgba(70,155,126,0.16) !important; outline: none; }
+.sc-dd.is-disabled { cursor: not-allowed; opacity: 0.6; }
+
+.sc-dd-panel { position: fixed; z-index: 70; overflow-y: auto; overscroll-behavior: contain; padding: 0.35rem; border-radius: 16px;
+  background: rgba(255,255,255,0.96); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(23,63,49,0.1); box-shadow: 0 24px 50px -20px rgba(14,48,36,0.45), 0 0 0 1px rgba(255,255,255,0.8) inset;
+  transform-origin: top center; animation: sc-dd-in .16s ease-out both; }
+.sc-dd-panel.is-up { transform-origin: bottom center; }
+.sc-dd-panel.is-leaving { animation: sc-dd-out .12s ease-in both; pointer-events: none; }
+@keyframes sc-dd-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes sc-dd-out { to { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+.sc-dd-panel::-webkit-scrollbar { width: 8px; }
+.sc-dd-panel::-webkit-scrollbar-thumb { background: rgba(70,155,126,0.3); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+.sc-dd-opt { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.55rem 0.75rem; border-radius: 11px;
+  font-size: 0.875rem; font-weight: 500; color: #1e3a30; cursor: pointer; white-space: nowrap; transition: background .12s, color .12s; }
+.sc-dd-opt.is-active { background: rgba(70,155,126,0.12); color: #173f31; }
+.sc-dd-opt.is-selected { background: linear-gradient(135deg, #24604a, #173f31); color: #fff; font-weight: 700; }
+.sc-dd-opt.is-selected.is-active { background: linear-gradient(135deg, #2c7258, #1b4a39); }
+.sc-dd-opt.is-placeholder:not(.is-selected) { color: #94a3b8; }
+.sc-dd-opt.is-disabled { opacity: 0.45; cursor: not-allowed; }
+.sc-dd-check { width: 15px; height: 15px; flex: none; visibility: hidden;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d7f25b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 15px no-repeat; }
+.sc-dd-opt.is-selected .sc-dd-check { visibility: visible; }
+
+/* chế độ tối */
+html.theme-dark body:has(.app-shell) .sc-dd.is-empty .sc-dd-label { color: #6b7f76; }
+html.theme-dark body:has(.app-shell) .sc-dd-chev { filter: brightness(1.5); }
+html.theme-dark body:has(.app-shell) .sc-dd.is-open { border-color: #5bb592 !important; box-shadow: 0 0 0 4px rgba(91,181,146,0.18) !important; }
+html.theme-dark body:has(.app-shell) .sc-dd-panel { background: rgba(18,31,26,0.97); border-color: rgba(255,255,255,0.1); box-shadow: 0 24px 50px -18px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05); }
+html.theme-dark body:has(.app-shell) .sc-dd-opt { color: #c6d4cd; }
+html.theme-dark body:has(.app-shell) .sc-dd-opt.is-active { background: rgba(255,255,255,0.07); color: #fff; }
+html.theme-dark body:has(.app-shell) .sc-dd-opt.is-selected { background: linear-gradient(135deg, #2f7a5f, #1f5a45); color: #fff; }
+html.theme-dark body:has(.app-shell) .sc-dd-opt.is-placeholder:not(.is-selected) { color: #6b7f76; }
+@media (prefers-reduced-motion: reduce) { .sc-dd-panel, .sc-dd-panel.is-leaving { animation: none; } }
+
+/* ======================================================================
+   HIỆU ỨNG NÚT THÊM / SỬA / XÓA (mọi vai trò) — nhận diện theo icon lucide
+   ====================================================================== */
+:is(.btn-ghost, .btn-primary, .btn-secondary, .btn-danger):not(.absolute):not(.fixed):not(.sticky) { position: relative; }
+:is(.btn-ghost, .btn-primary, .btn-secondary, .btn-danger) { overflow: hidden; isolation: isolate; }
+/* gợn sóng khi bấm (src/core/effects.js) */
+.btn-ripple { position: absolute; border-radius: 999px; pointer-events: none; z-index: -1; background: currentColor; opacity: 0.28; transform: scale(0); animation: btn-ripple .55s ease-out forwards; }
+@keyframes btn-ripple { to { transform: scale(1); opacity: 0; } }
+
+/* --- nút icon trong bảng / thẻ --- */
+.btn-ghost.btn-sm { transition: background-color .2s, color .2s, box-shadow .25s, transform .25s cubic-bezier(0.34,1.6,0.5,1); }
+.btn-ghost.btn-sm:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 18px -10px rgba(23,63,49,0.55); }
+.btn-ghost.btn-sm:active:not(:disabled) { transform: translateY(0) scale(0.88); box-shadow: none; transition-duration: .08s; }
+.btn-ghost.btn-sm svg { transition: transform .3s cubic-bezier(0.34,1.6,0.5,1); }
+
+/* sửa: nền xanh, bút "viết" */
+.btn-ghost.btn-sm:has(svg:is(.lucide-pencil, .lucide-user-pen, .lucide-square-pen)):hover:not(:disabled) { background: rgba(70,155,126,0.16); color: #173f31; }
+.btn-ghost.btn-sm:hover:not(:disabled) svg:is(.lucide-pencil, .lucide-user-pen, .lucide-square-pen) { animation: fx-write .6s ease-in-out; }
+@keyframes fx-write { 0%,100% { transform: none; } 25% { transform: translate(-1px, 1px) rotate(-16deg); } 50% { transform: translate(1px, -1px) rotate(8deg); } 75% { transform: translate(-1px, 1px) rotate(-8deg); } }
+
+/* xóa / hủy / ngừng bán / khóa (nút đỏ): nền đỏ đặc, icon lắc */
+.btn-ghost.btn-sm.text-rose-600:hover:not(:disabled) { background: linear-gradient(135deg, #fb7185, #e11d48) !important; color: #fff !important; box-shadow: 0 10px 20px -10px rgba(225,29,72,0.75); }
+.btn-ghost.btn-sm:hover:not(:disabled) svg:is(.lucide-trash-2, .lucide-trash, .lucide-calendar-x, .lucide-calendar-x-2, .lucide-archive, .lucide-x, .lucide-ban, .lucide-lock, .lucide-user-x) { animation: fx-shake .5s ease-in-out; }
+@keyframes fx-shake { 0%,100% { transform: none; } 20% { transform: rotate(-14deg) scale(1.12); } 40% { transform: rotate(12deg) scale(1.12); } 60% { transform: rotate(-8deg) scale(1.08); } 80% { transform: rotate(5deg); } }
+
+/* mở khóa / kích hoạt (nút xanh): nền xanh đặc */
+.btn-ghost.btn-sm.text-emerald-700:hover:not(:disabled) { background: linear-gradient(135deg, #3a8e70, #1f5a45) !important; color: #fff !important; box-shadow: 0 10px 20px -10px rgba(23,63,49,0.7); }
+
+/* các nút còn lại (đổi HLV, xem, học viên...): icon nảy */
+.btn-ghost.btn-sm:not(.text-rose-600):not(.text-emerald-700):not(:has(svg:is(.lucide-pencil, .lucide-user-pen, .lucide-square-pen))):hover:not(:disabled) { background: rgba(215,242,91,0.35); color: #173f31; }
+.btn-ghost.btn-sm:hover:not(:disabled) svg:is(.lucide-user-cog, .lucide-users, .lucide-eye, .lucide-user-check, .lucide-unlock, .lucide-lock-open, .lucide-check, .lucide-printer, .lucide-history, .lucide-file-text, .lucide-copy, .lucide-download) { animation: fx-pop .45s cubic-bezier(0.34,1.6,0.5,1); }
+.btn-ghost.btn-sm:hover:not(:disabled) svg:is(.lucide-refresh-cw, .lucide-rotate-cw, .lucide-rotate-ccw, .lucide-undo-2) { animation: fx-spin .6s ease-in-out; }
+@keyframes fx-pop { 0% { transform: scale(1); } 45% { transform: scale(1.35) rotate(-8deg); } 100% { transform: scale(1); } }
+@keyframes fx-spin { to { transform: rotate(360deg); } }
+
+/* --- nút thêm (nút chính có dấu +) --- */
+.btn-primary { transition: background-color .2s, transform .25s cubic-bezier(0.34,1.6,0.5,1), box-shadow .25s; }
+.btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 26px -12px rgba(23,63,49,0.7); }
+.btn-primary:active:not(:disabled) { transform: scale(0.95); transition-duration: .08s; }
+.btn-primary::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%); transform: translateX(-120%); }
+.btn-primary:hover:not(:disabled)::after { transform: translateX(120%); transition: transform .7s ease; }
+.btn-primary svg { transition: transform .4s cubic-bezier(0.34,1.6,0.5,1); }
+.btn-primary:hover:not(:disabled) svg:is(.lucide-plus, .lucide-package-plus, .lucide-user-plus, .lucide-calendar-plus, .lucide-clipboard-plus, .lucide-message-square-plus, .lucide-image-plus) { transform: rotate(90deg) scale(1.15); }
+.btn-primary:hover:not(:disabled) svg:is(.lucide-package-plus, .lucide-user-plus, .lucide-calendar-plus, .lucide-clipboard-plus, .lucide-message-square-plus, .lucide-image-plus) { transform: scale(1.2) rotate(-8deg); }
+.btn-primary:hover:not(:disabled) svg:is(.lucide-save, .lucide-check, .lucide-send) { transform: translateY(-1px) scale(1.15); }
+.btn-secondary { transition: background-color .2s, border-color .2s, transform .25s cubic-bezier(0.34,1.6,0.5,1); }
+.btn-secondary:active:not(:disabled), .btn-danger:active:not(:disabled) { transform: scale(0.95); }
+
+/* chế độ tối */
+html.theme-dark body:has(.app-shell) .btn-ghost.btn-sm:has(svg:is(.lucide-pencil, .lucide-user-pen, .lucide-square-pen)):hover:not(:disabled) { background: rgba(91,181,146,0.2) !important; color: #d7f25b !important; }
+html.theme-dark body:has(.app-shell) .btn-ghost.btn-sm:not(.text-rose-600):not(.text-emerald-700):not(:has(svg:is(.lucide-pencil, .lucide-user-pen, .lucide-square-pen))):hover:not(:disabled) { background: rgba(215,242,91,0.14) !important; color: #d7f25b !important; }
+html.theme-dark body:has(.app-shell) .btn-ghost.btn-sm:hover:not(:disabled) { box-shadow: 0 8px 18px -10px rgba(0,0,0,0.9); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-ghost.btn-sm, .btn-ghost.btn-sm svg, .btn-primary, .btn-primary svg { transition: none !important; animation: none !important; }
+  .btn-ghost.btn-sm:hover, .btn-primary:hover { transform: none !important; }
+  .btn-primary::after, .btn-ripple { display: none; }
+}

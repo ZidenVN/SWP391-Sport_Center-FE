@@ -2,7 +2,7 @@ import { html, raw, icon } from '../core/dom.js';
 import { openModal, loading, errorState, toast } from '../core/ui.js';
 import { packageApi, receptionApi } from '../api/endpoints.js';
 import { money, date, fullName, phoneText } from '../core/format.js';
-import { renewalWindow } from './billing.js';
+import { packageScope, packageKind } from './billing.js';
 import { openInvoice } from './invoice.js';
 
 const METHODS = [
@@ -16,7 +16,8 @@ const QUICK_CASH = [100000, 200000, 500000, 1000000];
 
 // Hộp bán / gia hạn gói tại quầy. onDone(subscription) gọi sau khi bán thành công.
 export function openSellPackage({ member, onDone, packageId: preselect }) {
-  const st = { packages: [], subscriptions: [], packageId: null, method: 'CASH', cash: '', ref: '', busy: false, error: null, sold: null };
+  // preview: GET /receptionist/members/{id}/subscriptions/preview?packageId= (ngày dự kiến + cảnh báo gói trùng khu tập)
+  const st = { packages: [], packageId: null, preview: null, method: 'CASH', cash: '', ref: '', busy: false, error: null, sold: null };
 
   const pkg = () => st.packages.find(p => p.packageId === st.packageId);
 
@@ -58,7 +59,9 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
 
   function formView() {
     const p = pkg();
-    const win = p ? renewalWindow(st.subscriptions, p.durationDays) : null;
+    const pv = st.preview && st.preview.packageId === st.packageId ? st.preview : null;
+    const start = pv ? new Date(pv.startDate) : null;
+    const isRenewal = Boolean(start && start.getTime() - Date.now() > 60000);
     const active = st.packages.filter(x => x.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays);
     const cashShort = st.method === 'CASH' && p && Number(st.cash || 0) < p.price;
     const blocked = cashShort || refMissing();
@@ -77,8 +80,9 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
               class="text-left rounded-2xl border-2 p-4 transition-colors ${on ? 'border-teal-600 bg-teal-50/60' : 'border-slate-200 hover:border-slate-300'}">
               <div class="flex justify-between items-start gap-2">
                 <span class="font-bold text-sm">${x.packageName}</span>
-                <span class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100">${x.durationDays} ngày</span>
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 whitespace-nowrap">${x.durationDays} ngày</span>
               </div>
+              <div class="text-[11px] text-slate-500 mt-1">${packageKind(x)} · ${packageScope(x)}</div>
               <div class="text-xl font-black mt-2">${money(x.price)}</div>
             </button>`;
         })}
@@ -100,8 +104,13 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
 
       ${p ? html`
         <div class="rounded-2xl border border-slate-200 p-4 mt-5 text-sm space-y-1.5" data-testid="sell-summary">
-          <div class="flex justify-between"><span class="text-slate-500">Loại giao dịch</span><b>${win.isRenewal ? 'Gia hạn nối tiếp' : 'Đăng ký mới'}</b></div>
-          <div class="flex justify-between"><span class="text-slate-500">Hiệu lực</span><b>${date(win.start)} → ${date(win.end)}</b></div>
+          <div class="flex justify-between"><span class="text-slate-500">Loại giao dịch</span><b>${pv ? (isRenewal ? 'Gia hạn nối tiếp' : 'Đăng ký mới') : '…'}</b></div>
+          <div class="flex justify-between"><span class="text-slate-500">Hiệu lực</span><b data-testid="sell-dates">${pv ? `${date(pv.startDate)} → ${date(pv.endDate)}` : 'Đang tính...'}</b></div>
+          ${pv?.warnings?.length ? html`
+            <div class="mt-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 p-3 text-xs space-y-1" data-testid="sell-warnings">
+              <div class="font-bold flex items-center gap-1.5">${icon('alert-triangle', 'w-4 h-4')} Hội viên đang có gói dùng được cùng khu tập</div>
+              ${pv.warnings.map(w => html`<div>${w.packageName} · còn ${w.daysLeft} ngày${w.remainingSessions != null ? ` · ${w.remainingSessions} buổi` : ''} — ${w.message}</div>`)}
+            </div>` : ''}
           <div class="flex justify-between items-end pt-2 mt-2 border-t border-dashed border-slate-200">
             <span class="font-bold">Tổng thu</span><span class="text-2xl font-black">${money(p.price)}</span>
           </div>
@@ -141,7 +150,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     size: 'max-w-2xl',
     body: loading(),
     actions: {
-      'pick-package': btn => { st.packageId = Number(btn.dataset.id); st.error = null; rerender(); },
+      'pick-package': btn => { st.packageId = Number(btn.dataset.id); st.error = null; rerender(); loadPreview(); },
       'pick-method': btn => { st.method = btn.dataset.method; st.error = null; rerender(); },
       'cash-quick': btn => { st.cash = btn.dataset.value; rerender(); },
       cash: input => {
@@ -210,18 +219,25 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     }
   });
 
+  // hỏi BE ngày hiệu lực dự kiến cho gói đang chọn (bỏ kết quả cũ nếu đã chọn gói khác)
+  const loadPreview = async () => {
+    const id = st.packageId;
+    if (!id) return;
+    const pv = await receptionApi.purchasePreview(member.memberId, id).catch(() => null);
+    if (st.packageId !== id || st.sold) return;
+    st.preview = pv;
+    rerender();
+  };
+
   const load = async () => {
     try {
-      const [packages, subscriptions] = await Promise.all([
-        packageApi.list(),
-        receptionApi.subscriptions(member.memberId).catch(() => [])
-      ]);
+      const packages = await packageApi.list();
       st.packages = packages;
-      st.subscriptions = subscriptions;
       const first = packages.filter(p => p.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays)[0];
       const chosen = packages.find(p => p.packageId === Number(preselect) && p.status === 'ACTIVE');
       st.packageId = chosen ? chosen.packageId : first ? first.packageId : null;
       rerender();
+      loadPreview();
     } catch (err) {
       modal.setBody(errorState(err));
     }

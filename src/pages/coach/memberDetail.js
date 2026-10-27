@@ -6,8 +6,6 @@ import { fullName, genderLabel, phoneText } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { planList, resultList, progressSummary } from '../../components/training.js';
 import { openPlanForm, openResultForm, openNotifyForm } from '../../components/coachForms.js';
-import { openAiSuggest } from '../../components/aiSuggest.js';
-import { FEATURES } from '../../core/features.js';
 
 function view(s) {
   const m = s.member;
@@ -33,7 +31,6 @@ function view(s) {
         </div>
       </div>
       <div class="flex flex-wrap gap-2 md:flex-col md:items-stretch">
-        ${FEATURES.coachAi ? html`<button type="button" class="btn-lime btn-sm" data-action="ai" data-testid="ai-suggest">${icon('sparkles', 'w-3.5 h-3.5')} Gợi ý bài tập AI</button>` : ''}
         <button type="button" class="btn-primary btn-sm" data-action="new-result" data-testid="new-result">${icon('activity', 'w-3.5 h-3.5')} Ghi kết quả</button>
         <button type="button" class="btn-secondary btn-sm" data-action="new-plan" data-testid="new-plan">${icon('clipboard-plus', 'w-3.5 h-3.5')} Giao giáo án</button>
         <button type="button" class="btn-secondary btn-sm" data-action="notify" data-testid="notify-member">${icon('send', 'w-3.5 h-3.5')} Gửi thông báo</button>
@@ -72,10 +69,6 @@ export default function CoachMemberDetail(el, { params, query }) {
       'new-plan': (t, e, ctx) => openPlanForm({
         preset: { targetType: 'INDIVIDUAL', targetId: memberId, label: fullName(ctx.state.member) },
         onDone: () => { ctx.state.tab = 'plans'; ctx.reload(); }
-      }),
-      ai: (t, e, ctx) => openAiSuggest({
-        member: ctx.state.member,
-        onAssigned: () => { ctx.state.tab = 'plans'; ctx.reload(); }
       }),
       notify: (t, e, ctx) => openNotifyForm({
         title: `Gửi thông báo cho ${fullName(ctx.state.member)}`,

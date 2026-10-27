@@ -1,5 +1,4 @@
 import { html, raw, icon } from '../core/dom.js';
-import { toDate } from '../core/format.js';
 
 // Gói ACTIVE có ngày hết hạn xa nhất (khi đã gia hạn nối tiếp sẽ có nhiều gói ACTIVE)
 export function latestActive(subscriptions) {
@@ -8,15 +7,19 @@ export function latestActive(subscriptions) {
     .sort((a, b) => String(b.endDate).localeCompare(String(a.endDate)))[0] || null;
 }
 
-// Giống logic BE: còn gói thì gói mới bắt đầu ngay khi gói xa nhất hết hạn, không thì bắt đầu từ bây giờ
-export function renewalWindow(subscriptions, durationDays) {
-  const latest = latestActive(subscriptions);
-  const now = new Date();
-  const latestEnd = latest ? toDate(latest.endDate) : null;
-  const isRenewal = Boolean(latestEnd && latestEnd > now);
-  const start = isRenewal ? latestEnd : now;
-  const end = new Date(start.getTime() + durationDays * 86400000);
-  return { start, end, isRenewal, latest };
+// Phạm vi gói (BE main): FREE không gắn môn = toàn trung tâm; có môn thì liệt kê tên môn.
+// Dùng được cho cả gói (package.subjects) lẫn gói đã mua (subscription.subjects / wholeCenter)
+export function packageScope(p) {
+  const names = (p?.subjects || []).map(x => x.subjectName).filter(Boolean);
+  if (names.length) return names.join(', ');
+  if (p?.packageType === 'FREE' || p?.wholeCenter) return 'Toàn trung tâm (khu tập tự do)';
+  return 'Chưa gắn môn';
+}
+
+// Nhãn ngắn loại gói + số buổi: "Theo lớp · 12 buổi", "Tập tự do"
+export function packageKind(p) {
+  if (p?.packageType === 'FREE') return 'Tập tự do';
+  return p?.sessionLimit ? `Theo lớp · ${p.sessionLimit} buổi` : 'Theo lớp · không giới hạn buổi';
 }
 
 // Gói rẻ nhất tính theo ngày (chỉ đánh dấu khi có từ 2 gói trở lên)

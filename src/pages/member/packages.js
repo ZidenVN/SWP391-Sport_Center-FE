@@ -4,7 +4,7 @@ import { mountPage, settle } from '../../core/page.js';
 import { packageApi, memberApi } from '../../api/endpoints.js';
 import { money, date, daysUntil, toDate } from '../../core/format.js';
 import { expiryBanner } from '../../components/memberAlerts.js';
-import { latestActive, bestValueId, vnpayMark } from '../../components/billing.js';
+import { latestActive, bestValueId, vnpayMark, packageScope, packageKind } from '../../components/billing.js';
 import { session } from '../../core/session.js';
 import { quizStore, recommendPackage } from '../../core/quiz.js';
 
@@ -48,7 +48,8 @@ function planCard(p, { best, isRenewal, suggested }) {
   const perDay = p.durationDays ? Math.round(p.price / p.durationDays) : null;
   const perks = [
     `${p.durationDays} ngày tập kể từ ngày kích hoạt`,
-    'Đặt lớp không giới hạn trong thời hạn gói',
+    p.packageType === 'FREE' ? 'Vào khu tập tự do, không kèm đăng ký lớp' : p.sessionLimit ? `Đặt tối đa ${p.sessionLimit} buổi lớp, hủy lớp được hoàn buổi` : 'Đặt lớp không giới hạn trong thời hạn gói',
+    `Áp dụng: ${packageScope(p)}`,
     'Nhận giáo án & nhận xét từ huấn luyện viên',
     isRenewal ? 'Cộng nối tiếp, không mất ngày còn lại' : 'Kích hoạt ngay sau khi thanh toán'
   ];
@@ -62,7 +63,7 @@ function planCard(p, { best, isRenewal, suggested }) {
       </div>
       <div class="flex items-center justify-between">
         <div class="text-sm font-bold ${best ? 'text-white' : 'text-slate-900'}">${p.packageName}</div>
-        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${best ? 'bg-white/15' : 'bg-brand-sand text-slate-700'}">${p.durationDays} ngày</span>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${best ? 'bg-white/15' : 'bg-brand-sand text-slate-700'}" data-testid="package-kind">${packageKind(p)}</span>
       </div>
       <div class="mt-5 flex items-end gap-1">
         <span class="font-display text-5xl font-extrabold tracking-tight ${best ? 'text-brand-lime' : 'text-brand-dark'}">${money(p.price).replace(' ₫', '')}</span>

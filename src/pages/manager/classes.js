@@ -160,7 +160,7 @@ function createForm(s) {
     </div>
     ${field('Sĩ số tối đa', input('maxCapacity', { type: 'number', value: 20, required: true, attrs: 'min="1"' }), 'Không vượt quá sức chứa của phòng')}
     ${imageField({}, { required: true })}
-    <div class="rounded-xl bg-brand-sand/70 p-3 text-sm text-slate-700 flex gap-2" data-testid="session-preview"></div>`;
+    <div class="sc-note rounded-2xl p-3.5 text-sm text-slate-700 flex gap-2.5" data-testid="session-preview"></div>`;
 }
 
 function createValidator(s) {

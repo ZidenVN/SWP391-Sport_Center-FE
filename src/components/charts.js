@@ -1,4 +1,5 @@
 import { money } from '../core/format.js';
+import { styleChart } from '../core/theme.js';
 
 // Bảng màu biểu đồ theo tông trang giới thiệu: xanh thương hiệu, xanh rừng, vàng chanh rồi mới tới màu phụ
 export const CHART_COLORS = ['#469B7E', '#173F31', '#C4DE3F', '#F59E0B', '#8EBFA6', '#94A3B8'];
@@ -21,7 +22,7 @@ export async function drawChart(root, id, config) {
   const canvas = root.querySelector(`#${id}`);
   if (!canvas) return null;
   Chart.getChart(canvas)?.destroy();
-  return new Chart(canvas, {
+  const chart = new Chart(canvas, {
     ...config,
     options: {
       responsive: true,
@@ -30,6 +31,10 @@ export async function drawChart(root, id, config) {
       ...config.options
     }
   });
+  // màu chữ / lưới theo chế độ sáng / tối
+  styleChart(chart);
+  chart.update('none');
+  return chart;
 }
 
 export function revenueLine(points) {

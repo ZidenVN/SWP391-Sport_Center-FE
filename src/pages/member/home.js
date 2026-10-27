@@ -7,6 +7,7 @@ import { date, dateTime, daysUntil, weekday, timeRange, badge, isPlaceholderPhon
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
 import { quizStore } from '../../core/quiz.js';
+import { packageScope } from '../../components/billing.js';
 
 function subscriptionCard(sub) {
   if (!sub) {
@@ -33,6 +34,8 @@ function subscriptionCard(sub) {
       <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
         <div><div class="text-white/50 text-xs">Bắt đầu</div><div class="font-semibold">${date(sub.startDate)}</div></div>
         <div><div class="text-white/50 text-xs">Hết hạn</div><div class="font-semibold">${date(sub.endDate)}</div></div>
+        <div class="col-span-2"><div class="text-white/50 text-xs">Áp dụng</div><div class="font-semibold" data-testid="sub-scope">${packageScope(sub)}${sub.remainingSessions != null ? html` · <span class="text-brand-lime">còn ${sub.remainingSessions}/${sub.sessionLimit} buổi</span>` : ''}</div></div>
+        ${(sub.all || []).length > 1 ? html`<div class="col-span-2 text-xs text-white/60">+${sub.all.length - 1} gói khác đang hiệu lực</div>` : ''}
       </div>
       <a href="#/member/packages" class="btn-lime mt-5">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</a>
       </div>

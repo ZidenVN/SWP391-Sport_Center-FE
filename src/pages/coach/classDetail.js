@@ -6,7 +6,7 @@ import { badge, date, dateTime, weekday, timeRange, fullName, genderLabel, toDat
 import { memberAvatar } from '../../components/memberPicker.js';
 import { planList } from '../../components/training.js';
 import { openPlanForm, openNotifyForm } from '../../components/coachForms.js';
-import { subjectColor } from '../../components/classCard.js';
+import { subjectColor, classImage } from '../../components/classCard.js';
 
 const ATTENDANCE = [
   { id: 'PRESENT', label: 'Có mặt', on: 'peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600' },
@@ -19,8 +19,10 @@ function hero(c) {
   const pct = c.maxCapacity ? Math.round((c.currentEnrolled / c.maxCapacity) * 100) : 0;
   return html`
     <a href="#/coach/schedule" class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800 mb-3">${icon('arrow-left', 'w-4 h-4')} Lịch dạy</a>
-    <div class="rounded-3xl p-6 bg-gradient-to-br ${subjectColor(c.subjectName)} text-white mb-6 relative overflow-hidden" data-testid="class-hero">
-      <div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-white/10"></div>
+    <div class="rounded-3xl p-6 pt-24 sm:pt-28 bg-gradient-to-br ${subjectColor(c.subjectName)} text-white mb-6 relative overflow-hidden" data-testid="class-hero">
+      <!-- ảnh lớp (imageUrl từ GET /coaches/me/schedules, null -> ảnh mặc định theo môn) -->
+      <div class="absolute inset-0">${classImage(c)}</div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10"></div>
       <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <div class="text-xs font-bold uppercase tracking-widest opacity-80">${weekday(c.startTime)} · ${date(c.startTime)}</div>
