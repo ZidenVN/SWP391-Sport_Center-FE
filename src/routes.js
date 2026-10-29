@@ -71,6 +71,7 @@ export const ROUTES = [
   { path: '/manager/packages', roles: CM, nav: { label: 'Gói tập', icon: 'package', group: 'Vận hành' }, load: () => import('./pages/manager/packages.js') },
   { path: '/manager/rooms', roles: CM, nav: { label: 'Phòng tập', icon: 'door-open', group: 'Vận hành' }, load: () => import('./pages/manager/rooms.js') },
   { path: '/manager/subjects', roles: CM, nav: { label: 'Bộ môn', icon: 'book-open', group: 'Vận hành' }, load: () => import('./pages/manager/subjects.js') },
+  { path: '/manager/quiz', roles: CM, nav: { label: 'Câu hỏi khảo sát', icon: 'clipboard-list', group: 'Vận hành' }, load: () => import('./pages/manager/quiz.js') },
   { path: '/manager/coaches', roles: CM, nav: { label: 'Huấn luyện viên', icon: 'medal', group: 'Nhân sự' }, load: () => import('./pages/manager/coaches.js') },
   { path: '/manager/staff', roles: CM, nav: { label: 'Lễ tân', icon: 'concierge-bell', group: 'Nhân sự' }, load: () => import('./pages/manager/staff.js') },
   { path: '/manager/users', roles: CM, nav: { label: 'Tài khoản', icon: 'users', group: 'Nhân sự' }, load: () => import('./pages/manager/users.js') },

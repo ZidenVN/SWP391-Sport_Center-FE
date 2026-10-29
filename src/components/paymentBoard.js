@@ -3,12 +3,12 @@ import { pageHeader, table, emptyState, field, input, textarea, toast } from '..
 import { mountPage } from '../core/page.js';
 import { money, dateTime, badge, paymentMethodLabel, isoDate } from '../core/format.js';
 import { openFormModal } from './crud.js';
+import { pagination, pagerActions, DEFAULT_PAGE_SIZE } from './pagination.js';
 
 // Danh sách giao dịch có lọc + phân trang phía BE, dùng chung cho Quản lý (/manager/payments) và Lễ tân (/receptionist/payments).
 // rowActions(payment) -> html các nút; actions: handler bổ sung (refund, confirm, invoice...)
 const STATUSES = [['', 'Mọi trạng thái'], ['COMPLETED', 'Hoàn tất'], ['PENDING', 'Chờ thanh toán'], ['CANCELLED', 'Đã hủy'], ['REFUNDED', 'Đã hoàn tiền'], ['FAILED', 'Thất bại']];
 const METHODS = [['', 'Mọi phương thức'], ['CASH', 'Tiền mặt'], ['BANK_TRANSFER', 'Chuyển khoản'], ['CARD', 'Thẻ'], ['E_WALLET', 'Ví điện tử'], ['VNPAY', 'VNPay']];
-const PAGE_SIZE = 20;
 
 const options = (list, selected) => list.map(([v, l]) => html`<option value="${v}" ${v === selected ? 'selected' : ''}>${l}</option>`);
 
@@ -25,19 +25,6 @@ function filterBar(f, extra) {
         ${extra || ''}
       </div>
     </form>`;
-}
-
-function pager(page) {
-  if (!page || page.totalPages <= 1) return '';
-  const n = page.number;
-  return html`
-    <div class="flex items-center justify-between px-5 py-3 border-t border-brand-line/60 text-sm" data-testid="pager">
-      <span class="text-slate-500">Trang ${n + 1}/${page.totalPages} · ${page.totalElements} giao dịch</span>
-      <div class="flex gap-2">
-        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n - 1}" ${n <= 0 ? 'disabled' : ''}>${icon('chevron-left', 'w-3.5 h-3.5')} Trước</button>
-        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n + 1}" ${n + 1 >= page.totalPages ? 'disabled' : ''}>Sau ${icon('chevron-right', 'w-3.5 h-3.5')}</button>
-      </div>
-    </div>`;
 }
 
 export function defaultFilters() {
@@ -67,16 +54,16 @@ export function mountPaymentBoard(el, { title, subtitle, list, headerActions = '
             html`${badge(p.status)}${p.note && p.status !== 'COMPLETED' ? html`<div class="text-[11px] text-slate-400 mt-0.5 max-w-[12rem] truncate" title="${p.note}">${p.note}</div>` : ''}`,
             html`<div class="flex justify-end gap-1">${rowActions ? rowActions(p) : ''}</div>`
           ])
-        })}${pager(page)}` : emptyState('Không có giao dịch phù hợp bộ lọc', 'receipt')}
+        })}${pagination(page, { unit: 'giao dịch' })}` : emptyState('Không có giao dịch phù hợp bộ lọc', 'receipt')}
       </div>`;
   };
 
   return mountPage(el, {
-    state: { filters: { ...defaultFilters(), ...initial }, pageNo: 0 },
+    state: { filters: { ...defaultFilters(), ...initial }, pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: async ctx => {
       const f = ctx.state.filters;
       if (f.fromDate && f.toDate && f.fromDate > f.toDate) throw new Error('Ngày bắt đầu phải trước ngày kết thúc');
-      return { page: await list({ ...f, keyword: f.keyword.trim(), page: ctx.state.pageNo, size: PAGE_SIZE }) };
+      return { page: await list({ ...f, keyword: f.keyword.trim(), page: ctx.state.pageNo, size: ctx.state.pageSize }) };
     },
     view,
     actions: {
@@ -90,7 +77,7 @@ export function mountPaymentBoard(el, { title, subtitle, list, headerActions = '
         ctx.state.pageNo = 0;
         ctx.reload();
       },
-      page: (t, e, ctx) => { ctx.state.pageNo = Math.max(0, Number(t.dataset.page)); ctx.reload(); },
+      ...pagerActions({ server: true }),
       ...actions
     }
   });

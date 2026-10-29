@@ -20,8 +20,11 @@ export function refreshNotificationBadge({ force = false } = {}) {
   if (session.role() !== 'MEMBER') return Promise.resolve();
   if (!force && (inflight || Date.now() - lastFetch < MIN_INTERVAL_MS)) return inflight || Promise.resolve();
   lastFetch = Date.now();
-  inflight = memberApi.notifications()
-    .then(items => setNotificationBadge(countUnread(items)))
+  // BE đếm sẵn số chưa đọc; endpoint cũ lỗi thì đếm từ danh sách
+  inflight = memberApi.unreadNotificationCount()
+    .then(r => Number(r?.count) || 0)
+    .catch(() => memberApi.notifications().then(countUnread))
+    .then(setNotificationBadge)
     .catch(() => { /* không làm phiền người dùng nếu lỗi badge */ })
     .finally(() => { inflight = null; });
   return inflight;

@@ -4,6 +4,7 @@ import { mountPage } from '../../core/page.js';
 import { roomApi } from '../../api/endpoints.js';
 import { badge } from '../../core/format.js';
 import { openFormModal, requireFields, confirmAction, rowActions, matches, searchBox } from '../../components/crud.js';
+import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 
 const STATUS_OPTIONS = [{ value: 'AVAILABLE', label: 'Sẵn sàng' }, { value: 'MAINTENANCE', label: 'Bảo trì' }];
 
@@ -24,13 +25,14 @@ const payload = d => ({ roomName: d.roomName, capacity: Number(d.capacity), stat
 
 function view(s) {
   const list = s.rooms.filter(r => r.status !== 'INACTIVE' && matches(s.keyword, [r.roomName]));
+  const page = paginate(list, s.pageNo, s.pageSize);
   return html`
     ${pageHeader('Phòng tập', 'Phòng dùng để xếp lớp — sức chứa lớp không được vượt sức chứa phòng',
       html`<button type="button" class="btn-primary" data-action="create" data-testid="create">${icon('plus', 'w-4 h-4')} Thêm phòng</button>`)}
     <div class="mb-5">${searchBox(s.keyword, 'Tìm phòng...')}</div>
     ${list.length ? html`
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="room-list">
-        ${list.map(r => html`
+        ${page.content.map(r => html`
           <div class="card p-5" data-testid="room-card">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
@@ -44,16 +46,17 @@ function view(s) {
               ${rowActions(r.roomId)}
             </div>
           </div>`)}
-      </div>` : emptyState('Chưa có phòng tập', 'door-open')}`;
+      </div>${pagination(page, { unit: 'phòng', standalone: true })}` : emptyState('Chưa có phòng tập', 'door-open')}`;
 }
 
 export default function ManagerRooms(el) {
   return mountPage(el, {
-    state: { keyword: '' },
+    state: { keyword: '', pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: async () => ({ rooms: await roomApi.list() }),
     view,
     actions: {
-      search: (t, e, ctx) => ctx.set({ keyword: t.value }),
+      search: (t, e, ctx) => ctx.set({ keyword: t.value, pageNo: 0 }),
+      ...pagerActions(),
       create: (t, e, ctx) => openFormModal({
         title: 'Thêm phòng tập', fields: form(), validate, success: 'Đã thêm phòng',
         submit: d => roomApi.create(payload(d)), onDone: () => ctx.reload()

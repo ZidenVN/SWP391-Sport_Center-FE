@@ -1,10 +1,11 @@
 import { html, icon } from '../../core/dom.js';
-import { pageHeader, emptyState, field, input, select, GENDER_OPTIONS } from '../../core/ui.js';
+import { pageHeader, emptyState, field, input, select, tabs, GENDER_OPTIONS } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { coachAdminApi, classApi, userApi } from '../../api/endpoints.js';
 import { badge, fullName, genderLabel, toDate } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
+import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 
 function form(c = {}) {
   const edit = Boolean(c.coachId);
@@ -38,19 +39,62 @@ const payload = d => ({
   email: d.email, specialty: d.specialty || null, password: d.password || null
 });
 
+const LOAD_OPTIONS = [['', 'Mọi lịch dạy'], ['BUSY', 'Có lớp sắp tới'], ['FREE', 'Chưa có lớp sắp tới'], ['NONE', 'Chưa từng dạy lớp']];
+const SORT_OPTIONS = [['name', 'Tên A → Z'], ['upcoming', 'Nhiều lớp sắp tới nhất'], ['total', 'Nhiều lớp nhất']];
+
+const statTile = (n, label, ic, tone) => html`
+  <div class="coach-stat ${tone} ${n ? '' : 'is-zero'}">
+    <span class="coach-stat-ic">${icon(ic, 'w-4 h-4')}</span>
+    <div><div class="coach-stat-num">${n}</div><div class="coach-stat-label">${label}</div></div>
+  </div>`;
+
 function view(s) {
   const now = new Date();
-  const list = s.coaches.filter(c => matches(s.keyword, [fullName(c), c.email, c.phone, c.speciality]));
+  // số lớp mỗi HLV, tính một lần cho cả lọc, sắp xếp và hiển thị
+  const stats = c => {
+    const classes = s.classes.filter(x => x.coachId === c.coachId);
+    return { total: classes.length, upcoming: classes.filter(x => toDate(x.endTime) >= now).length };
+  };
+  const statusOf = c => s.statusById[c.coachId] || 'ACTIVE';
+  const rows = s.coaches.map(c => ({ c, status: statusOf(c), ...stats(c) }));
+  const count = st => rows.filter(r => !st || r.status === st).length;
+  const specialties = [...new Set(s.coaches.map(c => (c.speciality || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+  const list = rows
+    .filter(r => !s.tab || r.status === s.tab)
+    .filter(r => !s.specialty || (s.specialty === '-' ? !(r.c.speciality || '').trim() : (r.c.speciality || '').trim() === s.specialty))
+    .filter(r => !s.load || (s.load === 'BUSY' ? r.upcoming > 0 : s.load === 'FREE' ? r.upcoming === 0 : r.total === 0))
+    .filter(r => matches(s.keyword, [fullName(r.c), r.c.email, r.c.phone, r.c.speciality]))
+    .sort((a, b) => (s.sort === 'upcoming' ? b.upcoming - a.upcoming : s.sort === 'total' ? b.total - a.total : 0)
+      || fullName(a.c).localeCompare(fullName(b.c), 'vi'));
+  const page = paginate(list, s.pageNo, s.pageSize);
+  const filtered = s.tab || s.specialty || s.load || s.keyword.trim();
   return html`
     ${pageHeader('Huấn luyện viên', 'Tạo tài khoản, cập nhật hồ sơ và khóa / mở HLV',
       html`<button type="button" class="btn-primary" data-action="create" data-testid="create">${icon('user-plus', 'w-4 h-4')} Thêm HLV</button>`)}
-    <div class="mb-5">${searchBox(s.keyword, 'Tìm tên, email, chuyên môn...')}</div>
+    <div>
+      ${tabs([
+        { id: '', label: 'Tất cả', count: count('') },
+        { id: 'ACTIVE', label: 'Hoạt động', count: count('ACTIVE') },
+        { id: 'INACTIVE', label: 'Đã khóa', count: count('INACTIVE') }
+      ], s.tab)}
+      <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 mb-5" data-testid="coach-filters">
+        <select class="input sm:w-48" name="specialty" data-action="specialty">
+          <option value="">Mọi chuyên môn</option>
+          ${specialties.map(v => html`<option value="${v}" ${s.specialty === v ? 'selected' : ''}>${v}</option>`)}
+          <option value="-" ${s.specialty === '-' ? 'selected' : ''}>Chưa có chuyên môn</option>
+        </select>
+        <select class="input sm:w-48" name="load" data-action="workload">
+          ${LOAD_OPTIONS.map(([v, l]) => html`<option value="${v}" ${s.load === v ? 'selected' : ''}>${l}</option>`)}
+        </select>
+        <select class="input sm:w-52" name="sort" data-action="sort">
+          ${SORT_OPTIONS.map(([v, l]) => html`<option value="${v}" ${s.sort === v ? 'selected' : ''}>${l}</option>`)}
+        </select>
+        ${searchBox(s.keyword, 'Tìm tên, email, chuyên môn...')}
+      </div>
+    </div>
     ${list.length ? html`
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="coach-list">
-        ${list.map(c => {
-          const status = s.statusById[c.coachId] || 'ACTIVE';
-          const classes = s.classes.filter(x => x.coachId === c.coachId);
-          const upcoming = classes.filter(x => toDate(x.endTime) >= now).length;
+        ${page.content.map(({ c, status, upcoming, total }) => {
           return html`
             <div class="card p-5 ${status === 'INACTIVE' ? 'opacity-70' : ''}" data-testid="coach-card">
               <div class="flex items-start gap-3">
@@ -64,9 +108,9 @@ function view(s) {
                 <div class="flex items-center gap-2">${icon('mail', 'w-3.5 h-3.5 text-slate-400')} <span class="truncate">${c.email}</span></div>
                 <div class="flex items-center gap-2">${icon('phone', 'w-3.5 h-3.5 text-slate-400')} ${c.phone || '—'} · ${genderLabel(c.gender)}</div>
               </div>
-              <div class="grid grid-cols-2 gap-2 mt-4 text-center">
-                <div class="rounded-xl bg-slate-50 py-2"><div class="text-lg font-extrabold">${upcoming}</div><div class="text-[11px] text-slate-500">Lớp sắp tới</div></div>
-                <div class="rounded-xl bg-slate-50 py-2"><div class="text-lg font-extrabold">${classes.length}</div><div class="text-[11px] text-slate-500">Tổng lớp</div></div>
+              <div class="grid grid-cols-2 gap-2 mt-4">
+                ${statTile(upcoming, 'Lớp sắp tới', 'calendar-clock', 'is-hot')}
+                ${statTile(total, 'Tổng lớp', 'layers', 'is-soft')}
               </div>
               <div class="flex justify-end gap-1 mt-4 pt-3 border-t border-slate-100">
                 <button type="button" class="btn-ghost btn-sm" data-action="edit" data-id="${c.coachId}" data-testid="row-edit">${icon('pencil', 'w-3.5 h-3.5')} Sửa</button>
@@ -76,19 +120,24 @@ function view(s) {
               </div>
             </div>`;
         })}
-      </div>` : emptyState('Chưa có huấn luyện viên', 'medal')}`;
+      </div>${pagination(page, { unit: 'HLV', standalone: true })}` : emptyState(filtered && s.coaches.length ? 'Không có HLV phù hợp bộ lọc' : 'Chưa có huấn luyện viên', 'medal')}`;
 }
 
 export default function ManagerCoaches(el) {
   return mountPage(el, {
-    state: { keyword: '' },
+    state: { tab: '', specialty: '', load: '', sort: 'name', keyword: '', pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: async () => {
       const [coaches, classes, users] = await Promise.all([coachAdminApi.list(), classApi.list().catch(() => []), userApi.list({ role: 'COACH' }).catch(() => [])]);
       return { coaches, classes, statusById: Object.fromEntries(users.map(u => [u.id, u.status])) };
     },
     view,
     actions: {
-      search: (t, e, ctx) => ctx.set({ keyword: t.value }),
+      tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab, pageNo: 0 }),
+      specialty: (t, e, ctx) => ctx.set({ specialty: t.value, pageNo: 0 }),
+      workload: (t, e, ctx) => ctx.set({ load: t.value, pageNo: 0 }),
+      sort: (t, e, ctx) => ctx.set({ sort: t.value, pageNo: 0 }),
+      search: (t, e, ctx) => ctx.set({ keyword: t.value, pageNo: 0 }),
+      ...pagerActions(),
       create: (t, e, ctx) => openFormModal({
         title: 'Thêm huấn luyện viên', fields: form(), validate: validator(false), success: 'Đã tạo tài khoản HLV',
         submit: d => coachAdminApi.create(payload(d)), onDone: () => ctx.reload()

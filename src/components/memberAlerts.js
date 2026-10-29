@@ -1,6 +1,5 @@
 import { html, icon } from '../core/dom.js';
-import { date, daysUntil, toDate } from '../core/format.js';
-import { session } from '../core/session.js';
+import { date, daysUntil } from '../core/format.js';
 
 export const EXPIRY_WARNING_DAYS = 7;
 
@@ -19,29 +18,9 @@ export function expiryBanner(sub) {
     </div>`;
 }
 
-// ---- Thông báo chưa đọc: lưu mốc "đã xem" theo từng thiết bị ----
-const seenKey = () => `sc_notifications_seen_at:${session.get()?.email || ''}`;
-
-function seenAt() {
-  try {
-    return Number(localStorage.getItem(seenKey()) || 0);
-  } catch {
-    return 0;
-  }
-}
-
-export function markNotificationsSeen(items) {
-  const newest = Math.max(0, ...(items || []).map(n => toDate(n.sendDate)?.getTime() || 0));
-  try {
-    localStorage.setItem(seenKey(), String(Math.max(newest, seenAt())));
-  } catch { /* bỏ qua */ }
-}
+// ---- Thông báo chưa đọc: BE trả cờ read theo từng tài khoản (đọc ở máy nào cũng đồng bộ) ----
+export const isUnread = n => !n.read;
 
 export function countUnread(items) {
-  const since = seenAt();
-  return (items || []).filter(n => (toDate(n.sendDate)?.getTime() || 0) > since).length;
-}
-
-export function isUnread(n) {
-  return (toDate(n.sendDate)?.getTime() || 0) > seenAt();
+  return (items || []).filter(isUnread).length;
 }

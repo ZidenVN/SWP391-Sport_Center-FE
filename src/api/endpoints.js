@@ -115,12 +115,35 @@ export const memberApi = {
   workoutResults: () => http.get('/members/me/workout-results'),
   progress: () => http.get('/members/me/progress'),
   notifications: () => http.get('/members/me/notifications'),
+  unreadNotificationCount: () => http.get('/members/me/notifications/unread-count'),
+  markNotificationRead: notificationId => http.patch(`/members/me/notifications/${notificationId}/read`),
+  markAllNotificationsRead: () => http.patch('/members/me/notifications/read-all'),
   // lịch sử điểm danh theo từng buổi học
   attendances: () => http.get('/members/me/attendances'),
-  // FE-TODO #11: lịch sử check-in của hội viên (đang ẩn bằng FEATURES.checkInHistory)
+  // lịch sử check-in của hội viên
   checkIns: () => http.get('/members/me/check-ins'),
   classWorkoutPlans: classId => http.get(`/coaches/classes/${classId}/workout-plans`),
   profileById: memberId => http.get(`/members/${memberId}`)
+};
+
+// Khảo sát (quiz) của hội viên: phải làm xong mới tự đặt lớp được (BE trả ERR_QUIZ_008).
+// Câu hệ thống HEIGHT / WEIGHT / TRAINING_GOAL được BE ghi thẳng vào hồ sơ hội viên.
+export const quizApi = {
+  questions: () => http.get('/members/me/quiz/questions'),
+  // { completed, completedAt }
+  status: () => http.get('/members/me/quiz/status'),
+  // answers: [{ questionId, optionIds?, numberValue?, textValue? }] — phải trả lời đủ mọi câu đang ACTIVE; làm lại thì ghi đè
+  submit: answers => http.put('/members/me/quiz', { answers })
+};
+
+// Quản lý: soạn bộ câu hỏi khảo sát (quyền MANAGE_QUIZ). Câu hệ thống không sửa / ẩn được.
+// payload: { content, type (NUMBER|SINGLE|MULTIPLE|TEXT), code, minValue, maxValue, unit, displayOrder, options: [{ optionId?, content, code }] }
+export const quizAdminApi = {
+  list: () => http.get('/quiz-questions'),
+  create: payload => http.post('/quiz-questions', payload),
+  update: (id, payload) => http.put(`/quiz-questions/${id}`, payload),
+  hide: id => http.delete(`/quiz-questions/${id}`),
+  restore: id => http.patch(`/quiz-questions/${id}/restore`)
 };
 
 // Trợ lý AI của hội viên. BE có thể mất tới 1–2 phút khi chuyển sang model dự phòng -> chờ tối đa 150 giây.
@@ -141,11 +164,8 @@ export const vnpayApi = {
 
 export const receptionApi = {
   search: keyword => http.get('/receptionist/members', { keyword }),
-  // /users giờ chỉ Quản lý gọi được. BE đang trả rỗng khi keyword trống; khi BE cập nhật (FE-TODO #8)
-  // keyword trống sẽ trả mọi hội viên và danh sách tự hiện, không phải sửa FE
-  // (keyword để thẳng trong đường dẫn vì client bỏ tham số rỗng, mà BE bắt buộc phải có keyword)
+  // keyword trống: BE trả mọi hội viên (keyword để thẳng trong đường dẫn vì client bỏ tham số rỗng)
   allMembers: async () => (await http.get('/receptionist/members?keyword=')).sort((a, b) => b.memberId - a.memberId),
-  // BE chưa có API sửa hội viên cho Lễ tân (FE-TODO #9, dự kiến PUT /receptionist/members/{id}); nút sửa đang ẩn
   updateMember: (memberId, payload) => http.put(`/receptionist/members/${memberId}`, payload),
   member: id => http.get(`/receptionist/members/${id}`),
   registerWalkIn: payload => http.post('/receptionist/members', payload),
@@ -170,7 +190,6 @@ export const receptionApi = {
   // điểm danh hội viên khi đến trung tâm (không có body)
   checkIn: memberId => http.post(`/receptionist/members/${memberId}/check-ins`),
   checkInsByDate: date => http.get('/receptionist/check-ins', date ? { date } : undefined),
-  // BE chưa có (FE-TODO #11)
   memberCheckIns: memberId => http.get(`/receptionist/members/${memberId}/check-ins`)
 };
 
@@ -183,6 +202,8 @@ export const coachApi = {
   createPlan: payload => http.post('/coaches/me/workout-plans', payload),
   myPlans: () => http.get('/coaches/me/workout-plans'),
   memberPlans: memberId => http.get(`/coaches/members/${memberId}/workout-plans`),
+  // tiến độ giáo án cá nhân (memberPlanId có trong danh sách giáo án của học viên); status: IN_PROGRESS | COMPLETED
+  setMemberPlanStatus: (memberPlanId, status) => http.patch(`/coaches/member-plans/${memberPlanId}/status`, undefined, { query: { status } }),
   classPlans: classId => http.get(`/coaches/classes/${classId}/workout-plans`),
   recordResult: (memberId, payload) => http.post(`/coaches/members/${memberId}/workout-results`, payload),
   memberResults: memberId => http.get(`/coaches/members/${memberId}/workout-results`),

@@ -4,6 +4,7 @@ import { mountPage, settle } from '../../core/page.js';
 import { reportApi } from '../../api/endpoints.js';
 import { money, isoDate, date, paymentMethodLabel, badge, statusLabel } from '../../core/format.js';
 import { drawChart, revenueLine, doughnut, bars, CHART_COLORS } from '../../components/charts.js';
+import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 
 const DAY = 86400000;
 const PRESETS = [
@@ -91,9 +92,10 @@ function membersTab(m) {
     </div>`;
 }
 
-function classesTab(c) {
+function classesTab(c, s) {
   if (!c) return emptyState('Không tải được báo cáo lớp học', 'calendar');
   const details = c.classDetails || [];
+  const page = paginate(details, s.pageNo, s.pageSize);
   return html`
     <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
       ${statCard('Lớp đang mở', c.totalOpeningClasses ?? 0, 'calendar-days', 'emerald')}
@@ -109,14 +111,14 @@ function classesTab(c) {
       <div class="card rounded-3xl" data-testid="class-report-table">
         ${table({
           columns: [{ label: 'Lớp' }, { label: 'HLV' }, { label: 'Phòng' }, { label: 'Đăng ký', cls: 'text-right' }, { label: 'Còn trống', cls: 'text-right' }, { label: 'Lấp đầy', cls: 'text-right' }, { label: 'Đánh giá' }],
-          rows: details.map(d => [
+          rows: page.content.map(d => [
             html`<b>${d.subjectName}</b> <span class="text-slate-400">#${d.classId}</span>`,
             d.coachName, d.roomName,
             `${d.registeredCnt}/${d.maxCapacity}`, d.availableSlots,
             `${Number(d.occupancyRate).toFixed(1)}%`,
             badge(d.status)
           ])
-        })}
+        })}${pagination(page, { unit: 'lớp' })}
       </div>` : emptyState('Chưa có lớp trong kỳ', 'calendar-x')}`;
 }
 
@@ -135,7 +137,7 @@ function view(s) {
       </form>
     </div>
     ${tabs([{ id: 'revenue', label: 'Doanh thu' }, { id: 'members', label: 'Hội viên' }, { id: 'classes', label: 'Lớp học' }], s.tab)}
-    ${s.tab === 'revenue' ? revenueTab(s.revenue) : s.tab === 'members' ? membersTab(s.members) : classesTab(s.classes)}`;
+    ${s.tab === 'revenue' ? revenueTab(s.revenue) : s.tab === 'members' ? membersTab(s.members) : classesTab(s.classes, s)}`;
 }
 
 function draw(s, ctx) {
@@ -197,7 +199,7 @@ function exportRows(s) {
 export default function ManagerReports(el) {
   const [f, t] = presetRange('30');
   return mountPage(el, {
-    state: { tab: 'revenue', preset: '30', from: isoDate(f), to: isoDate(t) },
+    state: { tab: 'revenue', preset: '30', from: isoDate(f), to: isoDate(t), pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: ctx => {
       const { from, to } = ctx.state;
       return settle({
@@ -209,17 +211,18 @@ export default function ManagerReports(el) {
     view,
     afterRender: draw,
     actions: {
-      tab: (btn, e, ctx) => ctx.set({ tab: btn.dataset.tab }),
+      tab: (btn, e, ctx) => ctx.set({ tab: btn.dataset.tab, pageNo: 0 }),
+      ...pagerActions(),
       preset: (btn, e, ctx) => {
         const [a, b] = presetRange(btn.dataset.id);
-        Object.assign(ctx.state, { preset: btn.dataset.id, from: isoDate(a), to: isoDate(b) });
+        Object.assign(ctx.state, { preset: btn.dataset.id, from: isoDate(a), to: isoDate(b), pageNo: 0 });
         ctx.reload();
       },
       'apply-range': (form, e, ctx) => {
         const from = form.from.value;
         const to = form.to.value;
         if (!from || !to || from > to) { toast('Khoảng ngày không hợp lệ', 'warning'); return; }
-        Object.assign(ctx.state, { preset: '', from, to });
+        Object.assign(ctx.state, { preset: '', from, to, pageNo: 0 });
         ctx.reload();
       },
       export: (btn, e, ctx) => {

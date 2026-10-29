@@ -1,7 +1,7 @@
 import { html, icon } from '../../core/dom.js';
 import { pageHeader, statCard, emptyState } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
-import { memberApi } from '../../api/endpoints.js';
+import { memberApi, quizApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { date, dateTime, daysUntil, weekday, timeRange, badge, isPlaceholderPhone } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
@@ -42,10 +42,19 @@ function subscriptionCard(sub) {
     </div>`;
 }
 
-// Chưa có gói: mời làm quiz, hoặc nhắc lại gợi ý nếu đã làm
+// Chưa làm khảo sát (BE bắt buộc trước khi tự đặt lớp): luôn nhắc. Đã làm: chỉ nhắc lại gợi ý khi chưa có gói
 function quizBanner(current) {
+  const completed = session.get()?.quizCompleted;
+  const done = completed ?? Boolean(quizStore.answers(session.get()?.email));
+  if (!done) {
+    return html`
+      <a href="#/member/onboarding" class="mb-5 flex items-center gap-3 rounded-2xl bg-brand-dark p-4 text-white hover:bg-brand-deep" data-testid="quiz-banner">
+        <span class="w-10 h-10 rounded-xl bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('clipboard-list', 'w-5 h-5')}</span>
+        <span class="flex-1 text-sm"><b>Hoàn thành khảo sát để đặt lớp</b><br /><span class="text-white/70">Vài câu hỏi về chỉ số cơ thể, mục tiêu và khung giờ — nhận luôn gói tập, lớp học hợp với bạn.</span></span>
+        ${icon('chevron-right', 'w-5 h-5')}
+      </a>`;
+  }
   if (current) return '';
-  const done = Boolean(quizStore.answers(session.get()?.email));
   const combo = quizStore.combo(session.get()?.email);
   if (combo) {
     return html`
@@ -136,13 +145,19 @@ function view(s) {
 
 export default function MemberHome(el) {
   return mountPage(el, {
-    load: () => settle({
-      current: [memberApi.currentSubscription, null],
-      schedule: [memberApi.schedule, []],
-      notifications: [memberApi.notifications, []],
-      progress: [memberApi.progress, null],
-      me: [memberApi.me, null]
-    }),
+    load: async () => {
+      const res = await settle({
+        current: [memberApi.currentSubscription, null],
+        schedule: [memberApi.schedule, []],
+        notifications: [memberApi.notifications, []],
+        progress: [memberApi.progress, null],
+        me: [memberApi.me, null],
+        quiz: [quizApi.status, null]
+      });
+      // banner khảo sát đọc trạng thái trong session
+      if (res.quiz) session.update({ quizCompleted: Boolean(res.quiz.completed) });
+      return res;
+    },
     view,
     actions: { 'coach-info': btn => openCoachInfo(coachFromButton(btn)) }
   });

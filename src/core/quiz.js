@@ -1,5 +1,7 @@
 // Quiz làm quen cho hội viên mới + gợi ý gói tập / lớp học.
-// BE chưa có API lưu quiz -> lưu tạm trong localStorage theo email hội viên; khi BE có API chỉ cần thay load/save ở đây.
+// Bộ câu hỏi và trạng thái "đã làm" lấy từ BE (quizApi); BE bắt buộc làm xong mới tự đặt lớp được.
+// Khung giờ rảnh, số buổi / tuần, thời gian gắn bó chỉ dùng để gợi ý ở FE (BE không có) nên vẫn lưu localStorage
+// cùng bản sao câu trả lời (BE không trả lại câu trả lời cũ).
 
 const KEY = email => `sc_quiz_${(email || '').toLowerCase()}`;
 const PENDING = email => `sc_quiz_pending_${(email || '').toLowerCase()}`;
@@ -27,11 +29,80 @@ export const quizStore = {
   combo: email => read(KEY(email))?.combo || null
 };
 
-// Mở quiz sau đăng nhập khi: vừa đăng ký, hoặc chưa từng làm/bỏ qua quiz và chưa có gói tập
-export function shouldAskQuiz(email, hasPackage) {
+// Mở quiz sau đăng nhập khi BE báo chưa làm, trừ khi hội viên đã bấm "Bỏ qua" (vừa đăng ký thì luôn mở).
+// completed = null (không hỏi được BE): chỉ mở khi vừa đăng ký hoặc chưa từng làm / bỏ qua trên máy này.
+export function shouldAskQuiz(email, completed) {
+  if (completed === true) return false;
   if (read(PENDING(email))) return true;
   const rec = read(KEY(email));
-  return !rec && !hasPackage;
+  return completed === false ? !rec?.skippedAt : !rec;
+}
+
+// ===== Bộ câu hỏi từ BE -> các bước của quiz =====
+// Câu hệ thống: HEIGHT + WEIGHT gộp 1 bước (kèm BMI), TRAINING_GOAL là câu chọn 1 có mã trùng id trong GOALS.
+// Câu Quản lý tự thêm: mỗi câu 1 bước. Cuối cùng là 2 bước sở thích chỉ dùng ở FE.
+export const QUIZ_CODES = { height: 'HEIGHT', weight: 'WEIGHT', goal: 'TRAINING_GOAL' };
+const SYSTEM_CODES = Object.values(QUIZ_CODES);
+export const byCode = (questions, code) => (questions || []).find(q => q.code === code) || null;
+
+export function quizSteps(questions) {
+  const list = questions || [];
+  const steps = [];
+  if (byCode(list, QUIZ_CODES.height) || byCode(list, QUIZ_CODES.weight)) steps.push({ kind: 'body', label: 'Chỉ số cơ thể' });
+  if (byCode(list, QUIZ_CODES.goal)) steps.push({ kind: 'goal', label: 'Mục tiêu', question: byCode(list, QUIZ_CODES.goal) });
+  list.filter(q => !SYSTEM_CODES.includes(q.code)).forEach(q => steps.push({ kind: 'custom', label: 'Thêm về bạn', question: q }));
+  steps.push({ kind: 'slots', label: 'Khung giờ' }, { kind: 'commitment', label: 'Thời gian gắn bó' });
+  return steps;
+}
+
+// option của câu mục tiêu ứng với 1 mục trong GOALS (so mã, không có mã thì so nội dung)
+export const goalOption = (question, goalId) => (question?.options || []).find(o =>
+  (o.code || '').toLowerCase() === goalId || o.content === find(GOALS, goalId)?.label) || null;
+export const goalIdOf = option => GOALS.find(g => g.id === (option?.code || '').toLowerCase() || g.label === option?.content)?.id || null;
+
+// câu trả lời câu tự thêm nằm ở answers.extra[questionId]: chuỗi số / chuỗi văn bản / mảng optionId
+export function validateStep(step, a, questions) {
+  if (step.kind === 'body') {
+    const errors = {};
+    [['height', QUIZ_CODES.height, 'chiều cao'], ['weight', QUIZ_CODES.weight, 'cân nặng']].forEach(([key, code, label]) => {
+      const q = byCode(questions, code);
+      if (!q) return;
+      const v = Number(a[key]);
+      if (a[key] === undefined || a[key] === '') errors[key] = `Nhập ${label}`;
+      else if (!Number.isFinite(v) || (q.minValue != null && v < q.minValue) || (q.maxValue != null && v > q.maxValue)) {
+        errors[key] = `${label[0].toUpperCase()}${label.slice(1)} từ ${q.minValue ?? '…'} đến ${q.maxValue ?? '…'} ${q.unit || ''}`.trim();
+      }
+    });
+    return errors;
+  }
+  if (step.kind === 'goal') return validateAnswers(a, 2);
+  if (step.kind === 'slots') return validateAnswers(a, 3);
+  if (step.kind === 'commitment') return validateAnswers(a, 4);
+  const q = step.question;
+  const v = a.extra?.[q.questionId];
+  if (q.type === 'NUMBER') {
+    if (v === undefined || v === '') return { extra: 'Nhập một con số' };
+    const n = Number(v);
+    if (!Number.isFinite(n) || (q.minValue != null && n < q.minValue) || (q.maxValue != null && n > q.maxValue)) {
+      return { extra: `Nhập số từ ${q.minValue ?? '…'} đến ${q.maxValue ?? '…'}${q.unit ? ` ${q.unit}` : ''}` };
+    }
+    return {};
+  }
+  if (q.type === 'TEXT') return String(v || '').trim() ? (String(v).trim().length > 1000 ? { extra: 'Tối đa 1000 ký tự' } : {}) : { extra: 'Vui lòng trả lời câu này' };
+  return Array.isArray(v) && v.length ? {} : { extra: q.type === 'MULTIPLE' ? 'Chọn ít nhất một lựa chọn' : 'Chọn một lựa chọn' };
+}
+
+// body cho PUT /members/me/quiz: đủ mọi câu BE đang ACTIVE
+export function quizPayload(questions, a) {
+  return (questions || []).map(q => {
+    if (q.code === QUIZ_CODES.height) return { questionId: q.questionId, numberValue: Number(a.height) };
+    if (q.code === QUIZ_CODES.weight) return { questionId: q.questionId, numberValue: Number(a.weight) };
+    if (q.code === QUIZ_CODES.goal) return { questionId: q.questionId, optionIds: [goalOption(q, a.goal)?.optionId].filter(Boolean) };
+    const v = a.extra?.[q.questionId];
+    if (q.type === 'NUMBER') return { questionId: q.questionId, numberValue: Number(v) };
+    if (q.type === 'TEXT') return { questionId: q.questionId, textValue: String(v || '').trim() };
+    return { questionId: q.questionId, optionIds: (v || []).map(Number) };
+  });
 }
 
 export const GOALS = [

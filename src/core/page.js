@@ -31,6 +31,11 @@ export function mountPage(el, { state = {}, load, view, actions = {}, afterRende
         next.focus();
         if (selStart !== null && typeof next.setSelectionRange === 'function') {
           try { next.setSelectionRange(selStart, selStart); } catch { /* input type không hỗ trợ */ }
+        } else if (next.type === 'number') {
+          // ô number không đọc/đặt được con trỏ, focus lại thì con trỏ về đầu -> gõ bị ngược; gán lại value để con trỏ về cuối
+          const v = next.value;
+          next.value = '';
+          next.value = v;
         }
       }
     }

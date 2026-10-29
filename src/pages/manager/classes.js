@@ -5,6 +5,7 @@ import { classApi, subjectApi, roomApi, coachAdminApi } from '../../api/endpoint
 import { badge, date, weekday, timeRange, toDate, isoLocalMinute, isoDate, fullName } from '../../core/format.js';
 import { subjectColor, classImage, classImageUrl } from '../../components/classCard.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
+import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 import { calendarGrid, calendarToolbar, viewModeTabs, loadCalendarClasses, scrollTimeGrid, MANAGER_LEGEND, classWhen, whenLine } from '../../components/classCalendar.js';
 
 // Lớp học của Quản lý: xem dạng lịch Tuần (khung giờ) / Tháng hoặc bảng Danh sách theo tab trạng thái.
@@ -281,7 +282,6 @@ function detailActions(c, ph) {
 }
 
 // Mỗi tab là 1 truy vấn GET /classes/search (lọc + phân trang ở BE, FE-TODO #7)
-const PAGE_SIZE = 20;
 function tabQuery(tab, today) {
   return {
     UPCOMING: { status: 'OPENING', fromDate: today },
@@ -291,19 +291,6 @@ function tabQuery(tab, today) {
     CANCELLED: { status: 'CANCELLED' },
     ALL: {}
   }[tab];
-}
-
-function pager(page) {
-  if (!page || page.totalPages <= 1) return '';
-  const n = page.number;
-  return html`
-    <div class="flex items-center justify-between px-5 py-3 border-t border-brand-line/60 text-sm" data-testid="pager">
-      <span class="text-slate-500">Trang ${n + 1}/${page.totalPages} · ${page.totalElements} lớp</span>
-      <div class="flex gap-2">
-        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n - 1}" ${n <= 0 ? 'disabled' : ''}>${icon('chevron-left', 'w-3.5 h-3.5')} Trước</button>
-        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n + 1}" ${n + 1 >= page.totalPages ? 'disabled' : ''}>Sau ${icon('chevron-right', 'w-3.5 h-3.5')}</button>
-      </div>
-    </div>`;
 }
 
 const subjectSelect = (s, testid) => html`
@@ -317,6 +304,9 @@ function listView(s) {
   const count = id => s.counts?.[id];
   // từ khóa lọc trong trang đang xem (API tìm lớp chưa có tham số từ khóa)
   const list = s.classes.filter(c => matches(s.keyword, [c.subjectName, c.coachName, c.roomName]));
+  // tab Chờ chốt lấy hết rồi cắt ở FE, các tab khác BE đã phân trang
+  const page = s.tab === 'PENDING' ? paginate(list, s.pageNo, s.pageSize) : s.page;
+  const rowsOf = s.tab === 'PENDING' ? page.content : list;
   return html`
     <div>
       ${tabs(TABS.map(([id, label]) => ({ id, label, count: count(id) })), s.tab)}
@@ -328,7 +318,7 @@ function listView(s) {
     <div class="card" data-testid="class-table">
       ${list.length ? html`${table({
         columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'HLV' }, { label: 'Phòng' }, { label: 'Sĩ số' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
-        rows: list.map(c => {
+        rows: rowsOf.map(c => {
           const ph = phase(c, now);
           const pct = c.maxCapacity ? Math.round((c.currentEnrolled / c.maxCapacity) * 100) : 0;
           return [
@@ -343,7 +333,7 @@ function listView(s) {
             actionsCell(c, ph)
           ];
         })
-      })}${s.tab === 'PENDING' ? '' : pager(s.page)}` : emptyState('Không có lớp phù hợp', 'calendar-x')}
+      })}${pagination(page, { unit: 'lớp' })}` : emptyState('Không có lớp phù hợp', 'calendar-x')}
     </div>`;
 }
 
@@ -442,7 +432,7 @@ export default function ManagerClasses(el) {
     tab: (t, e, ctx) => { ctx.state.tab = t.dataset.tab; ctx.state.pageNo = 0; ctx.reload(); },
     search: (t, e, ctx) => ctx.set({ keyword: t.value }),
     subject: (t, e, ctx) => { ctx.state.subjectId = t.value; ctx.state.pageNo = 0; ctx.reload(); },
-    page: (t, e, ctx) => { ctx.state.pageNo = Math.max(0, Number(t.dataset.page)); ctx.reload(); },
+    ...pagerActions({ server: true }),
     create: (t, e, ctx) => openFormModal({
       title: 'Mở lớp mới', size: 'max-w-xl', fields: createForm(ctx.state), validate: createValidator(ctx.state),
       submitText: 'Mở lớp', onMount: modal => { mountSessionPreview(modal); mountImagePicker(modal); },
@@ -500,7 +490,7 @@ export default function ManagerClasses(el) {
     state: {
       mode: ['week', 'month', 'list'].includes(savedMode()) ? savedMode() : 'week',
       calOffset: 0, calClasses: [],
-      tab: 'UPCOMING', keyword: '', subjectId: '', pageNo: 0, subjects: [], rooms: [], coaches: []
+      tab: 'UPCOMING', keyword: '', subjectId: '', pageNo: 0, pageSize: DEFAULT_PAGE_SIZE, subjects: [], rooms: [], coaches: []
     },
     load: async ctx => {
       const s = ctx.state;
@@ -513,7 +503,7 @@ export default function ManagerClasses(el) {
       // lớp chờ chốt thường ít: lấy hết rồi lọc giờ kết thúc để đếm đúng
       const pendingOf = page => (page?.content || []).filter(c => toDate(c.endTime) < now);
       const [page, calClasses, pendingPage, UPCOMING, DONE, CANCELLED, ALL, subjects, rooms, coaches] = await Promise.all([
-        !isList || s.tab === 'PENDING' ? null : search(s.tab, { page: s.pageNo, size: PAGE_SIZE }),
+        !isList || s.tab === 'PENDING' ? null : search(s.tab, { page: s.pageNo, size: s.pageSize }),
         // lớp đã hủy không hiện trên lịch (xem ở tab Đã hủy của Danh sách)
         isList ? [] : loadCalendarClasses(s),
         search('PENDING', { size: 100 }),

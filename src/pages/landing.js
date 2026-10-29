@@ -1,11 +1,9 @@
 import { html, icon } from '../core/dom.js';
 import { mountPage, settle } from '../core/page.js';
 import { publicApi } from '../api/endpoints.js';
-import { money } from '../core/format.js';
-import { bestValueId } from '../components/billing.js';
 import { brandMark } from '../components/brand.js';
 
-// Trang giới thiệu trước khi đăng nhập. Bảng giá + bộ môn lấy thật từ BE (GET công khai),
+// Trang giới thiệu trước khi đăng nhập. Bộ môn lấy thật từ BE (GET công khai),
 // BE lỗi thì vẫn hiện bản giới thiệu với dữ liệu mẫu bên dưới.
 const IMG = '/landing';
 const DARK = '#173F31';
@@ -67,7 +65,7 @@ const STEPS = [
   ['dumbbell', 'Đặt lớp & tập luyện', 'Chọn lớp yêu thích, nhận giáo án và theo dõi tiến bộ.']
 ];
 
-const nav = [['top', 'Trang chủ'], ['subjects', 'Bộ môn'], ['pricing', 'Bảng giá'], ['about', 'Về chúng tôi']];
+const nav = [['top', 'Trang chủ'], ['subjects', 'Bộ môn'], ['services', 'Dịch vụ'], ['about', 'Về chúng tôi']];
 
 function header(s) {
   return html`
@@ -140,7 +138,7 @@ function hero(s) {
             </div>`)}
           <div class="hb-fade mt-8 flex flex-wrap gap-3" style="animation-delay:.75s">
             <a href="#/register" class="hb-btn-solid" data-testid="hero-register">Đăng ký hội viên ${icon('arrow-right', 'w-4 h-4')}</a>
-            <button type="button" data-action="scroll" data-target="pricing" class="hb-btn-ghost">Xem bảng giá</button>
+            <button type="button" data-action="scroll" data-target="services" class="hb-btn-ghost">Khám phá dịch vụ</button>
           </div>
           <div class="hb-fade mt-8 hidden sm:flex flex-wrap gap-2" style="animation-delay:.9s">
             ${subjects.slice(0, 5).map(x => html`<span class="px-3 py-1 rounded-full text-xs font-semibold text-white/85 bg-white/10 border border-white/15 backdrop-blur">${x.subjectName}</span>`)}
@@ -371,40 +369,107 @@ function ctaBanner() {
     </section>`;
 }
 
-function pricing(s) {
-  const plans = s.packages.filter(p => p.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays);
-  const best = bestValueId(plans);
+// "Dịch vụ dành cho hội viên": lưới bento, thẻ trồi lên lần lượt khi cuộn tới, vệt sáng theo chuột (--px/--py),
+// mỗi thẻ có hiệu ứng minh họa riêng (chat AI gõ chữ, tia quét check-in, thanh ngày gói tập, chuông rung...)
+const SV_CHIPS = ['Giáo án riêng', 'Nhận xét sau buổi', 'Theo dõi tiến độ'];
+const SV_CLASS_IMG = ['gym.jpg', 'yoga.jpg', 'boxing.jpg', 'swim.jpg'];
+
+function services() {
+  const card = (cls, k, body) => html`
+    <article class="sv-card ${cls}" style="--k:${k}" data-sv data-testid="service-card">
+      <span class="sv-spot" aria-hidden="true"></span>
+      ${body}
+    </article>`;
+  const head = (ic, title, text) => html`
+    <span class="sv-ic">${icon(ic, 'w-5 h-5')}</span>
+    <h3 class="sv-title">${title}</h3>
+    <p class="sv-text">${text}</p>`;
   return html`
-    <section id="pricing" class="max-w-6xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24">
-      <div class="text-center mb-10" data-reveal>
-        <h2 class="font-display font-extrabold text-4xl sm:text-5xl text-slate-900">Bảng giá gói tập</h2>
-        <p class="text-slate-600 mt-2">Tập không giới hạn số buổi trong thời hạn gói. Gia hạn được cộng nối tiếp, không mất ngày.</p>
+    <section id="services" class="sv max-w-6xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28" data-reveal data-testid="services">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+        <div>
+          <div class="ab-eyebrow">Dịch vụ của chúng tôi</div>
+          <h2 class="font-display font-extrabold text-4xl sm:text-6xl text-slate-900 leading-[0.95] mt-4">${maskWords('Trọn gói tiện ích')}<br />${maskWords('cho', 3)} <span class="st-hl">${maskWords('hội viên', 4)}</span></h2>
+        </div>
+        <p class="ab-fade text-slate-600 max-w-sm md:text-right">Từ buổi tập đầu tiên đến khi đạt mục tiêu — Sport Center lo trọn lịch lớp, huấn luyện, thanh toán và hỗ trợ.</p>
       </div>
-      ${plans.length ? html`
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto pt-3" data-testid="pricing-cards">
-          ${plans.map(p => {
-            const hot = p.packageId === best;
-            return html`
-              <div class="tilt-card relative rounded-3xl p-7 flex flex-col ${hot ? 'text-white shadow-2xl' : 'bg-white border border-slate-200'}" style="${hot ? `background:${DARK}` : ''}" data-testid="price-card" data-reveal data-tilt>
-                ${hot ? html`<span class="absolute -top-3 left-7 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase text-slate-900" style="background:${LIME}">Tiết kiệm nhất</span>` : ''}
-                <div class="flex items-center justify-between">
-                  <span class="font-bold">${p.packageName}</span>
-                  <span class="text-xs font-bold px-2.5 py-1 rounded-full ${hot ? 'bg-white/15' : 'bg-slate-100'}">${p.durationDays} ngày</span>
-                </div>
-                <div class="font-display font-extrabold text-5xl mt-5">${money(p.price)}</div>
-                <div class="text-sm mt-1 ${hot ? 'text-white/70' : 'text-slate-500'}">≈ ${money(Math.round(p.price / p.durationDays))} / ngày</div>
-                <p class="text-sm mt-4 flex-1 ${hot ? 'text-white/80' : 'text-slate-600'}">${p.description || ''}</p>
-                <ul class="mt-5 space-y-2 text-sm ${hot ? 'text-white/90' : 'text-slate-700'}">
-                  ${['Đặt lớp không giới hạn', 'Giáo án & nhận xét từ HLV', 'Gia hạn nối tiếp'].map(t => html`<li class="flex items-center gap-2">${icon('check-circle-2', 'w-4 h-4 shrink-0')} ${t}</li>`)}
-                </ul>
-                <a href="#/register" class="btn mt-7 w-full !py-3 ${hot ? 'text-slate-900' : 'text-white'}" style="background:${hot ? LIME : DARK}">Bắt đầu ngay</a>
-              </div>`;
-          })}
-        </div>` : html`
-        <div class="text-center text-slate-500 rounded-3xl border border-dashed border-slate-300 py-10" data-testid="pricing-empty">
-          Bảng giá đang được cập nhật — <a href="#/login" class="font-bold underline">đăng nhập</a> để xem gói tập hiện có.
-        </div>`}
+
+      <div class="sv-grid mt-12 sm:mt-14">
+        ${card('sv-hero sm:col-span-2 lg:row-span-2', 0, html`
+          <img src="${IMG}/gym.jpg" alt="" class="sv-hero-img" loading="lazy" />
+          <div class="sv-hero-shade" aria-hidden="true"></div>
+          <div class="relative flex flex-col flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <span class="sv-ic sv-ic-lime">${icon('medal', 'w-5 h-5')}</span>
+              <span class="sv-badge">Nổi bật</span>
+            </div>
+            <div class="mt-auto pt-24">
+              <div class="flex items-end gap-2">
+                <span class="font-display font-extrabold text-7xl sm:text-8xl leading-none" style="color:${LIME}" data-count="20">20</span>
+                <span class="font-display font-extrabold text-4xl leading-none pb-2" style="color:${LIME}">+</span>
+                <span class="text-sm text-white/70 pb-2.5 ml-1">huấn luyện viên<br />chuyên môn</span>
+              </div>
+              <h3 class="sv-title !text-white !text-2xl sm:!text-3xl mt-4">Huấn luyện cá nhân cùng HLV</h3>
+              <p class="sv-text !text-white/75 max-w-md">HLV xây giáo án theo mục tiêu của bạn, ghi nhận xét sau mỗi buổi để bạn thấy rõ mình tiến bộ thế nào.</p>
+              <div class="flex flex-wrap gap-2 mt-5">${SV_CHIPS.map((t, i) => html`<span class="sv-chip" style="--c:${i}">${icon('check', 'w-3.5 h-3.5')} ${t}</span>`)}</div>
+            </div>
+          </div>`)}
+
+        ${card('sv-ai', 1, html`
+          ${head('sparkles', 'Trợ lý AI 24/7', 'Hỏi lịch lớp, gói tập hay gợi ý bài tập bất cứ lúc nào.')}
+          <div class="sv-chat" aria-hidden="true">
+            <span class="sv-msg sv-msg-me">Tối nay có lớp Yoga không?</span>
+            <span class="sv-msg sv-msg-bot">Có lớp 19:00, còn 4 chỗ trống 🙌</span>
+            <span class="sv-typing"><i></i><i></i><i></i></span>
+          </div>`)}
+
+        ${card('', 2, html`
+          ${head('users', 'Lớp nhóm đa bộ môn', 'Gym, Yoga, Boxing, Bơi lội — lịch học dày, đủ mọi trình độ.')}
+          <div class="sv-stack" aria-hidden="true">
+            ${SV_CLASS_IMG.map((f, i) => html`<img src="${IMG}/${f}" alt="" style="--i:${i}" loading="lazy" />`)}
+            <span class="sv-stack-more">30+ lớp</span>
+          </div>`)}
+
+        ${card('', 3, html`
+          ${head('scan-line', 'Check-in tại quầy', 'Lễ tân xác nhận buổi tập chỉ trong vài giây, không cần giấy tờ.')}
+          <div class="sv-scan" aria-hidden="true">${icon('qr-code', 'w-12 h-12')}<span class="sv-scan-beam"></span></div>`)}
+
+        ${card('', 4, html`
+          ${head('bell-ring', 'Nhắc lịch tự động', 'Báo trước giờ học và trước khi gói tập hết hạn, không lỡ buổi nào.')}
+          <div class="sv-notice" aria-hidden="true">
+            <span class="sv-bell">${icon('bell', 'w-4 h-4')}</span>
+            <span><b>Boxing · 18:00</b><small>Lớp bắt đầu sau 24 giờ nữa</small></span>
+          </div>`)}
+
+        ${card('sv-wide sm:col-span-2', 5, html`
+          <div class="grid sm:grid-cols-[1fr_1.1fr] gap-6 items-center">
+            <div>${head('credit-card', 'Gói tập linh hoạt', 'Mua online qua VNPay hoặc tại quầy. Gia hạn được cộng nối tiếp, không mất ngày nào.')}</div>
+            <div class="sv-plan" aria-hidden="true">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-500"><span>Gói 3 tháng</span><span class="sv-plus">+30 ngày</span></div>
+              <div class="sv-bar"><span></span></div>
+              <div class="flex items-center justify-between text-xs text-slate-500 mt-2"><span>Còn <b class="text-slate-900">64</b> ngày</span><span class="flex items-center gap-1">${icon('shield-check', 'w-3.5 h-3.5')} VNPay</span></div>
+            </div>
+          </div>`)}
+
+        ${card('sv-wide sv-dark sm:col-span-2', 6, html`
+          <div class="grid sm:grid-cols-[1fr_auto] gap-6 items-center h-full">
+            <div>${head('headset', 'Hỗ trợ tận tâm', 'Gửi yêu cầu hỗ trợ ngay trên ứng dụng, lễ tân tiếp nhận và phản hồi nhanh chóng.')}</div>
+            <a href="#/register" class="sv-cta">
+              <span>Trở thành hội viên</span>
+              <span class="sv-cta-arrow">${icon('arrow-up-right', 'w-4 h-4')}</span>
+            </a>
+          </div>`)}
+      </div>
     </section>`;
+}
+
+// vệt sáng của thẻ dịch vụ đi theo chuột
+function onServiceSpot(e) {
+  const c = e.target.closest?.('[data-sv]');
+  if (!c) return;
+  const r = c.getBoundingClientRect();
+  c.style.setProperty('--px', `${e.clientX - r.left}px`);
+  c.style.setProperty('--py', `${e.clientY - r.top}px`);
 }
 
 // "Nâng tầm buổi tập": danh sách tính năng tự chạy (thanh tiến độ) + ảnh đổi theo tính năng đang chọn.
@@ -503,35 +568,55 @@ function steps() {
     </section>`;
 }
 
-// Chân trang: khối kêu gọi đăng ký có quầng sáng theo chuột, chữ trồi, dải bộ môn chạy ngang
-function footer() {
-  const ribbon = [...RIBBON, ...RIBBON, ...RIBBON, ...RIBBON];
+// thông tin liên hệ ở chân trang: [icon, nội dung, liên kết]
+const CONTACT = [
+  ['map-pin', 'Đại học FPT, Khu Công nghệ cao, TP. Thủ Đức, TP.HCM'],
+  ['clock', '06:00 – 21:30 · Thứ 2 – Chủ nhật'],
+  ['phone', '1900 0000', 'tel:19000000'],
+  ['mail', 'support@sportcenter.demo', 'mailto:support@sportcenter.demo']
+];
+const SOCIALS = [['facebook', 'Facebook'], ['instagram', 'Instagram'], ['youtube', 'YouTube']];
+
+// Chân trang: thương hiệu + liên kết nhanh + bộ môn (từ BE) + liên hệ, quầng sáng theo chuột, chữ thương hiệu lớn ở đáy
+function footer(s) {
+  const col = (title, items) => html`
+    <div>
+      <div class="ft-title">${title}</div>
+      <ul class="mt-5 space-y-3 text-sm text-white/70">${items}</ul>
+    </div>`;
+  const toSection = (id, label) => html`<li><button type="button" data-action="scroll" data-target="${id}" class="ft-link">${label}</button></li>`;
   return html`
-    <footer class="px-4 sm:px-6 pb-6">
-      <div class="ft max-w-6xl mx-auto rounded-[2rem] text-white" data-reveal data-testid="footer-cta">
-        <div class="ft-glow" aria-hidden="true"></div>
-        <div class="relative px-6 sm:px-12 pt-12 sm:pt-14">
-          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-            <h2 class="font-display font-extrabold text-4xl sm:text-6xl leading-[0.95]">${maskWords('Chọn môn yêu thích,')}<br /><span style="color:${LIME}">${maskWords('bắt đầu ngay hôm nay!', 3)}</span></h2>
-            <a href="#/register" class="ft-join self-start md:self-auto" data-testid="footer-join">
-              <span>Đăng ký hội viên</span>
-              <span class="ft-join-arrow">${icon('arrow-up-right', 'w-5 h-5')}</span>
+    <footer class="ft text-white" data-reveal data-testid="footer">
+      <div class="ft-glow" aria-hidden="true"></div>
+      <div class="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20">
+        <div class="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.4fr]">
+          <div>
+            <a href="#/" class="ft-brand inline-flex items-center gap-2.5 text-white">
+              ${brandMark('w-11 h-11 ring-1 ring-white/20')}
+              <span class="font-display font-extrabold text-2xl tracking-wide">SPORT CENTER</span>
             </a>
+            <p class="text-sm text-white/65 mt-5 max-w-xs leading-relaxed">Trung tâm thể thao kết nối hội viên, huấn luyện viên và lễ tân trên một hệ thống: đặt lớp online, giáo án riêng, thanh toán VNPay.</p>
+            <div class="flex gap-2.5 mt-6">
+              ${SOCIALS.map(([ic, label]) => html`<a href="#/" class="ft-social" aria-label="${label}" title="${label}">${icon(ic, 'w-4 h-4')}</a>`)}
+            </div>
           </div>
+          ${col('Khám phá', html`
+            ${nav.map(([id, label]) => toSection(id, label))}
+            <li><a href="#/login" class="ft-link">Đăng nhập</a></li>
+            <li><a href="#/register" class="ft-link">Đăng ký hội viên</a></li>`)}
+          ${col('Bộ môn', homeSubjects(s.subjects).map(x => toSection('subjects', x.subjectName)))}
+          ${col('Liên hệ', CONTACT.map(([ic, text, href]) => html`
+            <li class="flex items-start gap-3">
+              <span class="ft-ic">${icon(ic, 'w-4 h-4')}</span>
+              ${href ? html`<a href="${href}" class="ft-link mt-1.5">${text}</a>` : html`<span class="mt-1.5">${text}</span>`}
+            </li>`))}
         </div>
-        <div class="ft-ribbon" aria-hidden="true"><div class="ab-rib-track">${ribbon.map(t => html`<span class="ab-rib-item">${t}<span class="ab-rib-dot"></span></span>`)}</div></div>
-        <div class="relative px-6 sm:px-12 pb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-white/70">
-          <a href="#/" class="ft-brand flex items-center gap-2.5 text-white">
-            ${brandMark('w-9 h-9 ring-1 ring-white/20')}
-            <span class="font-display font-extrabold text-xl tracking-wide">SPORT CENTER</span>
-          </a>
-          <div class="flex flex-wrap gap-x-6 gap-y-2">
-            ${nav.slice(1).map(([id, label]) => html`<button type="button" data-action="scroll" data-target="${id}" class="ft-link">${label}</button>`)}
-            <a href="#/login" class="ft-link">Đăng nhập</a>
-          </div>
-          <div>© ${new Date().getFullYear()} Sport Center · SWP391</div>
+        <div class="mt-14 pt-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-white/50">
+          <div>© ${new Date().getFullYear()} Sport Center · Đồ án SWP391 – Đại học FPT</div>
+          <div class="flex items-center gap-2"><span style="color:${LIME}">${icon('shield-check', 'w-4 h-4')}</span> Thanh toán an toàn qua VNPay</div>
         </div>
       </div>
+      <div class="ft-word font-display font-extrabold" aria-hidden="true">SPORT CENTER</div>
     </footer>`;
 }
 
@@ -551,10 +636,10 @@ function view(s) {
       ${hero(s)}
       ${subjectsSection(s)}
       ${ctaBanner()}
-      ${pricing(s)}
+      ${services()}
       ${about()}
       ${steps()}
-      ${footer()}
+      ${footer(s)}
     </div>`;
 }
 
@@ -579,20 +664,6 @@ function countUp(node) {
   };
   node.textContent = '00';
   requestAnimationFrame(step);
-}
-
-// nghiêng 3D + vệt sáng theo con trỏ cho [data-tilt]
-function onTilt(e) {
-  const card = e.target.closest?.('[data-tilt]');
-  document.querySelectorAll('[data-tilt].is-tilting').forEach(n => { if (n !== card) { n.classList.remove('is-tilting'); n.style.transform = ''; } });
-  if (!card || e.pointerType === 'touch') return;
-  const r = card.getBoundingClientRect();
-  const x = (e.clientX - r.left) / r.width;
-  const y = (e.clientY - r.top) / r.height;
-  card.classList.add('is-tilting');
-  card.style.transform = `perspective(900px) rotateX(${(0.5 - y) * 8}deg) rotateY(${(x - 0.5) * 10}deg) translateY(-4px)`;
-  card.style.setProperty('--gx', `${x * 100}%`);
-  card.style.setProperty('--gy', `${y * 100}%`);
 }
 
 // chọn dải bộ môn (rê chuột, chạm hoặc tab tới)
@@ -634,7 +705,6 @@ export default function LandingPage(el, { navigate }) {
       io.unobserve(en.target);
     }), { threshold: 0.15 })
     : null;
-  document.addEventListener('pointermove', onTilt, { passive: true });
   // khu tính năng: bấm để chọn, thanh tiến độ chạy hết thì sang mục kế, rê chuột vào danh sách thì tạm dừng
   const onAboutClick = e => { const b = e.target.closest?.('[data-ab]'); if (b) setAbout(el, Number(b.dataset.ab)); };
   const onAboutEnd = e => {
@@ -648,6 +718,7 @@ export default function LandingPage(el, { navigate }) {
   el.addEventListener('animationend', onAboutEnd);
   el.addEventListener('pointerover', onAboutHover);
   el.addEventListener('pointermove', onFooterGlow, { passive: true });
+  el.addEventListener('pointermove', onServiceSpot, { passive: true });
   const unmount = mountPage(el, {
     afterRender: () => {
       scrollFx.update();
@@ -660,7 +731,6 @@ export default function LandingPage(el, { navigate }) {
     state: { menuOpen: false },
     load: async () => {
       const data = await settle({
-        packages: [() => publicApi.packages(), []],
         subjects: [() => publicApi.subjects(), []]
       });
       return { ...data, subjects: data.subjects.filter(x => x.status !== 'INACTIVE') };
@@ -683,10 +753,10 @@ export default function LandingPage(el, { navigate }) {
     el.removeEventListener('focusin', onPanelEnter);
     unmount?.();
     io?.disconnect();
-    document.removeEventListener('pointermove', onTilt);
     el.removeEventListener('click', onAboutClick);
     el.removeEventListener('animationend', onAboutEnd);
     el.removeEventListener('pointerover', onAboutHover);
     el.removeEventListener('pointermove', onFooterGlow);
+    el.removeEventListener('pointermove', onServiceSpot);
   };
 }

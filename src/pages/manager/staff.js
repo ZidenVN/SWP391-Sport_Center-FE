@@ -5,6 +5,7 @@ import { staffApi } from '../../api/endpoints.js';
 import { badge, fullName, genderLabel, date } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
+import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 
 // Quản lý nhân viên lễ tân: GET/POST/PUT /manager/receptionists, khóa / mở qua PATCH .../status
 function form(r = {}) {
@@ -42,6 +43,7 @@ function view(s) {
   const list = s.staff
     .filter(r => !s.tab || r.status === s.tab)
     .filter(r => matches(s.keyword, [fullName(r), r.email, r.phone]));
+  const page = paginate(list, s.pageNo, s.pageSize);
   return html`
     ${pageHeader('Nhân viên lễ tân', 'Tạo tài khoản, cập nhật thông tin và khóa / mở nhân viên lễ tân',
       html`<button type="button" class="btn-primary" data-action="create" data-testid="create">${icon('user-plus', 'w-4 h-4')} Thêm lễ tân</button>`)}
@@ -55,7 +57,7 @@ function view(s) {
     </div>
     ${list.length ? html`
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="staff-list">
-        ${list.map(r => html`
+        ${page.content.map(r => html`
           <div class="card p-5 ${r.status === 'INACTIVE' ? 'opacity-70' : ''}" data-testid="staff-card" data-id="${r.userId}">
             <div class="flex items-start gap-3">
               ${memberAvatar(r, 'w-12 h-12 text-lg')}
@@ -75,18 +77,19 @@ function view(s) {
               </button>
             </div>
           </div>`)}
-      </div>` : emptyState(s.staff.length ? 'Không có nhân viên phù hợp' : 'Chưa có nhân viên lễ tân', 'concierge-bell')}`;
+      </div>${pagination(page, { unit: 'nhân viên', standalone: true })}` : emptyState(s.staff.length ? 'Không có nhân viên phù hợp' : 'Chưa có nhân viên lễ tân', 'concierge-bell')}`;
 }
 
 export default function ManagerStaff(el) {
   const find = ctx => id => ctx.state.staff.find(x => String(x.userId) === id);
   return mountPage(el, {
-    state: { tab: '', keyword: '' },
+    state: { tab: '', keyword: '', pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: async () => ({ staff: (await staffApi.list()).sort((a, b) => b.userId - a.userId) }),
     view,
     actions: {
-      tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),
-      search: (t, e, ctx) => ctx.set({ keyword: t.value }),
+      tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab, pageNo: 0 }),
+      search: (t, e, ctx) => ctx.set({ keyword: t.value, pageNo: 0 }),
+      ...pagerActions(),
       create: (t, e, ctx) => openFormModal({
         title: 'Thêm nhân viên lễ tân', fields: form(), validate: validator(false), success: 'Đã tạo tài khoản lễ tân',
         submit: d => staffApi.create(payload(d)), onDone: () => ctx.reload()

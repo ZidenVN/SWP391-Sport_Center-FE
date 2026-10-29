@@ -1,5 +1,5 @@
 import { html, render, bindActions, readForm } from '../../core/dom.js';
-import { authApi, memberApi } from '../../api/endpoints.js';
+import { authApi, memberApi, quizApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { HOME_BY_ROLE } from '../../routes.js';
 import { authLayout, iconInput, togglePassword, markAuthSwitch } from './authLayout.js';
@@ -23,6 +23,9 @@ export async function startSession(auth, email) {
     } catch {
       // không chặn đăng nhập nếu lỗi tải hồ sơ
     }
+    // BE bắt buộc làm khảo sát trước khi tự đặt lớp; lỗi thì để null (không biết)
+    const quiz = await quizApi.status().catch(() => null);
+    session.update({ quizCompleted: quiz ? Boolean(quiz.completed) : null });
   }
   return auth;
 }
@@ -30,8 +33,8 @@ export async function startSession(auth, email) {
 export function goAfterLogin(navigate) {
   const saved = sessionStorage.getItem('sc_after_login');
   sessionStorage.removeItem('sc_after_login');
-  // hội viên mới: mở quiz gợi ý gói tập trước khi vào trang chủ
-  if (session.role() === 'MEMBER' && shouldAskQuiz(session.get().email, Boolean(session.get().packageName))) {
+  // hội viên chưa làm khảo sát: mở quiz trước khi vào trang chủ
+  if (session.role() === 'MEMBER' && shouldAskQuiz(session.get().email, session.get().quizCompleted ?? null)) {
     navigate('/member/onboarding', { replace: true });
     return;
   }

@@ -9,11 +9,25 @@ import { openSellPackage } from '../../components/sellPackage.js';
 // Điểm danh hội viên khi đến trung tâm: tìm -> Check-in (POST /receptionist/members/{id}/check-ins)
 // -> báo gói còn hạn + lớp hôm nay. Mỗi hội viên tính 1 lượt / ngày, cần gói còn hiệu lực, chỉ Lễ tân được check-in (BE kiểm tra).
 
+// một gói còn hiệu lực: tên, hạn, số buổi còn lại (gói lớp theo buổi)
+function subLine(name, endDate, remaining, type) {
+  const daysLeft = daysUntil(endDate);
+  const warn = daysLeft !== null && daysLeft <= 7;
+  return html`
+    <div class="mt-1 first:mt-0" data-testid="checkin-sub">
+      <div class="font-bold">${name || '—'}${type ? html` <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/15 align-middle">${type === 'FREE' ? 'Tự do' : 'Theo lớp'}</span>` : ''}</div>
+      <div class="text-xs ${warn ? 'text-brand-lime font-bold' : 'text-white/70'}">Hết hạn ${date(endDate)}${daysLeft !== null ? ` · còn ${Math.max(0, daysLeft)} ngày` : ''}${remaining != null ? ` · còn ${remaining} buổi` : ''}${warn ? ', nhắc khách gia hạn' : ''}</div>
+    </div>`;
+}
+
 function resultPanel(s) {
   if (s.last) {
     const c = s.last;
-    const daysLeft = daysUntil(c.subscriptionEndDate);
-    const warn = daysLeft !== null && daysLeft <= 7;
+    // BE trả mọi gói đang hiệu lực (gói tự do + gói lớp có thể song song); bản cũ chỉ có packageName / subscriptionEndDate
+    const subs = (c.activeSubscriptions || []).length
+      ? c.activeSubscriptions
+      : [{ packageName: c.packageName, endDate: c.subscriptionEndDate }];
+    const warn = subs.some(x => { const d = daysUntil(x.endDate); return d !== null && d <= 7; });
     return html`
       <div class="rounded-2xl bg-brand-dark text-white p-5 mt-4" data-testid="checkin-success">
         <div class="flex items-center gap-3">
@@ -25,9 +39,8 @@ function resultPanel(s) {
         </div>
         <div class="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
           <div class="rounded-xl bg-white/10 p-3">
-            <div class="text-white/60 text-xs">Gói đang dùng</div>
-            <div class="font-bold">${c.packageName || '—'}</div>
-            <div class="text-xs ${warn ? 'text-brand-lime font-bold' : 'text-white/70'}">Hết hạn ${date(c.subscriptionEndDate)}${daysLeft !== null ? ` · còn ${Math.max(0, daysLeft)} ngày` : ''}${warn ? ', nhắc khách gia hạn' : ''}</div>
+            <div class="text-white/60 text-xs">${subs.length > 1 ? `${subs.length} gói đang dùng` : 'Gói đang dùng'}</div>
+            ${subs.map(x => subLine(x.packageName, x.endDate, x.remainingSessions, x.packageType))}
           </div>
           <div class="rounded-xl bg-white/10 p-3" data-testid="checkin-classes">
             <div class="text-white/60 text-xs">Lớp hôm nay</div>

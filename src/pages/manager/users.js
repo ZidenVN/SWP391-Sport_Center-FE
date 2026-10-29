@@ -6,6 +6,7 @@ import { badge, fullName, genderLabel, roleLabel, phoneText } from '../../core/f
 import { session } from '../../core/session.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openFormModal, requireFields, confirmAction, searchBox } from '../../components/crud.js';
+import { pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 
 const ROLE_TABS = ['ALL', 'MEMBER', 'RECEPTIONIST', 'COACH', 'CENTER_MANAGER'];
 const ROLE_BADGE = {
@@ -14,7 +15,6 @@ const ROLE_BADGE = {
   COACH: 'bg-amber-50 text-amber-700',
   CENTER_MANAGER: 'bg-violet-50 text-violet-700'
 };
-const PAGE_SIZE = 20;
 
 const isSelf = u => (u.email || '').toLowerCase() === (session.get()?.email || '').toLowerCase();
 
@@ -36,19 +36,6 @@ function validateEdit(d) {
   if (d.phone && !/^(0|\+84)[0-9]{9}$/.test(d.phone.trim())) e.phone = 'Số điện thoại không hợp lệ';
   if (d.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email.trim())) e.email = 'Email không hợp lệ';
   return e;
-}
-
-function pager(page) {
-  if (!page || page.totalPages <= 1) return '';
-  const n = page.number;
-  return html`
-    <div class="flex items-center justify-between px-5 py-3 border-t border-brand-line/60 text-sm" data-testid="pager">
-      <span class="text-slate-500">Trang ${n + 1}/${page.totalPages} · ${page.totalElements} tài khoản</span>
-      <div class="flex gap-2">
-        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n - 1}" ${n <= 0 ? 'disabled' : ''}>${icon('chevron-left', 'w-3.5 h-3.5')} Trước</button>
-        <button type="button" class="btn-secondary btn-sm" data-action="page" data-page="${n + 1}" ${n + 1 >= page.totalPages ? 'disabled' : ''}>Sau ${icon('chevron-right', 'w-3.5 h-3.5')}</button>
-      </div>
-    </div>`;
 }
 
 // Lọc + phân trang ở BE (GET /users?keyword&role&status&page&size); số trên tab và thẻ thống kê cũng lấy từ BE
@@ -89,7 +76,7 @@ function view(s) {
                 <button type="button" class="btn-ghost btn-sm ${u.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-700 hover:bg-emerald-50'}" data-action="toggle" data-id="${u.id}" title="${u.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}" data-testid="row-toggle">${icon(u.status === 'ACTIVE' ? 'lock' : 'unlock', 'w-3.5 h-3.5')}</button>`}
             </div>`
         ])
-      })}${pager(s.page)}` : emptyState('Không có tài khoản phù hợp', 'users')}
+      })}${pagination(s.page, { unit: 'tài khoản' })}` : emptyState('Không có tài khoản phù hợp', 'users')}
     </div>`;
 }
 
@@ -97,7 +84,7 @@ export default function ManagerUsers(el) {
   let timer = null;
   const find = (ctx, id) => (ctx.state.page?.content || []).find(x => String(x.id) === id);
   return mountPage(el, {
-    state: { tab: 'ALL', keyword: '', status: '', pageNo: 0 },
+    state: { tab: 'ALL', keyword: '', status: '', pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: async ctx => {
       const s = ctx.state;
       const query = {
@@ -105,7 +92,7 @@ export default function ManagerUsers(el) {
         role: s.tab === 'ALL' ? undefined : s.tab,
         status: s.status || undefined,
         page: s.pageNo,
-        size: PAGE_SIZE
+        size: s.pageSize
       };
       // đếm bằng totalElements, mỗi lần chỉ lấy 1 dòng
       const total = q => userApi.page({ ...q, size: 1 }).then(p => p.totalElements).catch(() => null);
@@ -125,7 +112,7 @@ export default function ManagerUsers(el) {
         timer = setTimeout(() => { ctx.state.pageNo = 0; ctx.reload(); }, 350);
       },
       status: (t, e, ctx) => { ctx.state.status = t.value; ctx.state.pageNo = 0; ctx.reload(); },
-      page: (t, e, ctx) => { ctx.state.pageNo = Math.max(0, Number(t.dataset.page)); ctx.reload(); },
+      ...pagerActions({ server: true }),
       edit: (t, e, ctx) => {
         const u = find(ctx, t.dataset.id);
         openFormModal({
@@ -141,7 +128,9 @@ export default function ManagerUsers(el) {
         const u = find(ctx, t.dataset.id);
         const locking = u.status === 'ACTIVE';
         if (await confirmAction(
-          locking ? `Khóa tài khoản ${fullName(u)} (${u.email})? Tài khoản sẽ không đăng nhập được.` : `Mở khóa tài khoản ${fullName(u)}?`,
+          locking
+            ? `Khóa tài khoản ${fullName(u)} (${u.email})? Tài khoản sẽ không đăng nhập được.${u.roleName === 'MEMBER' ? '\nCác lớp sắp diễn ra hội viên đã đặt sẽ bị hủy để trả chỗ (không hoàn buổi); mở khóa lại không tự đặt lại.' : ''}${u.roleName === 'COACH' ? '\nHLV còn lớp đang mở sắp dạy sẽ không khóa được — đổi HLV cho các lớp đó trước.' : ''}`
+            : `Mở khóa tài khoản ${fullName(u)}?`,
           () => userApi.toggleStatus(u.id),
           { confirmText: locking ? 'Khóa' : 'Mở khóa', success: locking ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản' }
         )) ctx.reload();

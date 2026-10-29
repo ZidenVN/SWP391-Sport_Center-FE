@@ -15,6 +15,19 @@ const ATTENDANCE = [
   { id: 'ABSENT', label: 'Vắng', on: 'peer-checked:bg-rose-600 peer-checked:text-white peer-checked:border-rose-600' }
 ];
 
+// Khung giờ điểm danh giống BE (app.attendance.*): mở trước giờ học 15 phút, đóng sau giờ kết thúc 24 giờ, lớp hủy thì không
+const ATTENDANCE_OPEN_MINUTES_BEFORE = 15;
+const ATTENDANCE_CLOSE_HOURS_AFTER = 24;
+function attendanceWindow(c, now = new Date()) {
+  if (!c) return { open: true };
+  if (c.status === 'CANCELLED' || c.status === 'INACTIVE') return { open: false, reason: 'Lớp đã bị hủy, không thể điểm danh.' };
+  const opensAt = new Date(toDate(c.startTime).getTime() - ATTENDANCE_OPEN_MINUTES_BEFORE * 60000);
+  const closesAt = new Date(toDate(c.endTime).getTime() + ATTENDANCE_CLOSE_HOURS_AFTER * 3600000);
+  if (now < opensAt) return { open: false, reason: `Chưa tới giờ điểm danh — mở lúc ${dateTime(opensAt)} (trước giờ học ${ATTENDANCE_OPEN_MINUTES_BEFORE} phút).` };
+  if (now > closesAt) return { open: false, reason: `Đã quá thời gian điểm danh (đóng ${ATTENDANCE_CLOSE_HOURS_AFTER} giờ sau khi lớp kết thúc, lúc ${dateTime(closesAt)}).` };
+  return { open: true, closesAt };
+}
+
 function hero(c) {
   const pct = c.maxCapacity ? Math.round((c.currentEnrolled / c.maxCapacity) * 100) : 0;
   return html`
@@ -64,12 +77,13 @@ function rosterTab(s) {
 function attendanceTab(s) {
   if (!s.roster.length) return emptyState('Lớp chưa có học viên để điểm danh', 'clipboard-check');
   const marked = Object.fromEntries(s.attendances.map(a => [a.memberId, a]));
-  const started = toDate(s.cls.startTime) <= new Date();
+  const win = attendanceWindow(s.cls);
   return html`
-    ${!started ? html`
-      <div class="mb-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 flex gap-2">
-        ${icon('info', 'w-4 h-4 shrink-0 mt-0.5')} Lớp chưa bắt đầu — bạn vẫn có thể ghi nhận trước (ví dụ học viên báo nghỉ có phép).
-      </div>` : ''}
+    ${!win.open ? html`
+      <div class="mb-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 flex gap-2" data-testid="attendance-closed">
+        ${icon('clock', 'w-4 h-4 shrink-0 mt-0.5')} ${win.reason}
+      </div>` : win.closesAt ? html`
+      <div class="mb-4 text-xs text-slate-500 flex items-center gap-1.5">${icon('clock', 'w-3.5 h-3.5')} Điểm danh được tới ${dateTime(win.closesAt)}</div>` : ''}
     <form class="card" data-action="save-attendance" data-testid="attendance-form" novalidate>
       <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
         <div class="text-sm text-slate-600">
@@ -98,7 +112,7 @@ function attendanceTab(s) {
         })}
       </div>
       <div class="flex justify-end px-5 py-4 border-t border-slate-100">
-        <button type="submit" class="btn-primary" data-testid="attendance-submit">${icon('save', 'w-4 h-4')} Lưu điểm danh</button>
+        <button type="submit" class="btn-primary" data-testid="attendance-submit" ${win.open ? '' : 'disabled'}>${icon('save', 'w-4 h-4')} Lưu điểm danh</button>
       </div>
     </form>
     ${s.attendances.length ? html`

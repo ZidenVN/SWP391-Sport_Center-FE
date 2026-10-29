@@ -1,5 +1,5 @@
 import { html, icon } from '../../core/dom.js';
-import { tabs, emptyState } from '../../core/ui.js';
+import { tabs, emptyState, withBusy, toast } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { coachApi } from '../../api/endpoints.js';
 import { fullName, genderLabel, phoneText } from '../../core/format.js';
@@ -12,7 +12,7 @@ function view(s) {
   if (!m) return emptyState(s.memberError?.message || 'Không xem được hồ sơ học viên này', 'user-x');
   const body = {
     progress: () => progressSummary(s.progress),
-    plans: () => planList(s.plans, { emptyText: 'Chưa giao giáo án cho học viên này' }),
+    plans: () => planList(s.plans, { emptyText: 'Chưa giao giáo án cho học viên này', statusAction: true }),
     results: () => resultList(s.results, { editable: true, emptyText: 'Chưa ghi kết quả buổi tập nào' })
   }[s.tab]();
   return html`
@@ -57,6 +57,11 @@ export default function CoachMemberDetail(el, { params, query }) {
     view,
     actions: {
       tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),
+      'plan-status': async (t, e, ctx) => {
+        const done = t.dataset.status === 'COMPLETED';
+        const res = await withBusy(t, () => coachApi.setMemberPlanStatus(t.dataset.id, t.dataset.status));
+        if (res !== undefined) { toast(done ? 'Đã đánh dấu giáo án hoàn thành' : 'Đã mở lại giáo án'); ctx.reload(); }
+      },
       'new-result': (t, e, ctx) => openResultForm({
         member: ctx.state.member,
         onDone: () => { ctx.state.tab = 'results'; ctx.reload(); }

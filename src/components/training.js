@@ -2,7 +2,19 @@ import { html, icon } from '../core/dom.js';
 import { emptyState, statCard } from '../core/ui.js';
 import { date, dateTime, badge } from '../core/format.js';
 
-export function planList(plans, { emptyText = 'Chưa có giáo án nào' } = {}) {
+// statusAction: hiện nút đổi tiến độ giáo án cá nhân (dành cho coach, cần memberPlanId)
+function planStatusButton(p) {
+  if (!p.memberPlanId) return '';
+  const done = p.status === 'COMPLETED';
+  return html`
+    <div class="flex justify-end mt-4 pt-3 border-t border-brand-line/60">
+      <button type="button" class="btn-sm ${done ? 'btn-secondary' : 'btn-primary'}" data-action="plan-status" data-id="${p.memberPlanId}" data-status="${done ? 'IN_PROGRESS' : 'COMPLETED'}" data-testid="plan-status">
+        ${done ? html`${icon('rotate-ccw', 'w-3.5 h-3.5')} Mở lại giáo án` : html`${icon('check-circle-2', 'w-3.5 h-3.5')} Đánh dấu hoàn thành`}
+      </button>
+    </div>`;
+}
+
+export function planList(plans, { emptyText = 'Chưa có giáo án nào', statusAction = false } = {}) {
   if (!plans?.length) return emptyState(emptyText, 'clipboard-list');
   return html`
     <div class="grid md:grid-cols-2 gap-4">
@@ -21,6 +33,7 @@ export function planList(plans, { emptyText = 'Chưa có giáo án nào' } = {})
             <span class="flex items-center gap-1">${icon('calendar', 'w-3.5 h-3.5')} Giao ngày ${date(p.assignedDate)}</span>
             ${p.dueDate ? html`<span class="flex items-center gap-1">${icon('flag', 'w-3.5 h-3.5')} Hạn ${date(p.dueDate)}</span>` : ''}
           </div>
+          ${statusAction ? planStatusButton(p) : ''}
         </div>`)}
     </div>`;
 }

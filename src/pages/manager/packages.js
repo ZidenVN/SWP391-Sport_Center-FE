@@ -4,6 +4,7 @@ import { mountPage } from '../../core/page.js';
 import { packageApi, subjectApi } from '../../api/endpoints.js';
 import { money, badge } from '../../core/format.js';
 import { openFormModal, requireFields, confirmAction, rowActions, matches, searchBox } from '../../components/crud.js';
+import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 import { packageScope } from '../../components/billing.js';
 
 // Gói tập theo BE main (MembershipPackageRequestDTO):
@@ -99,14 +100,15 @@ function view(s) {
   const list = s.packages
     .filter(p => matches(s.keyword, [p.packageName, p.description, ...(p.subjects || []).map(x => x.subjectName)]))
     .sort((a, b) => (a.status === 'INACTIVE') - (b.status === 'INACTIVE') || a.durationDays - b.durationDays);
+  const page = paginate(list, s.pageNo, s.pageSize);
   return html`
     ${pageHeader('Gói tập', 'Quản lý các gói hội viên đang bán',
       html`<button type="button" class="btn-primary" data-action="create" data-testid="create">${icon('plus', 'w-4 h-4')} Thêm gói</button>`)}
     <div class="card">
       <div class="p-4 border-b border-slate-100">${searchBox(s.keyword, 'Tìm gói tập, môn...')}</div>
-      ${list.length ? table({
+      ${list.length ? html`${table({
         columns: [{ label: 'Gói' }, { label: 'Loại / Môn áp dụng' }, { label: 'Thời hạn' }, { label: 'Giá', cls: 'text-right' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
-        rows: list.map(p => [
+        rows: page.content.map(p => [
           html`<div class="font-semibold">${p.packageName}</div><div class="text-xs text-slate-500 max-w-xs truncate">${p.description || ''}</div>`,
           html`<div class="text-xs font-bold ${p.packageType === 'FREE' ? 'text-sky-700' : 'text-emerald-700'}">${p.packageType === 'FREE' ? 'Tập tự do' : 'Theo lớp'}</div><div class="text-xs text-slate-500 max-w-[14rem]">${packageScope(p)}</div>
             ${p.packageType === 'CLASS' && !(p.subjects || []).length ? html`<div class="text-[11px] font-bold text-rose-600 mt-0.5" data-testid="pkg-warning">Chưa gắn môn — hội viên không đặt lớp được</div>` : ''}`,
@@ -115,20 +117,21 @@ function view(s) {
           p.status === 'INACTIVE' ? badge('INACTIVE', 'Ngừng bán') : badge('ACTIVE', 'Đang bán'),
           rowActions(p.packageId, { removeLabel: 'Ngừng bán', removeIcon: 'archive', remove: p.status !== 'INACTIVE' })
         ])
-      }) : emptyState('Chưa có gói tập', 'package')}
+      })}${pagination(page, { unit: 'gói' })}` : emptyState('Chưa có gói tập', 'package')}
     </div>`;
 }
 
 export default function ManagerPackages(el) {
   return mountPage(el, {
-    state: { keyword: '', subjects: [] },
+    state: { keyword: '', subjects: [], pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: async () => {
       const [packages, subjects] = await Promise.all([packageApi.list(), subjectApi.list().catch(() => [])]);
       return { packages, subjects: subjects.filter(x => x.status !== 'INACTIVE') };
     },
     view,
     actions: {
-      search: (t, e, ctx) => ctx.set({ keyword: t.value }),
+      search: (t, e, ctx) => ctx.set({ keyword: t.value, pageNo: 0 }),
+      ...pagerActions(),
       create: (t, e, ctx) => openFormModal({
         title: 'Thêm gói tập', size: 'max-w-xl', fields: form(ctx.state), validate: validator(ctx.state), success: 'Đã thêm gói tập',
         onMount: mountTypeSwitch,

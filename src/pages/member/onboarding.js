@@ -1,18 +1,19 @@
 import { html, icon } from '../../core/dom.js';
-import { toast } from '../../core/ui.js';
+import { toast, withBusy, emptyState } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
-import { packageApi, subjectApi, classApi, memberApi } from '../../api/endpoints.js';
+import { packageApi, subjectApi, classApi, memberApi, quizApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { money, isoDate, timeRange } from '../../core/format.js';
 import { classCard } from '../../components/classCard.js';
 import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import {
-  quizStore, GOALS, SLOTS, FREQUENCIES, COMMITMENTS, find, bmiInfo, bmiAdvice, validateAnswers,
-  recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, COMBO_PRICING
+  quizStore, GOALS, SLOTS, FREQUENCIES, COMMITMENTS, find, bmiInfo, bmiAdvice,
+  recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, COMBO_PRICING,
+  quizSteps, validateStep, quizPayload, byCode, QUIZ_CODES, goalIdOf
 } from '../../core/quiz.js';
 
-// Quiz làm quen sau khi đăng ký (4 bước) -> gợi ý gói tập + lớp hợp khung giờ. Chỉ chạy ở FE (xem core/quiz.js).
-const STEPS = ['Chỉ số cơ thể', 'Mục tiêu', 'Khung giờ', 'Thời gian gắn bó'];
+// Quiz làm quen sau khi đăng ký: câu hỏi lấy từ BE (Quản lý soạn được), nộp lên BE (bắt buộc để tự đặt lớp)
+// -> gợi ý gói tập + lớp hợp khung giờ. Khung giờ / số buổi / gắn bó chỉ dùng để gợi ý ở FE (xem core/quiz.js).
 const TONE = { sky: 'bg-sky-100 text-sky-700', emerald: 'bg-emerald-100 text-emerald-700', amber: 'bg-amber-100 text-amber-700', rose: 'bg-rose-100 text-rose-700' };
 
 const err = (s, key) => (s.errors?.[key] ? html`<p class="text-xs text-rose-600 mt-1.5" data-error="${key}">${s.errors[key]}</p>` : '');
@@ -30,48 +31,85 @@ function optionCard({ action, key, value, active, title, hint, iconName, testid 
     </button>`;
 }
 
+// ô nhập số của câu chiều cao / cân nặng, giới hạn và đơn vị lấy theo câu hỏi BE
+function bodyInput(s, key, q, placeholder) {
+  if (!q) return '';
+  return html`
+    <label class="block">
+      <span class="text-sm font-semibold text-slate-700">${q.code === QUIZ_CODES.height ? 'Chiều cao' : 'Cân nặng'}</span>
+      <div class="relative mt-1.5">
+        <input class="input pr-12 text-lg font-bold" type="number" inputmode="decimal" ${q.minValue != null ? `min="${q.minValue}"` : ''} ${q.maxValue != null ? `max="${q.maxValue}"` : ''} step="0.1"
+          name="${key}" data-action="field" data-live placeholder="${placeholder}" value="${s.answers[key] ?? ''}" data-testid="quiz-${key}" />
+        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">${q.unit || ''}</span>
+      </div>
+      ${err(s, key)}
+    </label>`;
+}
+
+// câu Quản lý tự thêm: hiển thị theo loại câu
+function customBody(s, q) {
+  const v = s.answers.extra?.[q.questionId];
+  const picked = Array.isArray(v) ? v.map(String) : [];
+  const hint = { NUMBER: 'Nhập một con số', TEXT: 'Trả lời ngắn gọn', SINGLE: 'Chọn một đáp án', MULTIPLE: 'Có thể chọn nhiều đáp án' }[q.type];
+  return html`
+    <h2 class="font-display text-3xl font-extrabold text-brand-dark">${q.content}</h2>
+    <p class="text-sm text-slate-500 mt-1">${hint}</p>
+    <div class="mt-6" data-testid="quiz-custom" data-question-id="${q.questionId}">
+      ${q.type === 'NUMBER' ? html`
+        <div class="relative max-w-xs">
+          <input class="input pr-14 text-lg font-bold" type="number" inputmode="decimal" step="any" ${q.minValue != null ? `min="${q.minValue}"` : ''} ${q.maxValue != null ? `max="${q.maxValue}"` : ''}
+            name="extra-${q.questionId}" data-action="extra-field" data-qid="${q.questionId}" data-live value="${v ?? ''}" data-testid="quiz-custom-number" />
+          ${q.unit ? html`<span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">${q.unit}</span>` : ''}
+        </div>
+        ${q.minValue != null || q.maxValue != null ? html`<p class="text-xs text-slate-500 mt-1.5">Từ ${q.minValue ?? '…'} đến ${q.maxValue ?? '…'}${q.unit ? ` ${q.unit}` : ''}</p>` : ''}` : ''}
+      ${q.type === 'TEXT' ? html`
+        <textarea class="input" rows="4" maxlength="1000" name="extra-${q.questionId}" data-action="extra-field" data-qid="${q.questionId}" data-live placeholder="Câu trả lời của bạn" data-testid="quiz-custom-text">${v || ''}</textarea>` : ''}
+      ${q.type === 'SINGLE' || q.type === 'MULTIPLE' ? html`
+        <div class="grid sm:grid-cols-2 gap-3">
+          ${q.options.map(o => optionCard({
+            action: 'extra-pick', key: q.questionId, value: o.optionId, active: picked.includes(String(o.optionId)), title: o.content,
+            iconName: q.type === 'MULTIPLE' ? (picked.includes(String(o.optionId)) ? 'square-check' : 'square') : null, testid: `quiz-option-${o.optionId}`
+          }))}
+        </div>` : ''}
+    </div>
+    ${err(s, 'extra')}`;
+}
+
 function stepBody(s) {
   const a = s.answers;
-  if (s.step === 1) {
+  const step = s.steps[s.step - 1];
+  if (step.kind === 'body') {
     const bmi = bmiInfo(a.height, a.weight);
+    const ok = bmi && !Object.keys(validateStep(step, a, s.questions)).length;
     return html`
       <h2 class="font-display text-3xl font-extrabold text-brand-dark">Chiều cao và cân nặng của bạn?</h2>
-      <p class="text-sm text-slate-500 mt-1">Dùng để tính BMI và gợi ý cường độ tập phù hợp. Chỉ bạn thấy thông tin này.</p>
+      <p class="text-sm text-slate-500 mt-1">Dùng để tính BMI và gợi ý cường độ tập phù hợp. Thông tin được lưu vào hồ sơ để HLV theo dõi.</p>
       <div class="grid sm:grid-cols-2 gap-4 mt-6">
-        <label class="block">
-          <span class="text-sm font-semibold text-slate-700">Chiều cao</span>
-          <div class="relative mt-1.5">
-            <input class="input pr-12 text-lg font-bold" type="number" inputmode="numeric" min="120" max="230" name="height" data-action="field" data-live placeholder="165" value="${a.height || ''}" data-testid="quiz-height" />
-            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">cm</span>
-          </div>
-          ${err(s, 'height')}
-        </label>
-        <label class="block">
-          <span class="text-sm font-semibold text-slate-700">Cân nặng</span>
-          <div class="relative mt-1.5">
-            <input class="input pr-12 text-lg font-bold" type="number" inputmode="decimal" min="30" max="250" step="0.1" name="weight" data-action="field" data-live placeholder="60" value="${a.weight || ''}" data-testid="quiz-weight" />
-            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">kg</span>
-          </div>
-          ${err(s, 'weight')}
-        </label>
+        ${bodyInput(s, 'height', byCode(s.questions, QUIZ_CODES.height), '165')}
+        ${bodyInput(s, 'weight', byCode(s.questions, QUIZ_CODES.weight), '60')}
       </div>
       <div class="mt-5 rounded-2xl bg-brand-sand/70 p-4 flex items-center gap-4 min-h-[76px]" data-testid="quiz-bmi">
-        ${bmi && !validateAnswers(a, 1).height && !validateAnswers(a, 1).weight ? html`
+        ${ok ? html`
           <div class="font-display text-4xl font-extrabold text-brand-dark">${bmi.value}</div>
           <div><div class="text-xs text-slate-500">Chỉ số BMI</div><span class="inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${TONE[bmi.tone]}">${bmi.label}</span></div>` : html`
           <span class="text-sm text-slate-500 flex items-center gap-2">${icon('calculator', 'w-4 h-4')} Nhập đủ chiều cao và cân nặng để xem BMI</span>`}
       </div>`;
   }
-  if (s.step === 2) {
+  if (step.kind === 'goal') {
+    // đáp án lấy từ BE; đáp án nào khớp GOALS thì có icon + mô tả
     return html`
-      <h2 class="font-display text-3xl font-extrabold text-brand-dark">Mục tiêu tập luyện chính?</h2>
+      <h2 class="font-display text-3xl font-extrabold text-brand-dark">${step.question.content || 'Mục tiêu tập luyện chính?'}</h2>
       <p class="text-sm text-slate-500 mt-1">Chọn một mục tiêu quan trọng nhất với bạn lúc này.</p>
       <div class="grid sm:grid-cols-2 gap-3 mt-6">
-        ${GOALS.map(g => optionCard({ action: 'pick', key: 'goal', value: g.id, active: a.goal === g.id, title: g.label, hint: g.hint, iconName: g.icon, testid: `quiz-goal-${g.id}` }))}
+        ${step.question.options.map(o => {
+          const g = find(GOALS, goalIdOf(o));
+          return g ? optionCard({ action: 'pick', key: 'goal', value: g.id, active: a.goal === g.id, title: o.content, hint: g.hint, iconName: g.icon, testid: `quiz-goal-${g.id}` }) : '';
+        })}
       </div>
       ${err(s, 'goal')}`;
   }
-  if (s.step === 3) {
+  if (step.kind === 'custom') return customBody(s, step.question);
+  if (step.kind === 'slots') {
     return html`
       <h2 class="font-display text-3xl font-extrabold text-brand-dark">Bạn thường rảnh khung giờ nào?</h2>
       <p class="text-sm text-slate-500 mt-1">Có thể chọn nhiều khung giờ. Hệ thống sẽ ưu tiên lớp học trong các khung này.</p>
@@ -97,22 +135,35 @@ function stepBody(s) {
 }
 
 function quizView(s) {
-  const pct = Math.round(((s.step - 1) / STEPS.length) * 100);
+  if (!s.questions) {
+    return html`
+      <div class="max-w-3xl mx-auto card p-8" data-testid="quiz-error">
+        ${emptyState('Không tải được bộ câu hỏi khảo sát', 'wifi-off')}
+        <div class="flex justify-center"><button type="button" class="btn-primary" data-action="retry">${icon('rotate-ccw', 'w-4 h-4')} Thử lại</button></div>
+      </div>`;
+  }
+  const total = s.steps.length;
+  const pct = Math.round(((s.step - 1) / total) * 100);
+  const last = s.step === total;
   return html`
     <div class="max-w-3xl mx-auto" data-testid="quiz">
+      ${!s.completed ? html`
+        <div class="mb-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 flex gap-2" data-testid="quiz-required">
+          ${icon('info', 'w-4 h-4 shrink-0 mt-0.5')} Bạn cần hoàn thành khảo sát này trước khi tự đặt lớp học.
+        </div>` : ''}
       <div class="flex items-center justify-between gap-4 mb-5">
         <div>
-          <div class="text-xs font-bold uppercase tracking-widest text-brand">Bước ${s.step}/${STEPS.length} · ${STEPS[s.step - 1]}</div>
-          <div class="text-sm text-slate-500 mt-0.5">Trả lời nhanh 4 câu để nhận gói tập hợp với bạn</div>
+          <div class="text-xs font-bold uppercase tracking-widest text-brand">Bước ${s.step}/${total} · ${s.steps[s.step - 1].label}</div>
+          <div class="text-sm text-slate-500 mt-0.5">Trả lời nhanh ${total} bước để nhận gói tập hợp với bạn</div>
         </div>
-        <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-800" data-action="skip" data-testid="quiz-skip">Bỏ qua</button>
+        <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-800" data-action="skip" data-testid="quiz-skip">${s.completed ? 'Hủy làm lại' : 'Để sau'}</button>
       </div>
       <div class="h-2 rounded-full bg-brand-sand overflow-hidden mb-6"><div class="h-full rounded-full bg-brand-dark transition-all" style="width:${Math.max(6, pct)}%"></div></div>
       <form class="card p-6 sm:p-8" data-action="next" novalidate>
         ${stepBody(s)}
         <div class="flex items-center justify-between gap-3 mt-8 pt-6 border-t border-brand-line/60">
           ${s.step > 1 ? html`<button type="button" class="btn-secondary" data-action="back" data-testid="quiz-back">${icon('arrow-left', 'w-4 h-4')} Quay lại</button>` : html`<span></span>`}
-          <button type="submit" class="btn-primary" data-testid="quiz-next">${s.step < STEPS.length ? html`Tiếp tục ${icon('arrow-right', 'w-4 h-4')}` : html`${icon('sparkles', 'w-4 h-4')} Xem gợi ý`}</button>
+          <button type="submit" class="btn-primary" data-testid="quiz-next">${!last ? html`Tiếp tục ${icon('arrow-right', 'w-4 h-4')}` : html`${icon('sparkles', 'w-4 h-4')} Hoàn thành & xem gợi ý`}</button>
         </div>
       </form>
     </div>`;
@@ -198,12 +249,13 @@ function resultView(s) {
         <div class="absolute -right-12 -top-12 w-52 h-52 rounded-full bg-brand/30"></div>
         <div class="relative">
           <div class="text-xs font-bold uppercase tracking-widest text-brand-lime">Gợi ý dành riêng cho bạn</div>
-          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none mt-2">${goal?.label}</h1>
+          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none mt-2">${goal?.label || 'Kế hoạch tập của bạn'}</h1>
           <div class="flex flex-wrap gap-2 mt-4 text-xs font-semibold">
-            <span class="px-3 py-1 rounded-full bg-white/10">${a.height} cm · ${a.weight} kg</span>
+            ${a.height && a.weight ? html`<span class="px-3 py-1 rounded-full bg-white/10">${a.height} cm · ${a.weight} kg</span>` : ''}
             ${bmi ? html`<span class="px-3 py-1 rounded-full bg-brand-lime text-brand-dark">BMI ${bmi.value} · ${bmi.label}</span>` : ''}
-            <span class="px-3 py-1 rounded-full bg-white/10">${slotText}</span>
-            <span class="px-3 py-1 rounded-full bg-white/10">${find(FREQUENCIES, a.frequency)?.label}</span>
+            ${slotText ? html`<span class="px-3 py-1 rounded-full bg-white/10">${slotText}</span>` : ''}
+            ${find(FREQUENCIES, a.frequency) ? html`<span class="px-3 py-1 rounded-full bg-white/10">${find(FREQUENCIES, a.frequency).label}</span>` : ''}
+            ${s.completedAt ? html`<span class="px-3 py-1 rounded-full bg-white/10 flex items-center gap-1">${icon('check', 'w-3.5 h-3.5')} Đã lưu khảo sát</span>` : ''}
           </div>
           <p class="text-white/75 text-sm mt-4 max-w-2xl">${bmiAdvice(bmi, a.goal)}</p>
         </div>
@@ -276,7 +328,7 @@ function resultView(s) {
         <div class="flex items-end justify-between mb-3 gap-3">
           <div>
             <h2 class="font-display text-2xl font-extrabold text-brand-dark">Lớp hợp khung giờ của bạn</h2>
-            <p class="text-sm text-slate-500">${classes.exact ? `Trong 2 tuần tới, ${slotText.toLowerCase()}` : 'Chưa có lớp đúng khung giờ bạn chọn, đây là các lớp gần nhất'}</p>
+            <p class="text-sm text-slate-500">${classes.exact && slotText ? `Trong 2 tuần tới, ${slotText.toLowerCase()}` : 'Chưa có lớp đúng khung giờ bạn chọn, đây là các lớp gần nhất'}</p>
           </div>
           <a href="#/member/classes" class="text-sm font-bold text-brand-deep hover:underline whitespace-nowrap">Xem tất cả lớp</a>
         </div>
@@ -299,21 +351,34 @@ export default function MemberOnboarding(el, { query } = {}) {
   const email = session.get()?.email;
   const saved = quizStore.answers(email);
   return mountPage(el, {
-    // ?redo=1 để làm lại; đã làm rồi thì mở thẳng phần kết quả
-    state: { step: 1, answers: saved ? { ...saved } : { slots: [] }, errors: {}, done: Boolean(saved) && !query?.redo, comboIdx: 0, chosenCombo: quizStore.combo(email) },
-    load: async () => {
+    // ?redo=1 để làm lại; BE báo đã làm thì mở thẳng phần kết quả
+    state: { step: 1, answers: { slots: [], ...(saved || {}), extra: { ...(saved?.extra || {}) } }, errors: {}, done: undefined, comboIdx: 0, chosenCombo: quizStore.combo(email) },
+    load: async ctx => {
       const today = new Date();
       const res = await settle({
+        questions: [quizApi.questions, null],
+        status: [quizApi.status, null],
+        me: [memberApi.me, null],
         packages: [packageApi.list, []],
         subjects: [subjectApi.list, []],
         current: [memberApi.currentSubscription, null],
         page: [() => classApi.search({ fromDate: isoDate(today), toDate: isoDate(new Date(today.getTime() + 13 * 86400000)), status: 'OPENING', available: true, size: 100 }), null]
       });
-      return { packages: res.packages, subjects: res.subjects, classes: res.page?.content || [], hasPackage: Boolean(res.current) };
+      const s = ctx.state;
+      const completed = Boolean(res.status?.completed);
+      if (res.status) session.update({ quizCompleted: completed });
+      // làm ở máy khác (không có bản sao câu trả lời): lấy mục tiêu đã lưu trong hồ sơ để vẫn gợi ý được
+      if (!s.answers.goal && res.me?.trainingGoal) s.answers.goal = GOALS.find(g => g.label === res.me.trainingGoal)?.id;
+      return {
+        questions: res.questions, steps: quizSteps(res.questions), completed, completedAt: res.status?.completedAt || null,
+        done: s.done ?? (completed && !query?.redo),
+        packages: res.packages, subjects: res.subjects, classes: res.page?.content || [], hasPackage: Boolean(res.current)
+      };
     },
     view,
     actions: {
       'coach-info': btn => openCoachInfo(coachFromButton(btn)),
+      retry: (t, e, ctx) => ctx.reload(),
       field: (t, e, ctx) => {
         ctx.state.answers[t.name] = t.value;
         ctx.set({ errors: { ...ctx.state.errors, [t.name]: undefined } });
@@ -322,6 +387,19 @@ export default function MemberOnboarding(el, { query } = {}) {
         ctx.state.answers[t.dataset.key] = t.dataset.value;
         ctx.set({ errors: { ...ctx.state.errors, [t.dataset.key]: undefined } });
       },
+      // câu tự thêm: ô số / văn bản
+      'extra-field': (t, e, ctx) => {
+        ctx.state.answers.extra[t.dataset.qid] = t.value;
+        ctx.set({ errors: { ...ctx.state.errors, extra: undefined } });
+      },
+      // câu tự thêm: chọn 1 thì thay, chọn nhiều thì bật / tắt
+      'extra-pick': (t, e, ctx) => {
+        const q = ctx.state.questions.find(x => String(x.questionId) === t.dataset.key);
+        const cur = (ctx.state.answers.extra[q.questionId] || []).map(String);
+        const id = t.dataset.value;
+        ctx.state.answers.extra[q.questionId] = q.type === 'SINGLE' ? [id] : cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+        ctx.set({ errors: { ...ctx.state.errors, extra: undefined } });
+      },
       'toggle-slot': (t, e, ctx) => {
         const slots = new Set(ctx.state.answers.slots || []);
         slots.has(t.dataset.value) ? slots.delete(t.dataset.value) : slots.add(t.dataset.value);
@@ -329,15 +407,19 @@ export default function MemberOnboarding(el, { query } = {}) {
         ctx.set({ errors: { ...ctx.state.errors, slots: undefined } });
       },
       back: (t, e, ctx) => ctx.set({ step: Math.max(1, ctx.state.step - 1), errors: {} }),
-      next: (t, e, ctx) => {
+      next: async (form, e, ctx) => {
         const s = ctx.state;
-        const errors = validateAnswers(s.answers, s.step);
+        const errors = validateStep(s.steps[s.step - 1], s.answers, s.questions);
         if (Object.keys(errors).length) { ctx.set({ errors }); return; }
-        if (s.step < STEPS.length) { ctx.set({ step: s.step + 1, errors: {} }); el.scrollIntoView?.({ block: 'start' }); return; }
+        if (s.step < s.steps.length) { ctx.set({ step: s.step + 1, errors: {} }); el.scrollIntoView?.({ block: 'start' }); return; }
+        // bước cuối: nộp lên BE (ghi đè lần trước), xong mới lưu bản sao để gợi ý
+        const res = await withBusy(form, () => quizApi.submit(quizPayload(s.questions, s.answers)));
+        if (!res) return;
         const answers = { ...s.answers, height: Number(s.answers.height), weight: Number(s.answers.weight) };
         quizStore.save(email, answers);
-        toast('Đã lưu câu trả lời, đây là gợi ý dành cho bạn');
-        ctx.set({ answers, done: true, errors: {} });
+        session.update({ quizCompleted: true });
+        toast('Đã lưu khảo sát — bạn có thể đặt lớp ngay. Đây là gợi ý dành cho bạn');
+        ctx.set({ answers, done: true, completed: true, completedAt: res.completedAt, errors: {} });
         window.scrollTo?.({ top: 0 });
       },
       redo: (t, e, ctx) => ctx.set({ done: false, step: 1, errors: {} }),
@@ -350,8 +432,11 @@ export default function MemberOnboarding(el, { query } = {}) {
         toast(`Đã chọn combo ${combo.name} · ${money(combo.price)}/tháng. Lễ tân sẽ hỗ trợ bạn khi combo mở thanh toán.`);
         ctx.set({ chosenCombo: quizStore.combo(email) });
       },
-      skip: () => {
+      // đã làm rồi (đang làm lại) thì quay về kết quả; chưa làm thì để sau, lần đăng nhập tới không tự mở nữa
+      skip: (t, e, ctx) => {
+        if (ctx.state.completed) { ctx.set({ done: true, errors: {} }); return; }
         quizStore.skip(email);
+        toast('Bạn có thể làm khảo sát bất cứ lúc nào ở mục Gói tập. Cần làm xong để tự đặt lớp.', 'warning');
         location.hash = '#/member/home';
       }
     }

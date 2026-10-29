@@ -47,10 +47,7 @@ function permissionPanel(s) {
               ${groups[name].map(p => html`
                 <label class="flex items-start gap-3 rounded-xl border border-slate-200 px-3 py-2.5 ${locked ? 'opacity-70' : 'cursor-pointer hover:bg-slate-50'} has-[:checked]:border-[#469B7E] has-[:checked]:bg-[#469B7E]/5">
                   <input type="checkbox" class="mt-0.5 rounded accent-[#469B7E]" data-action="toggle-perm" data-id="${p.permissionId}" ${s.granted.has(p.permissionId) ? 'checked' : ''} ${locked ? 'disabled' : ''} />
-                  <span class="min-w-0">
-                    <span class="block text-sm font-semibold text-slate-800">${p.description || p.permissionName}</span>
-                    <span class="block text-[11px] font-mono text-slate-400">${p.permissionName}</span>
-                  </span>
+                  <span class="min-w-0 text-sm font-semibold text-slate-800" title="${p.permissionName}">${p.description || p.permissionName}</span>
                 </label>`)}
             </div>
           </div>`)}
