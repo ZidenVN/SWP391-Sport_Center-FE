@@ -21,6 +21,16 @@ export default defineConfig({
         configure: proxy => {
           proxy.on('proxyReq', proxyReq => proxyReq.removeHeader('origin'));
         }
+      },
+      // thông báo realtime (STOMP qua WebSocket) của BE
+      '/ws': {
+        target: 'ws://localhost:8080',
+        ws: true,
+        changeOrigin: true,
+        // giống /api: bỏ Origin để mở FE qua IP LAN vẫn kết nối được
+        configure: proxy => {
+          proxy.on('proxyReqWs', proxyReq => proxyReq.removeHeader('origin'));
+        }
       }
     }
   }

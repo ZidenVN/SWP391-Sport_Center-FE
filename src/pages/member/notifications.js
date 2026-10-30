@@ -12,7 +12,9 @@ const STYLE = {
   SYSTEM: ['megaphone', 'bg-amber-50 text-amber-600'],
   // thông báo tự động của BE khi lớp đổi giờ / phòng hoặc bị hủy
   SCHEDULE_CHANGE: ['calendar-clock', 'bg-amber-50 text-amber-600'],
-  CLASS_CANCELLED: ['calendar-x', 'bg-rose-50 text-rose-600']
+  CLASS_CANCELLED: ['calendar-x', 'bg-rose-50 text-rose-600'],
+  // lễ tân gửi từ quầy (1 / nhiều / mọi hội viên)
+  STAFF_MESSAGE: ['message-square-text', 'bg-indigo-50 text-indigo-600']
 };
 
 // BE: category STAFF = HLV / nhân viên gửi (có senderName), SYSTEM = hệ thống tự gửi
@@ -22,7 +24,7 @@ function view(s) {
   const unread = countUnread(s.items);
   const list = s.tab === 'UNREAD' ? s.items.filter(isUnread) : s.items;
   return html`
-    ${pageHeader('Thông báo', 'Thông báo từ huấn luyện viên và hệ thống (đổi lịch lớp, gói sắp hết hạn...)',
+    ${pageHeader('Thông báo', 'Thông báo từ trung tâm, huấn luyện viên và hệ thống (đổi lịch lớp, gói sắp hết hạn...)',
       html`<button type="button" class="btn-secondary" data-action="read-all" data-testid="read-all" ${unread ? '' : 'disabled'}>${icon('check-check', 'w-4 h-4')} Đánh dấu đã đọc tất cả</button>`)}
     ${tabs([
       { id: 'ALL', label: 'Tất cả', count: s.items.length },
@@ -56,9 +58,21 @@ function view(s) {
 }
 
 export default function MemberNotifications(el) {
-  return mountPage(el, {
+  let page = null;
+  // thông báo đẩy realtime khi đang mở trang: chèn lên đầu danh sách, không cần tải lại
+  const onPush = e => {
+    const n = e.detail;
+    if (!page?.state.items || !n?.notificationId) return;
+    if (page.state.items.some(x => x.notificationId === n.notificationId)) return;
+    page.state.items.unshift({ ...n, read: false });
+    setNotificationBadge(countUnread(page.state.items));
+    page.rerender();
+  };
+  window.addEventListener('sc:notification', onPush);
+  const dispose = mountPage(el, {
     state: { tab: 'ALL' },
-    load: async () => {
+    load: async ctx => {
+      page = ctx;
       const items = await memberApi.notifications();
       setNotificationBadge(countUnread(items));
       return { items };
@@ -97,4 +111,8 @@ export default function MemberNotifications(el) {
       }
     }
   });
+  return () => {
+    window.removeEventListener('sc:notification', onPush);
+    dispose();
+  };
 }

@@ -6,6 +6,7 @@ import { refreshNotificationBadge } from '../components/notificationBadge.js';
 import { brandMark } from '../components/brand.js';
 import { authApi } from '../api/endpoints.js';
 import { isDark, toggleTheme } from './theme.js';
+import { startRealtime, stopRealtime } from './realtime.js';
 
 // Một bộ nhận diện cho mọi vai trò: khung kính mờ tone sáng (glass) trên nền mảnh kính nhạt, điểm nhấn xanh rừng + vàng chanh
 const SIDEBAR_BG = 'glass-panel';
@@ -76,6 +77,8 @@ function sidebar(role) {
 export function renderShell(root) {
   const s = session.get();
   const role = s.role;
+  // chỉ hội viên nhận thông báo đẩy realtime
+  if (role === 'MEMBER') startRealtime(); else stopRealtime();
   if (root.dataset.shell === role && root.querySelector('#page')) {
     return root.querySelector('#page');
   }
@@ -197,6 +200,7 @@ export function renderShell(root) {
     btn.classList.add('is-busy');
     const label = btn.querySelector('[data-logout-label]');
     if (label) label.textContent = 'Đang đăng xuất...';
+    stopRealtime();
     await authApi.logout().catch(() => {});
     session.end();
     window.location.hash = '#/login';

@@ -190,7 +190,9 @@ export const receptionApi = {
   // điểm danh hội viên khi đến trung tâm (không có body)
   checkIn: memberId => http.post(`/receptionist/members/${memberId}/check-ins`),
   checkInsByDate: date => http.get('/receptionist/check-ins', date ? { date } : undefined),
-  memberCheckIns: memberId => http.get(`/receptionist/members/${memberId}/check-ins`)
+  memberCheckIns: memberId => http.get(`/receptionist/members/${memberId}/check-ins`),
+  // targetMode: MEMBERS (kèm memberIds) | ALL_ACTIVE -> { recipientCount }
+  sendNotification: payload => http.post('/receptionist/notifications', payload)
 };
 
 export const coachApi = {

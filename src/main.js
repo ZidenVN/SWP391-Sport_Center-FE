@@ -6,6 +6,8 @@ import { applyTheme } from './core/theme.js';
 import { initSelectBoxes } from './core/selectBox.js';
 import { initDatePickers } from './core/datePicker.js';
 import { initButtonEffects } from './core/effects.js';
+import { onNotification, stopRealtime } from './core/realtime.js';
+import { refreshNotificationBadge } from './components/notificationBadge.js';
 
 // áp dụng sáng / tối trước khi vẽ trang để không nháy màu
 applyTheme();
@@ -14,6 +16,7 @@ configureClient({
   getToken: () => session.token(),
   onUnauthorized: () => {
     if (!session.isLoggedIn()) return;
+    stopRealtime();
     session.end();
     toast('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.', 'warning');
     window.location.hash = '#/login';
@@ -27,6 +30,13 @@ if (/\/payment-result\/?$/.test(path)) {
   const base = path.replace(/payment-result\/?$/, '');
   window.history.replaceState(null, '', `${base}#/member/payment-result${window.location.search}`);
 }
+
+// thông báo đẩy realtime: hiện toast, cập nhật chuông, báo trang đang mở tải lại danh sách
+onNotification(n => {
+  toast((n.content || '').slice(0, 160), 'info', n.title || 'Thông báo mới');
+  refreshNotificationBadge({ force: true });
+  window.dispatchEvent(new CustomEvent('sc:notification', { detail: n }));
+});
 
 initSelectBoxes();
 initDatePickers();

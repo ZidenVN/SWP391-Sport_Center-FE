@@ -53,6 +53,7 @@ export const ROUTES = [
   { path: '/reception/members/:id', roles: R, load: () => import('./pages/reception/memberDetail.js') },
   { path: '/reception/payments', roles: R, nav: { label: 'Giao dịch', icon: 'receipt' }, load: () => import('./pages/reception/payments.js') },
   { path: '/reception/tickets', roles: R, nav: { label: 'Yêu cầu hỗ trợ', icon: 'life-buoy' }, load: () => import('./pages/reception/tickets.js') },
+  { path: '/reception/notifications', roles: R, nav: { label: 'Gửi thông báo', icon: 'megaphone' }, load: () => import('./pages/reception/notifications.js') },
   { path: '/reception/classes', roles: R, nav: { label: 'Lịch lớp học', icon: 'calendar-days' }, load: () => import('./pages/shared/classBoard.js') },
   { path: '/reception/packages', roles: R, nav: { label: 'Bảng giá gói tập', icon: 'package' }, load: () => import('./pages/shared/packageBoard.js') },
 

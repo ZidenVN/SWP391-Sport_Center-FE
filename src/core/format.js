@@ -126,7 +126,8 @@ const STATUS = {
   CLASS: ['Cả lớp', 'sky'],
   SYSTEM: ['Hệ thống', 'amber'],
   SCHEDULE_CHANGE: ['Đổi lịch', 'amber'],
-  CLASS_CANCELLED: ['Lớp bị hủy', 'rose']
+  CLASS_CANCELLED: ['Lớp bị hủy', 'rose'],
+  STAFF_MESSAGE: ['Từ trung tâm', 'indigo']
 };
 
 const BADGE_CLASSES = {
