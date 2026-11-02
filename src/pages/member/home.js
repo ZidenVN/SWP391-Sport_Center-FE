@@ -7,38 +7,111 @@ import { date, dateTime, daysUntil, weekday, timeRange, badge, isPlaceholderPhon
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
 import { quizStore } from '../../core/quiz.js';
-import { packageScope } from '../../components/billing.js';
 
-function subscriptionCard(sub) {
-  if (!sub) {
+// Gói còn dùng được: đang chạy và chưa hết hạn (BE: hết hạn = ACTIVE + endDate < now), hoặc đang chờ kích hoạt
+const usable = x => x.status === 'WAITING_ACTIVATION' || (x.status === 'ACTIVE' && (!x.endDate || toDate(x.endDate) >= new Date()));
+const isClass = x => x.packageType === 'CLASS';
+const byEnd = (p, q) => String(p.endDate || '9').localeCompare(String(q.endDate || '9'));
+
+// Thẻ Membership (nền xanh rừng): gói đang chạy + các gói nối tiếp / chờ kích hoạt
+function membershipCard(list) {
+  const active = list.filter(x => x.status === 'ACTIVE').sort(byEnd);
+  const waiting = list.filter(x => x.status === 'WAITING_ACTIVATION');
+  const head = active[0] || waiting[0];
+  if (!head) {
     return html`
-      <div class="card p-6 bg-brand-sand border-0" data-testid="no-subscription">
-        <div class="text-sm font-semibold text-slate-600">Gói tập hiện tại</div>
-        <div class="font-display text-3xl font-extrabold leading-tight text-brand-dark mt-1">Bạn chưa có gói tập còn hiệu lực</div>
-        <p class="text-sm text-slate-600 mt-2">Mua gói để bắt đầu đặt lớp và tập luyện.</p>
-        <a href="#/member/packages" class="btn-primary mt-5">${icon('package', 'w-4 h-4')} Xem gói tập</a>
+      <div class="card p-6 bg-brand-sand border-0 h-full flex flex-col" data-testid="no-membership">
+        <div class="flex items-center gap-2 text-sm font-semibold text-slate-600">${icon('door-open', 'w-4 h-4')} Membership</div>
+        <div class="font-display text-3xl font-extrabold leading-tight text-brand-dark mt-1">Bạn chưa có Membership</div>
+        <p class="text-sm text-slate-600 mt-2 flex-1">Membership cho phép vào trung tâm, dùng cơ sở vật chất và là điều kiện để mua gói lớp.</p>
+        <a href="#/member/packages" class="btn-primary mt-5 self-start">${icon('package', 'w-4 h-4')} Mua Membership</a>
       </div>`;
   }
-  const left = daysUntil(sub.endDate);
+  const extra = active.length + waiting.length - 1;
+  const last = active[active.length - 1];
+  if (head.status === 'WAITING_ACTIVATION') {
+    return html`
+      <div class="card p-6 bg-brand-dark text-white border-0 relative overflow-hidden h-full" data-testid="membership-card">
+        <div class="absolute -right-14 -bottom-16 w-36 h-36 rounded-full bg-brand/25"></div>
+        <div class="relative">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-1.5 text-sm text-white/60">${icon('door-open', 'w-4 h-4')} Membership</div>
+              <div class="font-display text-4xl font-extrabold leading-none text-brand-lime mt-1">${head.packageName}</div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-white/15 text-xs font-extrabold whitespace-nowrap">Chờ kích hoạt</span>
+          </div>
+          <p class="text-sm text-white/75 mt-4">Gói sẽ bắt đầu tính ngày ở <b class="text-white">lần check-in đầu tiên</b> tại quầy lễ tân${head.paidAt ? ` (đã thanh toán ${date(head.paidAt)})` : ''}.</p>
+          ${extra > 0 ? html`<div class="text-xs text-white/60 mt-2">+${extra} gói Membership khác đang chờ</div>` : ''}
+          <a href="#/member/packages" class="btn-lime mt-5">${icon('package', 'w-4 h-4')} Xem gói</a>
+        </div>
+      </div>`;
+  }
+  const left = daysUntil(head.endDate);
+  const start = toDate(head.startDate || head.activatedAt);
+  const end = toDate(head.endDate);
+  const pct = start && end && end > start ? Math.max(3, Math.min(100, Math.round(((Date.now() - start) / (end - start)) * 100))) : 0;
   return html`
-    <div class="card p-6 bg-brand-dark text-white border-0 relative overflow-hidden" data-testid="current-subscription">
+    <div class="card p-6 bg-brand-dark text-white border-0 relative overflow-hidden h-full" data-testid="membership-card">
       <div class="absolute -right-14 -bottom-16 w-36 h-36 rounded-full bg-brand/25"></div>
       <div class="relative">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="text-sm text-white/60">Gói tập hiện tại</div>
-          <div class="font-display text-4xl font-extrabold leading-none text-brand-lime mt-1">${sub.packageName}</div>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-1.5 text-sm text-white/60">${icon('door-open', 'w-4 h-4')} Membership</div>
+            <div class="font-display text-4xl font-extrabold leading-none text-brand-lime mt-1">${head.packageName}</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold whitespace-nowrap">${left > 0 ? `Còn ${left} ngày` : 'Hết hạn hôm nay'}</span>
         </div>
-        <span class="px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold whitespace-nowrap">${left > 0 ? `Còn ${left} ngày` : 'Hết hạn hôm nay'}</span>
+        <div class="mt-5">
+          <div class="flex justify-between text-xs text-white/60 mb-1.5"><span>${date(start)}</span><span>${date(end)}</span></div>
+          <div class="h-2 rounded-full bg-white/20 overflow-hidden"><div class="h-full rounded-full bg-brand-lime" style="width:${pct}%"></div></div>
+        </div>
+        <div class="text-xs text-white/60 mt-3">${extra > 0
+          ? `+${extra} gói nối tiếp · tập được đến ${date((last || head).endDate)}${waiting.length ? ', gồm gói chờ kích hoạt' : ''}`
+          : 'Vào trung tâm, dùng cơ sở vật chất trong thời hạn gói'}</div>
+        <a href="#/member/packages" class="btn-lime mt-5">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</a>
       </div>
-      <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
-        <div><div class="text-white/50 text-xs">Bắt đầu</div><div class="font-semibold">${date(sub.startDate)}</div></div>
-        <div><div class="text-white/50 text-xs">Hết hạn</div><div class="font-semibold">${date(sub.endDate)}</div></div>
-        <div class="col-span-2"><div class="text-white/50 text-xs">Áp dụng</div><div class="font-semibold" data-testid="sub-scope">${packageScope(sub)}${sub.currentClassName ? html` · <span class="text-brand-lime">đang học ${sub.currentClassName}</span>` : ''}</div></div>
-        ${(sub.all || []).length > 1 ? html`<div class="col-span-2 text-xs text-white/60">+${sub.all.length - 1} gói khác đang hiệu lực</div>` : ''}
+    </div>`;
+}
+
+// Thẻ Gói lớp: mỗi gói 1 dòng — đang học lớp nào, hoặc chưa chọn lớp (chờ kích hoạt)
+function classPackageLine(x) {
+  const waiting = x.status === 'WAITING_ACTIVATION';
+  const left = waiting ? null : daysUntil(x.endDate);
+  return html`
+    <li class="flex items-center gap-3 py-3" data-testid="class-package-line">
+      <span class="w-10 h-10 rounded-xl ${waiting ? 'bg-amber-50 text-amber-600' : 'bg-[#469B7E]/10 text-[#2F6B55]'} flex items-center justify-center shrink-0">${icon(waiting ? 'ticket' : 'dumbbell', 'w-5 h-5')}</span>
+      <div class="min-w-0 flex-1">
+        <div class="text-sm font-bold truncate">${x.subjectName || x.packageName}</div>
+        <div class="text-xs text-slate-500 truncate">${waiting
+          ? 'Chưa chọn lớp · ngày bắt đầu tính khi lớp bắt đầu'
+          : x.currentClassName
+            ? `Đang học ${x.currentClassName}${x.classStartDate ? ` · ${date(x.classStartDate).slice(0, 5)} → ${date(x.classEndDate || x.endDate)}` : ''}`
+            : `Đến ${date(x.endDate)}`}</div>
       </div>
-      <a href="#/member/packages" class="btn-lime mt-5">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</a>
+      ${waiting
+        ? html`<a href="#/member/classes" class="btn-primary btn-sm whitespace-nowrap">Chọn lớp</a>`
+        : html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 whitespace-nowrap">${left > 0 ? `Còn ${left} ngày` : 'Hết hôm nay'}</span>`}
+    </li>`;
+}
+
+function classPackagesCard(list, hasMembership) {
+  const sorted = [...list].sort((p, q) => (p.status === 'WAITING_ACTIVATION') - (q.status === 'WAITING_ACTIVATION') || byEnd(p, q));
+  const waiting = list.filter(x => x.status === 'WAITING_ACTIVATION').length;
+  return html`
+    <div class="card p-6 h-full flex flex-col" data-testid="class-packages-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-1.5 text-sm font-semibold text-slate-500">${icon('calendar-check', 'w-4 h-4')} Gói lớp</div>
+          <div class="font-display text-3xl font-extrabold leading-tight text-brand-dark mt-1">${list.length ? `${list.length} gói lớp` : 'Chưa có gói lớp'}</div>
+        </div>
+        ${waiting ? html`<span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-extrabold whitespace-nowrap">${waiting} chưa chọn lớp</span>` : ''}
       </div>
+      ${list.length ? html`
+        <ul class="divide-y divide-slate-100 mt-2 flex-1">${sorted.slice(0, 3).map(classPackageLine)}</ul>
+        ${list.length > 3 ? html`<a href="#/member/schedule" class="text-xs font-bold text-emerald-600 hover:underline mt-1">+${list.length - 3} gói khác · xem lớp đã đăng ký</a>` : ''}` : html`
+        <p class="text-sm text-slate-600 mt-2 flex-1">Mỗi gói lớp dùng cho 1 lớp cùng môn, cùng thời hạn.${hasMembership ? '' : ' Cần có Membership trước khi mua.'}</p>
+        <a href="#/member/packages" class="btn-secondary mt-5 self-start">${icon('plus', 'w-4 h-4')} Mua gói lớp</a>`}
     </div>`;
 }
 
@@ -79,6 +152,11 @@ function view(s) {
   const upcoming = (s.schedule || []).filter(r => r.status === 'SCHEDULED' && toDate(r.endTime) >= new Date()).sort((a, b) => toDate(a.startTime) - toDate(b.startTime)).slice(0, 4);
   const notis = (s.notifications || []).slice(0, 4);
   const p = s.progress;
+  const subs = (s.subscriptions || []).filter(usable);
+  const memberships = subs.filter(x => !isClass(x));
+  const classPackages = subs.filter(isClass);
+  // nhắc gia hạn theo Membership hết hạn muộn nhất
+  const latestMembership = memberships.filter(x => x.status === 'ACTIVE').sort(byEnd).at(-1) || null;
   return html`
     ${pageHeader(`Xin chào, ${name}!`, 'Tổng quan hoạt động tập luyện của bạn')}
     ${s.me && isPlaceholderPhone(s.me.phone) ? html`
@@ -87,15 +165,16 @@ function view(s) {
         <span class="flex-1 text-sm"><b>Hoàn thiện hồ sơ</b><br />Thêm số điện thoại để lễ tân và HLV liên hệ được với bạn.</span>
         ${icon('chevron-right', 'w-5 h-5')}
       </a>` : ''}
-    ${expiryBanner(s.current)}
-    ${quizBanner(s.current)}
-    <div class="grid lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-1">${subscriptionCard(s.current)}</div>
-      <div class="lg:col-span-2 grid sm:grid-cols-3 gap-4 content-start">
-        ${statCard('Lớp sắp tới', upcoming.length, 'calendar-check', 'emerald')}
-        ${statCard('Buổi đã tập', p?.totalSessionAttended ?? 0, 'flame', 'orange')}
-        ${statCard('Giáo án đang tập', p?.inProgressPlans ?? 0, 'clipboard-list', 'emerald')}
-      </div>
+    ${expiryBanner(latestMembership)}
+    ${quizBanner(subs.length > 0)}
+    <div class="grid lg:grid-cols-2 gap-6">
+      ${membershipCard(memberships)}
+      ${classPackagesCard(classPackages, memberships.length > 0)}
+    </div>
+    <div class="grid sm:grid-cols-3 gap-4 mt-6">
+      ${statCard('Buổi học sắp tới', upcoming.length, 'calendar-clock', 'emerald')}
+      ${statCard('Buổi đã tập', p?.totalSessionAttended ?? 0, 'flame', 'orange')}
+      ${statCard('Giáo án đang tập', p?.inProgressPlans ?? 0, 'clipboard-list', 'emerald')}
     </div>
 
     <div class="grid lg:grid-cols-2 gap-6 mt-6">
@@ -147,7 +226,7 @@ export default function MemberHome(el) {
   return mountPage(el, {
     load: async () => {
       const res = await settle({
-        current: [memberApi.currentSubscription, null],
+        subscriptions: [memberApi.subscriptions, []],
         schedule: [memberApi.schedule, []],
         notifications: [memberApi.notifications, []],
         progress: [memberApi.progress, null],

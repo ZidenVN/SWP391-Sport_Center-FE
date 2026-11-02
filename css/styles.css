@@ -1723,3 +1723,18 @@ html.theme-dark .cal-day-wd, html.theme-dark .cal-day-count, html.theme-dark .ca
 .ds-opt[aria-selected="true"] { color: #fff; font-weight: 700; background: rgba(215, 242, 91, 0.1); }
 .ds-opt [data-ds-check] { color: #D7F25B; }
 @media (prefers-reduced-motion: reduce) { .ds-panel { animation: none; } .ds-opt { transition: none; } }
+
+/* ---------- Trang kết quả thanh toán: chế độ tối ---------- */
+html.theme-dark body:has(.app-shell) .pay-ticket { background: linear-gradient(180deg, rgba(20,40,32,0.92), rgba(14,28,23,0.95)) !important; border-color: rgba(255,255,255,0.08) !important; box-shadow: 0 24px 48px -24px rgba(0,0,0,0.7) !important; }
+html.theme-dark body:has(.app-shell) .pay-head { background: radial-gradient(120% 90% at 50% 0%, rgba(70,155,126,0.32), transparent 70%) !important; }
+html.theme-dark body:has(.app-shell) .pay-head.is-fail { background: radial-gradient(120% 90% at 50% 0%, rgba(244,63,94,0.26), transparent 70%) !important; }
+html.theme-dark body:has(.app-shell) .pay-head h1,
+html.theme-dark body:has(.app-shell) .pay-head [data-testid=paid-amount] { color: #f1f5f2 !important; }
+html.theme-dark body:has(.app-shell) .pay-head.is-ok [data-testid=paid-amount] { color: #d7f25b !important; }
+html.theme-dark body:has(.app-shell) .pay-head p { color: rgba(226,236,231,0.75) !important; }
+html.theme-dark body:has(.app-shell) .pay-ticket .border-dashed { border-color: rgba(255,255,255,0.14) !important; }
+html.theme-dark body:has(.app-shell) .pay-notch { background: #0f1f19 !important; border-color: rgba(255,255,255,0.10) !important; }
+html.theme-dark body:has(.app-shell) .pay-ticket dl > div + div { border-color: rgba(255,255,255,0.07) !important; }
+html.theme-dark body:has(.app-shell) .pay-ticket dt { color: rgba(226,236,231,0.6) !important; }
+html.theme-dark body:has(.app-shell) .pay-ticket dd { color: #f1f5f2 !important; }
+html.theme-dark body:has(.app-shell) .pay-ticket .bg-slate-50 { background: rgba(255,255,255,0.05) !important; color: rgba(226,236,231,0.8) !important; }

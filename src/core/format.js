@@ -134,6 +134,9 @@ const STATUS = {
   MAKEUP_SESSION_SCHEDULED: ['Buổi bù', 'violet'],
   COACH_SUBSTITUTE: ['HLV dạy thay', 'sky'],
   SUBSCRIPTION_REFUNDED: ['Hoàn tiền', 'violet'],
+  ISSUE_REPORT_CREATED: ['Sự cố mới', 'amber'],
+  ISSUE_REPORT_UPDATED: ['Phản hồi sự cố', 'sky'],
+  ISSUE_REPORT_ESCALATED: ['Chuyển Quản lý', 'violet'],
   // mô hình gói / buổi học mới
   WAITING_ACTIVATION: ['Chờ kích hoạt', 'sky'],
   STOPPED: ['Đã dừng', 'rose'],

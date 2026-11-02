@@ -21,8 +21,8 @@ function receipt(r, { loggedIn }) {
           ${brandMark('w-10 h-10')}
           <span class="font-extrabold tracking-tight">SPORT CENTER</span>
         </div>`}
-      <div class="rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden" data-testid="payment-result" data-success="${ok}">
-        <div class="px-8 pt-10 pb-8 text-center relative overflow-hidden ${ok ? 'bg-gradient-to-b from-emerald-50 to-white' : 'bg-gradient-to-b from-rose-50 to-white'}">
+      <div class="pay-ticket rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden" data-testid="payment-result" data-success="${ok}">
+        <div class="pay-head ${ok ? 'is-ok' : 'is-fail'} px-8 pt-10 pb-8 text-center relative overflow-hidden ${ok ? 'bg-gradient-to-b from-emerald-50 to-white' : 'bg-gradient-to-b from-rose-50 to-white'}">
           <div class="relative mx-auto w-20 h-20">
             <span class="absolute inset-0 rounded-full ${ok ? 'bg-emerald-400/30' : 'bg-rose-400/30'} animate-ping [animation-iteration-count:2]"></span>
             <span class="relative w-20 h-20 rounded-full ${ok ? 'bg-emerald-500' : 'bg-rose-500'} text-white flex items-center justify-center shadow-lg">
@@ -37,8 +37,8 @@ function receipt(r, { loggedIn }) {
         ${r.rows.length ? html`
           <div class="px-8 relative">
             <div class="border-t-2 border-dashed border-slate-200"></div>
-            <span class="absolute -left-3 -top-3 w-6 h-6 rounded-full bg-slate-50 border border-slate-200"></span>
-            <span class="absolute -right-3 -top-3 w-6 h-6 rounded-full bg-slate-50 border border-slate-200"></span>
+            <span class="pay-notch absolute -left-3 -top-3 w-6 h-6 rounded-full bg-slate-50 border border-slate-200"></span>
+            <span class="pay-notch absolute -right-3 -top-3 w-6 h-6 rounded-full bg-slate-50 border border-slate-200"></span>
           </div>
           <dl class="px-8 py-4 text-sm divide-y divide-slate-100">
             ${r.rows.map(([label, value, testid]) => detailRow(label, value, testid))}
@@ -73,7 +73,7 @@ async function fromInvoice(paymentId, base) {
       canInvoice: true,
       rows: [
         ['Gói tập', inv.packageName, 'paid-package'],
-        ['Thời hạn', `${date(inv.startDate)} → ${date(inv.endDate)}`, 'paid-until'],
+        ['Thời hạn', inv.startDate ? `${date(inv.startDate)} → ${date(inv.endDate)}` : 'Bắt đầu khi check-in lần đầu hoặc vào lớp', 'paid-until'],
         ['Phương thức', paymentMethodLabel(inv.paymentMethod)],
         ...base.rows,
         ['Số hóa đơn', inv.invoiceNumber],
