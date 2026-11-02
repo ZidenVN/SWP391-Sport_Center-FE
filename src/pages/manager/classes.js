@@ -1,8 +1,8 @@
 import { html, icon, render, readForm } from '../../core/dom.js';
-import { pageHeader, table, emptyState, field, input, select, textarea, tabs, openModal, dateTimeInput, timeInput, toast } from '../../core/ui.js';
+import { pageHeader, table, emptyState, field, input, select, textarea, tabs, openModal, timeInput, toast } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
-import { classApi, subjectApi, roomApi, coachAdminApi } from '../../api/endpoints.js';
-import { badge, date, weekday, timeRange, toDate, isoLocalMinute, isoDate, fullName } from '../../core/format.js';
+import { classApi, subjectApi, roomApi, coachAdminApi, packageApi } from '../../api/endpoints.js';
+import { badge, date, weekday, timeRange, toDate, isoDate, fullName } from '../../core/format.js';
 import { subjectColor, classImage, classImageUrl } from '../../components/classCard.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
 import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
@@ -74,11 +74,55 @@ const attachImageError = err => {
   return err;
 };
 
-function form(s, c = {}) {
+// ===== Lớp = 1 khoá học có lịch cố định: ngày bắt đầu + thời hạn khoá + các thứ trong tuần + khung giờ =====
+// BE tạo toàn bộ buổi trong 1 request: trùng phòng/HLV ở bất kỳ buổi nào thì không tạo gì.
+// Thời hạn khoá chỉ chọn trong các thời hạn đang có gói lớp bán cho môn đó (GET /packages/class-durations).
+const WEEKDAY_OPTS = [[1, 'T2'], [2, 'T3'], [3, 'T4'], [4, 'T5'], [5, 'T6'], [6, 'T7'], [0, 'CN']];
+const DAY_CODE = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']; // theo Date.getDay()
+const SHORT_DAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const pad = n => String(n).padStart(2, '0');
+const parseDay = v => { const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d); };
+const hhmm = t => (t ? String(t).slice(0, 5) : '');
+
+const checkedDays = d => WEEKDAY_OPTS.filter(([n]) => d[`day${n}`]).map(([n]) => n);
+// [1, 3, 5] -> "MON,WED,FRI" (định dạng BE nhận)
+const daysOfWeekOf = d => checkedDays(d).map(n => DAY_CODE[n]).join(',');
+// "MON,WED" (hoặc "MONDAY" của lớp tạo theo kiểu cũ) -> [1, 3]
+const parseDaysOfWeek = v => (v || '').split(/[,;\s]+/).map(t => DAY_CODE.indexOf(t.slice(0, 3).toUpperCase())).filter(n => n >= 0);
+
+// ngày cuối khoá giống BE: startDate + durationDays - 1
+function lastDayOf(d) {
+  const x = parseDay(d.startDate);
+  x.setDate(x.getDate() + Number(d.durationDays) - 1);
+  return x;
+}
+
+// các ngày (yyyy-MM-dd) sẽ có buổi học
+function sessionDates(d) {
+  if (!d.startDate || !d.durationDays) return [];
+  const days = checkedDays(d);
+  const out = [];
+  for (let x = parseDay(d.startDate), end = lastDayOf(d); x <= end; x.setDate(x.getDate() + 1)) {
+    if (days.includes(x.getDay())) out.push(isoDate(x));
+  }
+  return out;
+}
+
+// lịch trên form khác lịch hiện tại của lớp (sửa lớp)
+function scheduleChanged(c, d) {
+  return d.startDate !== c.startDate
+    || Number(d.durationDays) !== c.durationDays
+    || checkedDays(d).sort().join() !== parseDaysOfWeek(c.daysOfWeek).sort().join()
+    || d.startClock !== hhmm(c.startClock)
+    || d.endClock !== hhmm(c.endClock);
+}
+
+// c = lớp đang sửa ({} khi mở lớp mới)
+function classFields(s, c = {}) {
   const tomorrow = new Date(Date.now() + 86400000);
-  tomorrow.setHours(8, 0, 0, 0);
-  const start = c.startTime || tomorrow;
-  const end = c.endTime || new Date(toDate(start).getTime() + 90 * 60000);
+  const picked = c.daysOfWeek ? parseDaysOfWeek(c.daysOfWeek) : [tomorrow.getDay()];
+  // lúc đầu chỉ có thời hạn hiện tại của lớp; danh sách thật nạp theo môn trong mountSchedule
+  const durations = c.durationDays ? [{ value: c.durationDays, label: `${c.durationDays} ngày` }] : [];
   return html`
     ${field('Bộ môn', select('subjectId', s.subjects.filter(x => x.status !== 'INACTIVE').map(x => ({ value: x.subjectId, label: x.subjectName })), c.subjectId, { required: true, placeholder: 'Chọn bộ môn' }))}
     <div class="grid sm:grid-cols-2 gap-3">
@@ -86,146 +130,92 @@ function form(s, c = {}) {
       ${field('Phòng', select('roomId', s.rooms.filter(r => r.status === 'AVAILABLE').map(r => ({ value: r.roomId, label: `${r.roomName} (tối đa ${r.capacity})` })), c.roomId, { required: true, placeholder: 'Chọn phòng' }))}
     </div>
     <div class="grid sm:grid-cols-2 gap-3">
-      ${field('Bắt đầu', dateTimeInput('startTime', isoLocalMinute(start), { required: true }))}
-      ${field('Kết thúc', dateTimeInput('endTime', isoLocalMinute(end), { required: true }))}
+      ${field('Ngày bắt đầu', input('startDate', { type: 'date', value: c.startDate || isoDate(tomorrow), required: true }))}
+      ${field('Thời hạn khoá', select('durationDays', durations, c.durationDays, { required: true, placeholder: 'Chọn bộ môn trước' }), 'Chỉ có các thời hạn đang bán gói lớp của môn này')}
+    </div>
+    ${field('Học vào các thứ', html`
+      <div class="flex flex-wrap gap-2" data-field-wrap data-testid="repeat-days">
+        ${WEEKDAY_OPTS.map(([n, label]) => html`
+          <label class="cursor-pointer">
+            <input type="checkbox" name="day${n}" value="1" class="peer sr-only" ${picked.includes(n) ? 'checked' : ''} />
+            <span class="inline-flex w-11 h-9 items-center justify-center rounded-lg border border-brand-line text-sm font-bold text-slate-600 peer-checked:bg-brand-dark peer-checked:text-brand-lime peer-checked:border-brand-dark">${label}</span>
+          </label>`)}
+      </div>`)}
+    <div class="grid sm:grid-cols-2 gap-3">
+      ${field('Giờ bắt đầu', timeInput('startClock', hhmm(c.startClock) || '08:00'))}
+      ${field('Giờ kết thúc', timeInput('endClock', hhmm(c.endClock) || '09:30'))}
     </div>
     ${field('Sĩ số tối đa', input('maxCapacity', { type: 'number', value: c.maxCapacity || 20, required: true, attrs: 'min="1"' }), 'Không vượt quá sức chứa của phòng')}
-    ${imageField(c, { required: false })}`;
-}
-
-function validator(s) {
-  return d => {
-    const e = requireFields(d, ['subjectId', 'coachId', 'roomId', 'startTime', 'endTime', 'maxCapacity']);
-    if (d.startTime && d.endTime && d.endTime <= d.startTime) e.endTime = 'Giờ kết thúc phải sau giờ bắt đầu';
-    const room = s.rooms.find(r => String(r.roomId) === d.roomId);
-    if (room && Number(d.maxCapacity) > room.capacity) e.maxCapacity = `Phòng chỉ chứa tối đa ${room.capacity} người`;
-    if (d.maxCapacity && Number(d.maxCapacity) < 1) e.maxCapacity = 'Tối thiểu 1 học viên';
-    return { ...e, ...imageErrors(d, false) };
-  };
-}
-
-const payload = d => ({
-  subjectId: Number(d.subjectId),
-  coachId: Number(d.coachId),
-  roomId: Number(d.roomId),
-  maxCapacity: Number(d.maxCapacity),
-  startTime: `${d.startTime}:00`,
-  endTime: `${d.endTime}:00`
-});
-
-// ===== Mở lớp lặp lại: từ ngày bắt đầu tới ngày kết thúc, vào các thứ đã chọn, cùng khung giờ =====
-// BE chỉ tạo từng buổi (POST /classes) -> FE tạo lần lượt từng buổi trong khoảng ngày.
-const MAX_SESSIONS = 60;
-const WEEKDAY_OPTS = [[1, 'T2'], [2, 'T3'], [3, 'T4'], [4, 'T5'], [5, 'T6'], [6, 'T7'], [0, 'CN']];
-const SHORT_DAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const pad = n => String(n).padStart(2, '0');
-const parseDay = v => { const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d); };
-
-// các ngày (yyyy-MM-dd) sẽ mở buổi; không có ngày kết thúc = 1 buổi
-function sessionDates(d) {
-  if (!d.startDate) return [];
-  if (!d.endDate) return [d.startDate];
-  const days = WEEKDAY_OPTS.filter(([n]) => d[`day${n}`]).map(([n]) => n);
-  const out = [];
-  for (let x = parseDay(d.startDate), end = parseDay(d.endDate); x <= end && out.length <= MAX_SESSIONS; x.setDate(x.getDate() + 1)) {
-    if (days.includes(x.getDay())) out.push(isoDate(x));
-  }
-  return out;
-}
-
-function createForm(s) {
-  const tomorrow = new Date(Date.now() + 86400000);
-  return html`
-    ${field('Bộ môn', select('subjectId', s.subjects.filter(x => x.status !== 'INACTIVE').map(x => ({ value: x.subjectId, label: x.subjectName })), '', { required: true, placeholder: 'Chọn bộ môn' }))}
-    <div class="grid sm:grid-cols-2 gap-3">
-      ${field('Huấn luyện viên', select('coachId', s.coaches.map(x => ({ value: x.coachId, label: `${fullName(x)}${x.speciality ? ` · ${x.speciality}` : ''}` })), '', { required: true, placeholder: 'Chọn HLV' }))}
-      ${field('Phòng', select('roomId', s.rooms.filter(r => r.status === 'AVAILABLE').map(r => ({ value: r.roomId, label: `${r.roomName} (tối đa ${r.capacity})` })), '', { required: true, placeholder: 'Chọn phòng' }))}
-    </div>
-    <div class="grid sm:grid-cols-2 gap-3">
-      ${field('Ngày bắt đầu', input('startDate', { type: 'date', value: isoDate(tomorrow), required: true }))}
-      ${field('Ngày kết thúc', input('endDate', { type: 'date' }), 'Để trống nếu chỉ mở 1 buổi')}
-    </div>
-    <div data-repeat class="hidden">
-      ${field('Lặp vào các thứ', html`
-        <div class="flex flex-wrap gap-2" data-field-wrap data-testid="repeat-days">
-          ${WEEKDAY_OPTS.map(([n, label]) => html`
-            <label class="cursor-pointer">
-              <input type="checkbox" name="day${n}" value="1" class="peer sr-only" ${n === tomorrow.getDay() ? 'checked' : ''} />
-              <span class="inline-flex w-11 h-9 items-center justify-center rounded-lg border border-brand-line text-sm font-bold text-slate-600 peer-checked:bg-brand-dark peer-checked:text-brand-lime peer-checked:border-brand-dark">${label}</span>
-            </label>`)}
-        </div>`)}
-    </div>
-    <div class="grid sm:grid-cols-2 gap-3">
-      ${field('Giờ bắt đầu', timeInput('startClock', '08:00'))}
-      ${field('Giờ kết thúc', timeInput('endClock', '09:30'))}
-    </div>
-    ${field('Sĩ số tối đa', input('maxCapacity', { type: 'number', value: 20, required: true, attrs: 'min="1"' }), 'Không vượt quá sức chứa của phòng')}
-    ${imageField({}, { required: true })}
+    ${imageField(c, { required: !c.classId })}
     <div class="sc-note rounded-2xl p-3.5 text-sm text-slate-700 flex gap-2.5" data-testid="session-preview"></div>`;
 }
 
-function createValidator(s) {
+// original = lớp đang sửa; không truyền khi mở lớp mới
+function classValidator(s, original) {
   return d => {
-    const e = requireFields(d, ['subjectId', 'coachId', 'roomId', 'startDate', 'startClock', 'endClock', 'maxCapacity']);
+    const e = requireFields(d, ['subjectId', 'coachId', 'roomId', 'startDate', 'durationDays', 'startClock', 'endClock', 'maxCapacity']);
     if (d.startClock && d.endClock && d.endClock <= d.startClock) e.endClock = 'Giờ kết thúc phải sau giờ bắt đầu';
-    if (d.startDate && d.startClock && new Date(`${d.startDate}T${d.startClock}`) < new Date()) e.startDate = 'Buổi đầu tiên đã qua giờ, chọn ngày hoặc giờ sau hiện tại';
-    if (d.endDate) {
-      if (d.startDate && d.endDate < d.startDate) e.endDate = 'Ngày kết thúc phải từ ngày bắt đầu trở đi';
-      else if (!WEEKDAY_OPTS.some(([n]) => d[`day${n}`])) e.day1 = 'Chọn ít nhất 1 thứ trong tuần';
-      else {
-        const n = sessionDates(d).length;
-        if (!n) e.day1 = 'Không có buổi nào rơi vào các thứ đã chọn trong khoảng ngày này';
-        if (n > MAX_SESSIONS) e.endDate = `Tối đa ${MAX_SESSIONS} buổi mỗi lần, hãy rút ngắn khoảng ngày`;
-      }
+    // sửa lớp mà giữ nguyên lịch thì không kiểm tra lại ngày (lớp có thể đã bắt đầu)
+    if (!original || scheduleChanged(original, d)) {
+      if (d.startDate && d.startDate <= isoDate(new Date())) e.startDate = 'Ngày bắt đầu phải từ ngày mai trở đi';
+      if (!checkedDays(d).length) e.day1 = 'Chọn ít nhất 1 thứ trong tuần';
+      else if (d.startDate && d.durationDays && !sessionDates(d).length) e.day1 = 'Không có buổi nào rơi vào các thứ đã chọn trong thời hạn này';
     }
     const room = s.rooms.find(r => String(r.roomId) === d.roomId);
     if (room && Number(d.maxCapacity) > room.capacity) e.maxCapacity = `Phòng chỉ chứa tối đa ${room.capacity} người`;
     if (d.maxCapacity && Number(d.maxCapacity) < 1) e.maxCapacity = 'Tối thiểu 1 học viên';
-    return { ...e, ...imageErrors(d, true) };
+    return { ...e, ...imageErrors(d, !original) };
   };
 }
 
-// cập nhật ô "Sẽ mở N buổi" + hiện/ẩn chọn thứ khi đổi ngày
-function mountSessionPreview(modal) {
+// sửa lớp mà giữ nguyên lịch: không gửi các trường lịch -> BE giữ nguyên các buổi học
+function classPayload(d, original) {
+  const base = { subjectId: Number(d.subjectId), coachId: Number(d.coachId), roomId: Number(d.roomId), maxCapacity: Number(d.maxCapacity) };
+  if (original && !scheduleChanged(original, d)) return base;
+  return { ...base, startDate: d.startDate, durationDays: Number(d.durationDays), daysOfWeek: daysOfWeekOf(d), startClock: d.startClock, endClock: d.endClock };
+}
+
+// nạp thời hạn khoá theo môn + cập nhật ô "Sẽ mở N buổi"
+function mountSchedule(modal, original) {
   const form = modal.el.querySelector('form');
+  const durationEl = form.querySelector('select[name=durationDays]');
+  let loadedSubject;
   const update = () => {
     const d = readForm(form);
-    form.querySelector('[data-repeat]').classList.toggle('hidden', !d.endDate);
     const dates = sessionDates(d);
     const label = v => { const x = parseDay(v); return `${SHORT_DAY[x.getDay()]} ${pad(x.getDate())}/${pad(x.getMonth() + 1)}`; };
     const box = form.querySelector('[data-testid=session-preview]');
     render(box, dates.length
-      ? html`${icon('calendar-check', 'w-4 h-4 shrink-0 mt-0.5 text-brand')}<span><b data-testid="session-count">Sẽ mở ${Math.min(dates.length, MAX_SESSIONS)}${dates.length > MAX_SESSIONS ? '+' : ''} buổi</b>${d.startClock && d.endClock ? ` · ${d.startClock} – ${d.endClock}` : ''}<br /><span class="text-slate-500">${dates.slice(0, 8).map(label).join(', ')}${dates.length > 8 ? ', …' : ''}</span></span>`
-      : html`${icon('info', 'w-4 h-4 shrink-0 mt-0.5 text-slate-400')}<span class="text-slate-500">Chọn ngày bắt đầu${d.endDate ? ' và các thứ lặp lại' : ''} để xem các buổi sẽ mở</span>`);
+      ? html`${icon('calendar-check', 'w-4 h-4 shrink-0 mt-0.5 text-brand')}<span><b data-testid="session-count">Khoá ${d.durationDays} ngày · ${dates.length} buổi</b>${d.startClock && d.endClock ? ` · ${d.startClock} – ${d.endClock}` : ''} · đến ${date(isoDate(lastDayOf(d)))}<br /><span class="text-slate-500">${dates.slice(0, 8).map(label).join(', ')}${dates.length > 8 ? ', …' : ''}</span></span>`
+      : html`${icon('info', 'w-4 h-4 shrink-0 mt-0.5 text-slate-400')}<span class="text-slate-500">Chọn bộ môn, ngày bắt đầu, thời hạn khoá và các thứ để xem các buổi sẽ mở</span>`);
+  };
+  const loadDurations = async subjectId => {
+    if (subjectId === loadedSubject) return;
+    loadedSubject = subjectId;
+    const keep = durationEl.value;
+    const list = subjectId ? await packageApi.classDurations(subjectId).catch(() => []) : [];
+    if (loadedSubject !== subjectId) return; // đã đổi sang môn khác trong lúc chờ
+    const opts = [...new Set(list)].sort((a, b) => a - b);
+    // lớp đang sửa có thể mang thời hạn đã ngừng bán: vẫn giữ để không đổi lịch ngoài ý muốn
+    if (original?.durationDays && String(original.subjectId) === subjectId && !opts.includes(original.durationDays)) opts.push(original.durationDays);
+    const placeholder = !subjectId ? 'Chọn bộ môn trước' : opts.length ? 'Chọn thời hạn' : 'Môn này chưa có gói lớp đang bán';
+    durationEl.replaceChildren(new Option(placeholder, ''), ...opts.map(n => new Option(`${n} ngày`, n)));
+    durationEl.value = opts.map(String).includes(keep) ? keep : '';
+    update();
   };
   // đợi ô ẩn giờ:phút cập nhật xong (nghe ở document) rồi mới tính
-  const later = () => setTimeout(update, 0);
+  const later = () => setTimeout(() => { loadDurations(readForm(form).subjectId); update(); }, 0);
   form.addEventListener('input', later);
   form.addEventListener('change', later);
+  loadDurations(readForm(form).subjectId);
   update();
 }
 
-// tạo lần lượt từng buổi; buổi lỗi (trùng phòng/HLV...) bỏ qua và báo lại cuối cùng
-async function createSessions(d) {
-  const dates = sessionDates(d);
-  const base = { subjectId: Number(d.subjectId), coachId: Number(d.coachId), roomId: Number(d.roomId), maxCapacity: Number(d.maxCapacity) };
-  const failed = [];
-  let ok = 0;
-  for (const day of dates) {
-    try {
-      await classApi.create({ ...base, startTime: `${day}T${d.startClock}:00`, endTime: `${day}T${d.endClock}:00` }, d.image);
-      ok++;
-    } catch (err) {
-      failed.push({ day, err });
-    }
-  }
-  if (!ok) throw attachImageError(failed[0].err);
-  if (failed.length) {
-    toast(`${failed.map(f => date(f.day)).join(', ')}: ${failed[0].err.message}`, 'error', `Đã mở ${ok}/${dates.length} buổi, ${failed.length} buổi không mở được`);
-  } else {
-    toast(ok > 1 ? `Đã mở ${ok} buổi từ ${date(dates[0])} đến ${date(dates[dates.length - 1])}` : 'Đã mở lớp mới');
-  }
-  return { ok, failed };
+// mở lớp: 1 request duy nhất, BE trả lỗi thì không có buổi nào được tạo
+async function createClass(d) {
+  const res = await classApi.create(classPayload(d), d.image).catch(err => { throw attachImageError(err); });
+  toast(`Đã mở lớp ${sessionDates(d).length} buổi, từ ${date(d.startDate)} đến ${date(isoDate(lastDayOf(d)))}`);
+  return res;
 }
 
 // Nhóm theo trạng thái thật của BE: OPENING (sắp diễn ra / đã qua giờ nhưng chưa chốt), COMPLETED, CANCELLED
@@ -434,19 +424,19 @@ export default function ManagerClasses(el) {
     subject: (t, e, ctx) => { ctx.state.subjectId = t.value; ctx.state.pageNo = 0; ctx.reload(); },
     ...pagerActions({ server: true }),
     create: (t, e, ctx) => openFormModal({
-      title: 'Mở lớp mới', size: 'max-w-xl', fields: createForm(ctx.state), validate: createValidator(ctx.state),
-      submitText: 'Mở lớp', onMount: modal => { mountSessionPreview(modal); mountImagePicker(modal); },
-      submit: d => createSessions(d), onDone: () => ctx.reload()
+      title: 'Mở lớp mới', size: 'max-w-xl', fields: classFields(ctx.state), validate: classValidator(ctx.state),
+      submitText: 'Mở lớp', onMount: modal => { mountSchedule(modal); mountImagePicker(modal); },
+      submit: d => createClass(d), onDone: () => ctx.reload()
     }),
     edit: (t, e, ctx) => {
       const c = findClass(ctx, t.dataset.id);
       openFormModal({
         title: `Sửa lớp ${c.subjectName} #${c.classId}`, size: 'max-w-xl', fields: html`
           ${c.currentEnrolled ? html`<div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3">Lớp đã có ${c.currentEnrolled} học viên — đổi giờ hoặc phòng sẽ tự gửi thông báo cho họ.</div>` : ''}
-          ${form(ctx.state, c)}`,
-        validate: validator(ctx.state), success: 'Đã cập nhật lớp', onMount: mountImagePicker,
+          ${classFields(ctx.state, c)}`,
+        validate: classValidator(ctx.state, c), success: 'Đã cập nhật lớp', onMount: modal => { mountSchedule(modal, c); mountImagePicker(modal); },
         // không chọn ảnh mới -> không gửi part image, BE giữ ảnh cũ
-        submit: d => classApi.update(c.classId, payload(d), hasFile(d.image) ? d.image : undefined).catch(err => { throw attachImageError(err); }),
+        submit: d => classApi.update(c.classId, classPayload(d, c), hasFile(d.image) ? d.image : undefined).catch(err => { throw attachImageError(err); }),
         onDone: () => ctx.reload()
       });
     },

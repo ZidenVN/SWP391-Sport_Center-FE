@@ -48,6 +48,8 @@ export const coachAdminApi = {
 export const packageApi = {
   list: () => http.get('/packages'),
   get: id => http.get(`/packages/${id}`),
+  // các thời hạn (số ngày) đang có gói lớp bán cho môn này; lớp chỉ được mở đúng các thời hạn này
+  classDurations: subjectId => http.get('/packages/class-durations', { subjectId }),
   create: payload => http.post('/packages', payload),
   update: (id, payload) => http.put(`/packages/${id}`, payload),
   remove: id => http.delete(`/packages/${id}`)

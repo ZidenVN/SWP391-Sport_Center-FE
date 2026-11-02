@@ -23,4 +23,4 @@
 - `index.html`: File giao diện chính.
 - `css/styles.css`: Hiệu ứng giao diện, font chữ Plus Jakarta Sans, glassmorphism.
 - `js/mockData.js`: Dữ liệu mẫu phong phú (Hội viên, Gói tập, Huấn luyện viên, Lớp học, Lịch sử check-in, Hóa đơn).
-- `js/app.js`: Logic điều khiển giao diện, chuyển tab, phân quyền, xử lý đặt lịch, check-in, thanh toán và trợ lý AI.
+- `js/app.js`: Logic điều khiển giao diện, chuyển tab, phân quyền, xử lý đặt lịch, check-in, thanh toán và trợ lý AI.tẻ
