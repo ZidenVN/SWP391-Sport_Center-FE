@@ -1,5 +1,5 @@
 import { html, icon, readForm } from '../../core/dom.js';
-import { pageHeader, tabs, table, emptyState, openModal, field, input, select, textarea, showFormErrors, toast, withBusy, confirmDialog, statCard } from '../../core/ui.js';
+import { pageHeader, tabs, table, emptyState, openModal, field, input, textarea, showFormErrors, toast, withBusy, confirmDialog, statCard } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { issueApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
@@ -158,20 +158,32 @@ function handleView(s, isManager) {
     <div class="card" data-testid="issue-table">
       ${handleFilters(s, isManager)}
       ${rows.length ? html`${table({
-        columns: [{ label: 'Sự cố' }, { label: 'Người gửi' }, { label: 'Nơi xử lý' }, { label: 'Trạng thái' }, { label: 'Gửi lúc' }, { label: '', cls: 'text-right' }],
+        columns: [{ label: 'Sự cố' }, { label: 'Người gửi' }, { label: 'Nơi xử lý' }, { label: 'Trạng thái' }, { label: 'Người xử lý' }, { label: 'Gửi lúc' }, { label: '', cls: 'text-right' }],
         rows: rows.map(r => [
           html`<div class="font-semibold max-w-xs truncate">${r.title}</div><div class="text-xs text-slate-500">#${r.reportId} · ${categoryLabel(r)}</div>`,
           html`<div class="text-sm font-semibold">${r.reporterName || '—'}</div><div class="text-xs text-slate-500">${roleLabel(r.reporterRole)}${r.reporterPhone ? ` · ${phoneText(r.reporterPhone)}` : ''}</div>`,
           html`<span class="text-xs font-bold px-2 py-0.5 rounded-full ${r.desk === 'MANAGER' ? 'bg-violet-50 text-violet-700' : 'bg-teal-50 text-teal-700'}">${DESK[r.desk] || r.desk}</span>`,
           statusBadge(r.status),
+          handlerCell(r),
           html`<span class="text-xs whitespace-nowrap">${dateTime(r.createdAt)}</span>`,
-          html`<div class="flex justify-end"><button type="button" class="btn-ghost btn-sm" data-action="open-report" data-id="${r.reportId}" data-testid="open-report">${icon(closed(r) ? 'eye' : 'clipboard-pen', 'w-3.5 h-3.5')} ${closed(r) ? 'Xem' : 'Xử lý'}</button></div>`
+          html`<div class="flex justify-end"><button type="button" class="btn-ghost btn-sm" data-action="open-report" data-id="${r.reportId}" data-testid="open-report">${icon(viewOnly(r, isManager) ? 'eye' : 'clipboard-pen', 'w-3.5 h-3.5')} ${viewOnly(r, isManager) ? 'Xem' : 'Xử lý'}</button></div>`
         ])
       })}${pagination(page, { unit: 'báo cáo' })}` : emptyState('Không có báo cáo phù hợp', 'shield-check')}
     </div>`;
 }
 
-function reportDetail(r, { canEscalate }) {
+// Lễ tân chỉ xử lý báo cáo ở quầy; báo cáo đã chuyển lên Quản lý thì chỉ xem để theo dõi
+const viewOnly = (r, isManager) => closed(r) || (!isManager && r.desk !== 'RECEPTION');
+const RESPONSE_MAX = 1000;
+const REASON_MAX = 500;
+
+// Người xử lý cuối cùng; báo cáo lễ tân đã chuyển lên thì ghi thêm người chuyển
+function handlerCell(r) {
+  return html`<div class="text-sm">${r.handledByName ? html`<b>${r.handledByName}</b>` : html`<span class="text-slate-400">Chưa có</span>`}</div>
+    ${r.escalatedByName ? html`<div class="text-xs text-slate-500">Chuyển lên: ${r.escalatedByName}</div>` : ''}`;
+}
+
+function reportDetail(r, { canAct, canEscalate }) {
   return html`
     <div class="space-y-4" data-testid="issue-detail">
       <div class="flex flex-wrap items-center gap-2">${statusBadge(r.status)}<span class="text-xs text-slate-500">#${r.reportId} · ${categoryLabel(r)} · ${DESK[r.desk] || r.desk} xử lý</span></div>
@@ -184,44 +196,74 @@ function reportDetail(r, { canEscalate }) {
         <div><div class="text-xs text-slate-500">Người gửi</div><b>${r.reporterName || '—'}</b> <span class="text-xs text-slate-500">(${roleLabel(r.reporterRole)})</span></div>
         <div><div class="text-xs text-slate-500">Liên hệ</div>${phoneText(r.reporterPhone)}${r.reporterEmail ? html`<div class="text-xs text-slate-500">${r.reporterEmail}</div>` : ''}</div>
         <div><div class="text-xs text-slate-500">Gửi lúc</div>${dateTime(r.createdAt)}</div>
-        <div><div class="text-xs text-slate-500">Cập nhật</div>${dateTime(r.updatedAt)}${r.handledByName ? html`<div class="text-xs text-slate-500">bởi ${r.handledByName}</div>` : ''}</div>
+        <div><div class="text-xs text-slate-500">Người xử lý</div>${r.handledByName ? html`<b>${r.handledByName}</b><div class="text-xs text-slate-500">${dateTime(r.handledAt)}</div>` : html`<span class="text-slate-400">Chưa có</span>`}</div>
+        ${r.escalatedByName ? html`<div><div class="text-xs text-slate-500">Chuyển lên Quản lý</div><b>${r.escalatedByName}</b><div class="text-xs text-slate-500">${dateTime(r.escalatedAt)}</div></div>` : ''}
+        ${r.escalateReason ? html`<div class="sm:col-span-2"><div class="text-xs text-slate-500">Lý do chuyển (nội bộ)</div><div class="whitespace-pre-line">${r.escalateReason}</div></div>` : ''}
       </div>
-      ${closed(r) ? (r.response ? html`<div class="rounded-xl border border-brand-line p-3 text-sm"><div class="text-xs font-bold text-slate-500 mb-0.5">Phản hồi</div><div class="whitespace-pre-line">${r.response}</div></div>` : '') : html`
-        <form data-action="save-status" class="space-y-3 border-t border-slate-100 pt-4" novalidate>
-          ${field('Trạng thái', select('status', [
-            { value: 'IN_PROGRESS', label: 'Đang xử lý' },
-            { value: 'RESOLVED', label: 'Đã xử lý xong' },
-            { value: 'REJECTED', label: 'Từ chối' }
-          ], r.status === 'OPEN' ? 'IN_PROGRESS' : r.status, { required: true }))}
-          ${field('Phản hồi cho người gửi', textarea('response', r.response || '', { rows: 3, placeholder: 'Người gửi nhận được thông báo kèm phản hồi này' }))}
-          <div class="flex flex-wrap justify-end gap-2">
-            ${canEscalate ? html`<button type="button" class="btn-secondary" data-action="escalate" data-testid="escalate">${icon('arrow-up-right', 'w-4 h-4')} Chuyển lên Quản lý</button>` : ''}
-            <button type="submit" class="btn-primary" data-testid="save-status">${icon('save', 'w-4 h-4')} Cập nhật</button>
-          </div>
-        </form>`}
+      ${r.response ? html`<div class="rounded-xl border border-brand-line p-3 text-sm"><div class="text-xs font-bold text-slate-500 mb-0.5">${closed(r) ? 'Phản hồi' : 'Phản hồi gần nhất'}${r.handledByName ? ` · ${r.handledByName}` : ''}</div><div class="whitespace-pre-line">${r.response}</div></div>` : ''}
+      ${closed(r) ? '' : actionBar(r, { canAct, canEscalate })}
     </div>`;
 }
 
+// Nút theo trạng thái: Mới gửi -> Nhận xử lý / Từ chối; Đang xử lý -> Gửi cập nhật / Hoàn tất / Từ chối
+function actionBar(r, { canAct, canEscalate }) {
+  if (!canAct) {
+    return html`<div class="rounded-xl bg-violet-50 text-violet-800 text-sm p-3 flex gap-2">${icon('info', 'w-4 h-4 shrink-0 mt-0.5')}<span>Báo cáo đã chuyển lên Quản lý, bạn chỉ xem để theo dõi. Kết quả sẽ hiện ở đây khi Quản lý xử lý xong.</span></div>`;
+  }
+  const btn = (action, ic, label, cls = 'btn-secondary') => html`<button type="button" class="${cls}" data-action="${action}" data-testid="${action}">${icon(ic, 'w-4 h-4')} ${label}</button>`;
+  return html`
+    <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
+      ${canEscalate ? btn('escalate', 'arrow-up-right', 'Chuyển lên Quản lý') : ''}
+      ${btn('reject', 'x-circle', 'Từ chối', 'btn-secondary text-rose-600 hover:bg-rose-50')}
+      ${r.status === 'OPEN'
+        ? btn('accept', 'hand', 'Nhận xử lý', 'btn-primary')
+        : html`${btn('update', 'message-square-plus', 'Gửi cập nhật')}${btn('resolve', 'check-circle-2', 'Hoàn tất', 'btn-primary')}`}
+    </div>`;
+}
+
+// Mỗi hành động 1 popup riêng: đóng báo cáo (Hoàn tất / Từ chối) bắt buộc phản hồi mới và có câu xác nhận
+const RESPOND = {
+  IN_PROGRESS: { title: 'Nhận xử lý', submitText: 'Gửi', success: 'Đã cập nhật báo cáo', required: false },
+  RESOLVED: { title: 'Hoàn tất báo cáo', submitText: 'Hoàn tất', success: 'Đã hoàn tất báo cáo', required: true, closes: true },
+  REJECTED: { title: 'Từ chối báo cáo', submitText: 'Từ chối', success: 'Đã từ chối báo cáo', required: true, closes: true }
+};
+
 function openReport(id, role, onChange) {
   let report = null;
+  const respond = status => {
+    const cfg = RESPOND[status];
+    // đang xử lý mà gửi thêm cập nhật thì bắt buộc có nội dung (BE chặn gửi lại cùng trạng thái không kèm phản hồi)
+    const required = cfg.required || report.status === status;
+    const title = report.status === 'IN_PROGRESS' && status === 'IN_PROGRESS' ? 'Gửi cập nhật cho người gửi' : cfg.title;
+    openFormModal({
+      title: `${title} #${report.reportId}`,
+      fields: html`
+        ${cfg.closes ? html`<div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3">Báo cáo sẽ được đóng và gửi kết quả cho người báo cáo. Sau khi đóng không chỉnh sửa được nữa.</div>` : ''}
+        ${field(required ? 'Phản hồi cho người gửi' : 'Ghi chú cho người gửi (tuỳ chọn)', textarea('response', '', { rows: 4, placeholder: status === 'REJECTED' ? 'Lý do từ chối...' : 'Người gửi nhận được thông báo kèm nội dung này' }), `Tối đa ${RESPONSE_MAX} ký tự`)}`,
+      validate: d => {
+        const text = String(d.response || '').trim();
+        if (required && !text) return { response: status === 'REJECTED' ? 'Nhập lý do từ chối để báo cho người gửi' : 'Nhập phản hồi cho người gửi' };
+        return text.length > RESPONSE_MAX ? { response: `Tối đa ${RESPONSE_MAX} ký tự` } : {};
+      },
+      submitText: cfg.submitText, success: cfg.success,
+      submit: d => issueApi.setStatus(report.reportId, status, String(d.response || '').trim() || undefined),
+      onDone: () => { modal.close(); onChange(); }
+    });
+  };
   const modal = openModal({
     title: 'Báo cáo sự cố',
     size: 'max-w-2xl',
     body: html`<div class="py-10 text-center text-slate-400 text-sm">Đang tải...</div>`,
     actions: {
-      'save-status': async form => {
-        const d = readForm(form);
-        if (d.status === 'REJECTED' && !d.response) {
-          showFormErrors(form, { fields: { response: 'Nhập lý do từ chối để báo cho người gửi' } });
-          return;
-        }
-        const res = await withBusy(form, () => issueApi.setStatus(report.reportId, d.status, d.response || undefined));
-        if (res !== undefined) { toast('Đã cập nhật báo cáo'); modal.close(); onChange(); }
-      },
+      accept: () => respond('IN_PROGRESS'),
+      update: () => respond('IN_PROGRESS'),
+      resolve: () => respond('RESOLVED'),
+      reject: () => respond('REJECTED'),
       // lễ tân chuyển báo cáo ở quầy lên Quản lý, lý do tuỳ chọn
       escalate: () => openFormModal({
         title: `Chuyển báo cáo #${report.reportId} lên Quản lý`,
-        fields: field('Lý do chuyển', textarea('reason', '', { rows: 3, placeholder: 'VD: cần duyệt chi phí sửa chữa, vượt quyền quầy...' }), 'Tuỳ chọn, người gửi cũng nhận thông báo'),
+        fields: field('Lý do chuyển', textarea('reason', '', { rows: 3, placeholder: 'VD: cần duyệt chi phí sửa chữa, vượt quyền quầy...' }), `Tuỳ chọn, tối đa ${REASON_MAX} ký tự. Chỉ Quản lý thấy, người gửi không nhận thông báo khi chuyển cấp`),
+        validate: d => (String(d.reason || '').length > REASON_MAX ? { reason: `Tối đa ${REASON_MAX} ký tự` } : {}),
         submitText: 'Chuyển lên', success: 'Đã chuyển báo cáo lên Quản lý',
         submit: d => issueApi.escalate(report.reportId, d.reason || undefined),
         onDone: () => { modal.close(); onChange(); }
@@ -229,7 +271,11 @@ function openReport(id, role, onChange) {
     }
   });
   issueApi.get(id)
-    .then(r => { report = r; modal.setBody(reportDetail(r, { canEscalate: role === 'RECEPTIONIST' && r.desk === 'RECEPTION' })); })
+    .then(r => {
+      report = r;
+      const canAct = role === 'CENTER_MANAGER' || r.desk === 'RECEPTION';
+      modal.setBody(reportDetail(r, { canAct, canEscalate: role === 'RECEPTIONIST' && r.desk === 'RECEPTION' }));
+    })
     .catch(err => { modal.close(); toast(err.message, 'error'); });
 }
 
