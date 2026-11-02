@@ -98,7 +98,7 @@ export default async function PaymentResult(el, { search, query, loggedIn }) {
     const base = {
       success: ok,
       title: ok ? 'Thanh toán thành công' : 'Thanh toán chưa hoàn tất',
-      message: ok ? 'Gói tập của bạn đã được kích hoạt.' : 'Không tìm thấy giao dịch thành công.',
+      message: ok ? 'Gói tập đã được ghi nhận, sẽ kích hoạt khi bạn check-in lần đầu hoặc đăng ký lớp.' : 'Không tìm thấy giao dịch thành công.',
       paymentId,
       rows: [['Mã thanh toán', `#${paymentId}`]]
     };
@@ -114,14 +114,16 @@ export default async function PaymentResult(el, { search, query, loggedIn }) {
 
   render(el, loading('Đang xác nhận giao dịch với hệ thống...'));
   const amountFromVnp = query.vnp_Amount ? Number(query.vnp_Amount) / 100 : null;
+  let paidId = null;
   try {
     const res = await vnpayApi.callback(search);
+    paidId = res.paymentId;
     const ok = Boolean(res.success);
     const code = res.responseCode || query.vnp_ResponseCode;
     const base = {
       success: ok,
       title: ok ? 'Thanh toán thành công' : 'Thanh toán không thành công',
-      message: ok ? 'Gói tập của bạn đã được kích hoạt.' : (vnpayReason(code) || res.message),
+      message: ok ? 'Gói tập đã được ghi nhận, sẽ kích hoạt khi bạn check-in lần đầu hoặc đăng ký lớp.' : (vnpayReason(code) || res.message),
       amount: amountFromVnp,
       paymentId: res.paymentId,
       rows: [
@@ -134,8 +136,8 @@ export default async function PaymentResult(el, { search, query, loggedIn }) {
   } catch (err) {
     show({ success: false, title: 'Không xác nhận được giao dịch', message: err.message, amount: amountFromVnp, rows: [] });
   } finally {
-    // bỏ query vnp_* khỏi URL để reload không gửi lại
-    window.history.replaceState(null, '', '#/member/payment-result?done=1');
+    // bỏ query vnp_* khỏi URL để reload không gửi lại; giữ paymentId để F5 vẫn xem được kết quả thật
+    window.history.replaceState(null, '', paidId ? `#/member/payment-result?paymentId=${paidId}` : '#/member/payment-result?done=1');
   }
   return unbind;
 }
