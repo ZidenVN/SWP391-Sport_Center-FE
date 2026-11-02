@@ -2,21 +2,21 @@ import { html, icon } from '../../core/dom.js';
 import { pageHeader, emptyState, statCard, toast } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
-import { fullName, phoneText, time, date, timeRange, isoDate, badge, daysUntil, isToday } from '../../core/format.js';
+import { fullName, phoneText, time, date, isoDate, badge, daysUntil } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openSellPackage } from '../../components/sellPackage.js';
 
 // Điểm danh hội viên khi đến trung tâm: tìm -> Check-in (POST /receptionist/members/{id}/check-ins)
 // -> báo gói còn hạn + lớp hôm nay. Mỗi hội viên tính 1 lượt / ngày, cần gói còn hiệu lực, chỉ Lễ tân được check-in (BE kiểm tra).
 
-// một gói còn hiệu lực: tên, hạn, số buổi còn lại (gói lớp theo buổi)
-function subLine(name, endDate, remaining, type) {
+// một gói còn hiệu lực: tên, loại, hạn (gói lớp kèm tên lớp đang học)
+function subLine(name, endDate, className, type) {
   const daysLeft = daysUntil(endDate);
   const warn = daysLeft !== null && daysLeft <= 7;
   return html`
     <div class="mt-1 first:mt-0" data-testid="checkin-sub">
-      <div class="font-bold">${name || '—'}${type ? html` <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/15 align-middle">${type === 'FREE' ? 'Tự do' : 'Theo lớp'}</span>` : ''}</div>
-      <div class="text-xs ${warn ? 'text-brand-lime font-bold' : 'text-white/70'}">Hết hạn ${date(endDate)}${daysLeft !== null ? ` · còn ${Math.max(0, daysLeft)} ngày` : ''}${remaining != null ? ` · còn ${remaining} buổi` : ''}${warn ? ', nhắc khách gia hạn' : ''}</div>
+      <div class="font-bold">${name || '—'}${type ? html` <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/15 align-middle">${type === 'CLASS' ? 'Gói lớp' : 'Membership'}</span>` : ''}</div>
+      <div class="text-xs ${warn ? 'text-brand-lime font-bold' : 'text-white/70'}">Hết hạn ${date(endDate)}${daysLeft !== null ? ` · còn ${Math.max(0, daysLeft)} ngày` : ''}${className ? ` · lớp ${className}` : ''}${warn ? ', nhắc khách gia hạn' : ''}</div>
     </div>`;
 }
 
@@ -40,13 +40,13 @@ function resultPanel(s) {
         <div class="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
           <div class="rounded-xl bg-white/10 p-3">
             <div class="text-white/60 text-xs">${subs.length > 1 ? `${subs.length} gói đang dùng` : 'Gói đang dùng'}</div>
-            ${subs.map(x => subLine(x.packageName, x.endDate, x.remainingSessions, x.packageType))}
+            ${subs.map(x => subLine(x.packageName, x.endDate, x.currentClassName, x.packageType))}
           </div>
           <div class="rounded-xl bg-white/10 p-3" data-testid="checkin-classes">
-            <div class="text-white/60 text-xs">Lớp hôm nay</div>
-            ${c.todayClasses?.length
-              ? c.todayClasses.map(x => html`<div class="font-semibold">${x.subjectName} · ${timeRange(x.startTime, x.endTime)}</div><div class="text-xs text-white/70">${x.roomName}${x.coachName ? ` · HLV ${x.coachName}` : ''}</div>`)
-              : html`<div class="font-semibold">Không có lớp đã đặt</div><div class="text-xs text-white/70">Tập tự do</div>`}
+            <div class="text-white/60 text-xs">Kiểu check-in</div>
+            ${c.checkInType === 'CLASS'
+              ? html`<div class="font-semibold">Vào học lớp ${c.className || ''}${c.sessionStartTime ? ` · ${time(c.sessionStartTime)}` : ''}</div><div class="text-xs text-white/70">Membership đã hết hạn, chỉ vào đúng giờ buổi học của lớp</div>`
+              : html`<div class="font-semibold">Sử dụng cơ sở vật chất</div><div class="text-xs text-white/70">${c.className ? `Có buổi lớp ${c.className}${c.sessionStartTime ? ` lúc ${time(c.sessionStartTime)}` : ''}` : 'Membership còn hạn'}</div>`}
           </div>
         </div>
         ${warn ? html`<a href="#/reception/members/${c.memberId}" class="btn-lime btn-sm mt-4">${icon('refresh-cw', 'w-3.5 h-3.5')} Gia hạn cho khách</a>` : ''}
@@ -167,11 +167,6 @@ export default function ReceptionCheckIn(el) {
         btn.disabled = true;
         try {
           const res = await receptionApi.checkIn(m.memberId);
-          // BE không trả lớp hôm nay -> lấy từ lịch đăng ký của hội viên để lễ tân chỉ phòng tập
-          const regs = await receptionApi.registrations(m.memberId).catch(() => []);
-          res.todayClasses = regs
-            .filter(r => r.status === 'REGISTERED' && isToday(r.startTime))
-            .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
           toast(`Đã check-in ${fullName(m)}`);
           // về lại hôm nay để thấy lượt vừa ghi
           ctx.state.date = today;

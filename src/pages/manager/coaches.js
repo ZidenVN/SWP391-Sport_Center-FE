@@ -1,14 +1,19 @@
 import { html, icon } from '../../core/dom.js';
 import { pageHeader, emptyState, field, input, select, tabs, GENDER_OPTIONS } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
-import { coachAdminApi, classApi, userApi } from '../../api/endpoints.js';
+import { coachAdminApi, classApi, userApi, subjectApi } from '../../api/endpoints.js';
 import { badge, fullName, genderLabel, toDate } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
 import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 
-function form(c = {}) {
+// BE: HLV dạy các môn trong subjectIds (ít nhất 1); lọc HLV theo môn khi mở lớp / dạy thay
+const subjectsOf = c => c.subjects || [];
+const subjectText = c => subjectsOf(c).map(x => x.subjectName).join(', ');
+
+function form(subjects, c = {}) {
   const edit = Boolean(c.coachId);
+  const chosen = new Set(subjectsOf(c).map(x => String(x.subjectId)));
   return html`
     <div class="grid grid-cols-2 gap-3">
       ${field('Họ', input('firstName', { value: c.firstName, required: true }))}
@@ -19,24 +24,35 @@ function form(c = {}) {
       ${field('Số điện thoại', input('phone', { type: 'tel', value: c.phone, required: true }))}
     </div>
     ${field('Email đăng nhập', input('email', { type: 'email', value: c.email, required: true }))}
-    ${field('Chuyên môn', input('specialty', { value: c.speciality, placeholder: 'VD: Yoga, Gym, Boxing' }))}
-    ${field(edit ? 'Mật khẩu mới' : 'Mật khẩu', input('password', { type: 'password', required: !edit, attrs: 'autocomplete="new-password"' }),
-      edit ? 'Bỏ trống nếu không đổi mật khẩu' : 'Tối thiểu 6 ký tự, gửi cho HLV để đăng nhập lần đầu')}`;
+    ${field('Môn dạy', html`
+      <div class="flex flex-wrap gap-2" data-field-wrap data-testid="coach-subjects">
+        ${subjects.map(x => html`
+          <label class="cursor-pointer">
+            <input type="checkbox" name="subject_${x.subjectId}" value="1" class="peer sr-only" ${chosen.has(String(x.subjectId)) ? 'checked' : ''} />
+            <span class="inline-flex items-center px-3 py-1.5 rounded-full border border-brand-line text-sm font-semibold text-slate-600 peer-checked:bg-brand-dark peer-checked:text-brand-lime peer-checked:border-brand-dark">${x.subjectName}</span>
+          </label>`)}
+      </div>`, subjects.length ? 'Chọn ít nhất 1 môn. HLV chỉ được xếp vào lớp của các môn này' : 'Chưa có bộ môn nào, hãy tạo bộ môn trước')}
+    ${edit ? '' : field('Mật khẩu', input('password', { type: 'password', required: true, attrs: 'autocomplete="new-password"' }),
+      'Tối thiểu 6 ký tự, gửi cho HLV để đăng nhập lần đầu')}`;
 }
 
-function validator(edit) {
+const pickedSubjects = (subjects, d) => subjects.filter(x => d[`subject_${x.subjectId}`]).map(x => x.subjectId);
+
+function validator(subjects, edit) {
   return d => {
     const e = requireFields(d, edit ? ['firstName', 'lastName', 'email', 'phone'] : ['firstName', 'lastName', 'email', 'phone', 'password']);
     if (d.phone && !/^(0|\+84)[0-9]{9}$/.test(d.phone)) e.phone = 'Số điện thoại không hợp lệ';
     if (d.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)) e.email = 'Email không hợp lệ';
     if (d.password && d.password.length < 6) e.password = 'Mật khẩu tối thiểu 6 ký tự';
+    if (!pickedSubjects(subjects, d).length && subjects[0]) e[`subject_${subjects[0].subjectId}`] = 'Chọn ít nhất 1 môn dạy';
     return e;
   };
 }
 
-const payload = d => ({
-  firstName: d.firstName, lastName: d.lastName, gender: d.gender, phone: d.phone,
-  email: d.email, specialty: d.specialty || null, password: d.password || null
+// tạo: gửi password; sửa: BE không nhận password (CoachUpdateRequestDTO)
+const payload = (subjects, d, edit) => ({
+  firstName: d.firstName, lastName: d.lastName, gender: d.gender, phone: d.phone, email: d.email,
+  subjectIds: pickedSubjects(subjects, d), ...(edit ? {} : { password: d.password })
 });
 
 const LOAD_OPTIONS = [['', 'Mọi lịch dạy'], ['BUSY', 'Có lớp sắp tới'], ['FREE', 'Chưa có lớp sắp tới'], ['NONE', 'Chưa từng dạy lớp']];
@@ -58,12 +74,12 @@ function view(s) {
   const statusOf = c => s.statusById[c.coachId] || 'ACTIVE';
   const rows = s.coaches.map(c => ({ c, status: statusOf(c), ...stats(c) }));
   const count = st => rows.filter(r => !st || r.status === st).length;
-  const specialties = [...new Set(s.coaches.map(c => (c.speciality || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+
   const list = rows
     .filter(r => !s.tab || r.status === s.tab)
-    .filter(r => !s.specialty || (s.specialty === '-' ? !(r.c.speciality || '').trim() : (r.c.speciality || '').trim() === s.specialty))
+    .filter(r => !s.specialty || (s.specialty === '-' ? !subjectsOf(r.c).length : subjectsOf(r.c).some(x => String(x.subjectId) === s.specialty)))
     .filter(r => !s.load || (s.load === 'BUSY' ? r.upcoming > 0 : s.load === 'FREE' ? r.upcoming === 0 : r.total === 0))
-    .filter(r => matches(s.keyword, [fullName(r.c), r.c.email, r.c.phone, r.c.speciality]))
+    .filter(r => matches(s.keyword, [fullName(r.c), r.c.email, r.c.phone, subjectText(r.c)]))
     .sort((a, b) => (s.sort === 'upcoming' ? b.upcoming - a.upcoming : s.sort === 'total' ? b.total - a.total : 0)
       || fullName(a.c).localeCompare(fullName(b.c), 'vi'));
   const page = paginate(list, s.pageNo, s.pageSize);
@@ -79,9 +95,9 @@ function view(s) {
       ], s.tab)}
       <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 mb-5" data-testid="coach-filters">
         <select class="input sm:w-48" name="specialty" data-action="specialty">
-          <option value="">Mọi chuyên môn</option>
-          ${specialties.map(v => html`<option value="${v}" ${s.specialty === v ? 'selected' : ''}>${v}</option>`)}
-          <option value="-" ${s.specialty === '-' ? 'selected' : ''}>Chưa có chuyên môn</option>
+          <option value="">Mọi môn dạy</option>
+          ${s.subjects.map(x => html`<option value="${x.subjectId}" ${s.specialty === String(x.subjectId) ? 'selected' : ''}>${x.subjectName}</option>`)}
+          <option value="-" ${s.specialty === '-' ? 'selected' : ''}>Chưa gắn môn</option>
         </select>
         <select class="input sm:w-48" name="load" data-action="workload">
           ${LOAD_OPTIONS.map(([v, l]) => html`<option value="${v}" ${s.load === v ? 'selected' : ''}>${l}</option>`)}
@@ -89,7 +105,7 @@ function view(s) {
         <select class="input sm:w-52" name="sort" data-action="sort">
           ${SORT_OPTIONS.map(([v, l]) => html`<option value="${v}" ${s.sort === v ? 'selected' : ''}>${l}</option>`)}
         </select>
-        ${searchBox(s.keyword, 'Tìm tên, email, chuyên môn...')}
+        ${searchBox(s.keyword, 'Tìm tên, email, môn dạy...')}
       </div>
     </div>
     ${list.length ? html`
@@ -101,7 +117,9 @@ function view(s) {
                 ${memberAvatar(c, 'w-12 h-12 text-lg')}
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2"><span class="font-bold truncate">${fullName(c)}</span>${badge(status, status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa')}</div>
-                  <div class="text-xs font-semibold text-[#2F6B55] mt-0.5">${c.speciality || 'Chưa có chuyên môn'}</div>
+                  ${subjectsOf(c).length ? html`
+                    <div class="flex flex-wrap gap-1 mt-1">${subjectsOf(c).map(x => html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#469B7E]/10 text-[#2F6B55]">${x.subjectName}</span>`)}</div>`
+                    : html`<div class="text-xs font-semibold text-rose-600 mt-0.5">Chưa gắn môn, chưa xếp lớp được</div>`}
                 </div>
               </div>
               <div class="mt-4 space-y-1.5 text-sm text-slate-600">
@@ -125,10 +143,10 @@ function view(s) {
 
 export default function ManagerCoaches(el) {
   return mountPage(el, {
-    state: { tab: '', specialty: '', load: '', sort: 'name', keyword: '', pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
+    state: { tab: '', specialty: '', load: '', subjects: [], sort: 'name', keyword: '', pageNo: 0, pageSize: DEFAULT_PAGE_SIZE },
     load: async () => {
-      const [coaches, classes, users] = await Promise.all([coachAdminApi.list(), classApi.list().catch(() => []), userApi.list({ role: 'COACH' }).catch(() => [])]);
-      return { coaches, classes, statusById: Object.fromEntries(users.map(u => [u.id, u.status])) };
+      const [coaches, classes, users, subjects] = await Promise.all([coachAdminApi.list(), classApi.list().catch(() => []), userApi.list({ role: 'COACH' }).catch(() => []), subjectApi.list().catch(() => [])]);
+      return { coaches, classes, subjects: subjects.filter(x => x.status !== 'INACTIVE'), statusById: Object.fromEntries(users.map(u => [u.id, u.status])) };
     },
     view,
     actions: {
@@ -139,14 +157,14 @@ export default function ManagerCoaches(el) {
       search: (t, e, ctx) => ctx.set({ keyword: t.value, pageNo: 0 }),
       ...pagerActions(),
       create: (t, e, ctx) => openFormModal({
-        title: 'Thêm huấn luyện viên', fields: form(), validate: validator(false), success: 'Đã tạo tài khoản HLV',
-        submit: d => coachAdminApi.create(payload(d)), onDone: () => ctx.reload()
+        title: 'Thêm huấn luyện viên', fields: form(ctx.state.subjects), validate: validator(ctx.state.subjects, false), success: 'Đã tạo tài khoản HLV',
+        submit: d => coachAdminApi.create(payload(ctx.state.subjects, d, false)), onDone: () => ctx.reload()
       }),
       edit: (t, e, ctx) => {
         const c = ctx.state.coaches.find(x => String(x.coachId) === t.dataset.id);
         openFormModal({
-          title: `Sửa HLV ${fullName(c)}`, fields: form(c), validate: validator(true), success: 'Đã cập nhật HLV',
-          submit: d => coachAdminApi.update(c.coachId, payload(d)), onDone: () => ctx.reload()
+          title: `Sửa HLV ${fullName(c)}`, fields: form(ctx.state.subjects, c), validate: validator(ctx.state.subjects, true), success: 'Đã cập nhật HLV',
+          submit: d => coachAdminApi.update(c.coachId, payload(ctx.state.subjects, d, true)), onDone: () => ctx.reload()
         });
       },
       toggle: async (t, e, ctx) => {

@@ -109,11 +109,13 @@ export function chipState(c, registeredIds, isBookable) {
 // Màu theo trạng thái: lớp CSS tone-* (css/styles.css, mục "LỊCH LỚP HỌC") đặt biến màu cho thẻ, chấm, chú thích
 const TONES = {
   registered: 'tone-registered', open: 'tone-open', pending: 'tone-pending',
-  done: 'tone-done', closed: 'tone-closed', cancelled: 'tone-cancelled'
+  done: 'tone-done', closed: 'tone-closed', cancelled: 'tone-cancelled',
+  // buổi bị hoãn (lịch theo buổi của hội viên)
+  postponed: 'tone-pending'
 };
 
 const statusText = (c, st) => ({
-  registered: 'Đã đăng ký', pending: 'Chờ chốt buổi', done: 'Hoàn thành', cancelled: 'Đã hủy'
+  registered: 'Đã đăng ký', pending: 'Chờ chốt buổi', done: 'Hoàn thành', cancelled: 'Đã hủy', postponed: 'Đã hoãn'
 }[st] || (c.availableSeats <= 0 ? 'Hết chỗ' : `Còn ${c.availableSeats} chỗ`));
 
 // chú thích màu: [[trạng thái, nhãn], ...]
@@ -123,7 +125,7 @@ export const MANAGER_LEGEND = [['open', 'Sắp diễn ra'], ['closed', 'Đã đ�
 // thẻ lớp gọn (lịch tháng + danh sách theo ngày trên điện thoại)
 function chip(c, st, compact) {
   return html`
-    <button type="button" data-action="cal-class" data-id="${c.classId}" data-testid="cal-chip" title="${c.subjectName} · ${time(c.startTime)}–${time(c.endTime)} · ${c.roomName}"
+    <button type="button" data-action="cal-class" data-id="${c.classId}" data-session="${c.sessionId ?? ''}" data-testid="cal-chip" title="${c.subjectName} · ${time(c.startTime)}–${time(c.endTime)} · ${c.roomName}"
       class="cal-chip ${TONES[st]} ${compact ? 'is-compact' : ''}">
       <span class="cal-chip-line"><span class="cal-chip-time">${time(c.startTime)}</span><span class="cal-chip-name">${st === 'registered' ? icon('check', 'w-3 h-3 inline -mt-0.5') : ''} ${c.subjectName}</span></span>
       ${compact ? '' : html`<span class="cal-chip-sub">${c.dayTotal ? `Ngày ${c.dayIndex}/${c.dayTotal} · ` : ''}${c.coachName} · ${c.roomName}</span>`}
@@ -236,7 +238,7 @@ function timeCard(x, st, fromHour, order) {
   const roomy = height >= 92 && !narrow;
   const fill = c.maxCapacity ? Math.min(100, Math.round((c.currentEnrolled / c.maxCapacity) * 100)) : 0;
   return html`
-    <button type="button" data-action="cal-class" data-id="${c.classId}" data-testid="cal-chip"
+    <button type="button" data-action="cal-class" data-id="${c.classId}" data-session="${c.sessionId ?? ''}" data-testid="cal-chip"
       class="cal-ev ${TONES[st]} ${narrow ? 'is-narrow' : ''}"
       style="top:${top + 3}px;height:${height}px;left:calc(${x.lane * width}% + 5px);width:calc(${width}% - 10px);--o:${order}"
       title="${c.subjectName} · ${time(c.startTime)} – ${time(c.endTime)} · ${c.coachName} · ${c.roomName}">
@@ -248,7 +250,7 @@ function timeCard(x, st, fromHour, order) {
       ${roomy ? html`
         <span class="cal-ev-meta">${icon('user-round', 'w-3 h-3 shrink-0')}<span class="truncate">${c.coachName}</span></span>
         <span class="cal-ev-meta">${icon('map-pin', 'w-3 h-3 shrink-0')}<span class="truncate">${c.roomName}</span></span>
-        <span class="cal-ev-status">${icon('users', 'w-3 h-3 shrink-0')}<span class="truncate">${c.currentEnrolled}/${c.maxCapacity} · ${statusText(c, st)}</span></span>
+        <span class="cal-ev-status">${icon('users', 'w-3 h-3 shrink-0')}<span class="truncate">${c.maxCapacity ? `${c.currentEnrolled ?? 0}/${c.maxCapacity} · ` : ''}${statusText(c, st)}</span></span>
         <span class="cal-ev-meter" aria-hidden="true"><i style="width:${fill}%"></i></span>` : ''}
     </button>`;
 }

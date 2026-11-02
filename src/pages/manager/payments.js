@@ -10,7 +10,7 @@ export default function ManagerPayments(el) {
     title: 'Giao dịch',
     subtitle: 'Tra cứu thanh toán, xuất báo cáo CSV và hoàn tiền',
     list: q => managerPaymentApi.list(q),
-    filterExtra: html`<button type="button" class="btn-secondary" data-action="export" data-testid="payment-export">${icon('download', 'w-4 h-4')} CSV</button>`,
+    filterExtra: html`<button type="button" class="btn-secondary" data-action="export" data-testid="payment-export">${icon('download', 'w-4 h-4')} Xuất Excel</button>`,
     rowActions: p => (p.status === 'COMPLETED'
       ? html`<button type="button" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" data-action="refund" data-id="${p.paymentId}" data-testid="row-refund">${icon('undo-2', 'w-3.5 h-3.5')} Hoàn tiền</button>`
       : ''),

@@ -15,12 +15,15 @@ const ATTENDANCE = [
   { id: 'ABSENT', label: 'Vắng', on: 'peer-checked:bg-rose-600 peer-checked:text-white peer-checked:border-rose-600' }
 ];
 
-// Khung giờ điểm danh giống BE (app.attendance.*): mở trước giờ học 15 phút, đóng sau giờ kết thúc 24 giờ, lớp hủy thì không
+// Điểm danh theo TỪNG BUỔI (sessionId lấy từ GET /coaches/me/schedules).
+// Khung giờ giống BE (app.attendance.*): mở trước giờ học 15 phút, đóng sau giờ kết thúc 24 giờ; buổi hoãn / hủy thì không
 const ATTENDANCE_OPEN_MINUTES_BEFORE = 15;
 const ATTENDANCE_CLOSE_HOURS_AFTER = 24;
 function attendanceWindow(c, now = new Date()) {
-  if (!c) return { open: true };
-  if (c.status === 'CANCELLED' || c.status === 'INACTIVE') return { open: false, reason: 'Lớp đã bị hủy, không thể điểm danh.' };
+  if (!c) return { open: false, reason: 'Chọn buổi học để điểm danh.' };
+  if (c.status === 'POSTPONED') return { open: false, reason: 'Buổi này đã bị hoãn, không điểm danh.' };
+  if (c.status === 'CANCELLED' || c.classStatus === 'CANCELLED') return { open: false, reason: 'Buổi / lớp đã bị hủy, không thể điểm danh.' };
+  if (c.classStatus === 'STOPPED') return { open: false, reason: 'Lớp đã dừng, không thể điểm danh.' };
   const opensAt = new Date(toDate(c.startTime).getTime() - ATTENDANCE_OPEN_MINUTES_BEFORE * 60000);
   const closesAt = new Date(toDate(c.endTime).getTime() + ATTENDANCE_CLOSE_HOURS_AFTER * 3600000);
   if (now < opensAt) return { open: false, reason: `Chưa tới giờ điểm danh — mở lúc ${dateTime(opensAt)} (trước giờ học ${ATTENDANCE_OPEN_MINUTES_BEFORE} phút).` };
@@ -74,11 +77,33 @@ function rosterTab(s) {
     </div>`;
 }
 
-function attendanceTab(s) {
-  if (!s.roster.length) return emptyState('Lớp chưa có học viên để điểm danh', 'clipboard-check');
-  const marked = Object.fromEntries(s.attendances.map(a => [a.memberId, a]));
-  const win = attendanceWindow(s.cls);
+// dải chọn buổi: mỗi buổi 1 nút, buổi đang chọn tô đậm, buổi hoãn / bù có nhãn
+function sessionPicker(s) {
   return html`
+    <div class="mb-4" data-testid="session-picker">
+      <div class="text-xs font-bold text-slate-500 mb-2">Chọn buổi (${s.sessions.length} buổi)</div>
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        ${s.sessions.map((x, i) => {
+          const on = x.sessionId === s.session?.sessionId;
+          const past = toDate(x.endTime) < new Date();
+          return html`
+            <button type="button" data-action="pick-session" data-id="${x.sessionId}"
+              class="shrink-0 rounded-2xl border px-3 py-2 text-left text-xs transition ${on ? 'border-brand-dark bg-brand-dark text-white' : 'border-brand-line bg-white/70 hover:border-[#469B7E]'} ${x.status === 'POSTPONED' ? 'opacity-70' : ''}">
+              <span class="block font-bold">Buổi ${i + 1} · ${weekday(x.startTime)} ${date(x.startTime).slice(0, 5)}</span>
+              <span class="block ${on ? 'text-white/80' : 'text-slate-500'}">${timeRange(x.startTime, x.endTime)}${x.status === 'POSTPONED' ? ' · Hoãn' : x.type === 'MAKEUP' ? ' · Bù' : past ? ' · Đã qua' : ''}</span>
+            </button>`;
+        })}
+      </div>
+    </div>`;
+}
+
+function attendanceTab(s) {
+  if (!s.sessions.length) return emptyState('Lớp chưa có buổi nào bạn dạy', 'calendar-x');
+  if (!s.sessionRoster.length) return html`${sessionPicker(s)}${emptyState('Buổi này chưa có học viên để điểm danh', 'clipboard-check')}`;
+  const marked = Object.fromEntries(s.attendances.map(a => [a.memberId, a]));
+  const win = attendanceWindow(s.session);
+  return html`
+    ${sessionPicker(s)}
     ${!win.open ? html`
       <div class="mb-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 flex gap-2" data-testid="attendance-closed">
         ${icon('clock', 'w-4 h-4 shrink-0 mt-0.5')} ${win.reason}
@@ -87,12 +112,13 @@ function attendanceTab(s) {
     <form class="card" data-action="save-attendance" data-testid="attendance-form" novalidate>
       <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
         <div class="text-sm text-slate-600">
-          ${s.attendances.length ? html`Đã điểm danh <b>${s.attendances.length}</b>/${s.roster.length} học viên` : 'Chưa điểm danh buổi này'}
+          ${s.attendances.length ? html`Đã điểm danh <b>${s.attendances.length}</b>/${s.sessionRoster.length} học viên` : 'Chưa điểm danh buổi này'}
+          <div class="text-xs text-slate-400">${weekday(s.session.startTime)} ${date(s.session.startTime)} · ${timeRange(s.session.startTime, s.session.endTime)}${s.session.substitute ? ` · bạn dạy thay ${s.session.mainCoachName || ''}` : ''}</div>
         </div>
         <button type="button" class="btn-secondary btn-sm" data-action="all-present">${icon('check-check', 'w-3.5 h-3.5')} Tất cả có mặt</button>
       </div>
       <div class="divide-y divide-slate-100">
-        ${s.roster.map(m => {
+        ${s.sessionRoster.map(m => {
           const cur = marked[m.memberId]?.status || 'PRESENT';
           return html`
             <div class="px-5 py-4 flex flex-col lg:flex-row lg:items-center gap-3" data-testid="attendance-row">
@@ -150,7 +176,7 @@ function view(s) {
     notifications: () => notificationsTab(s)
   }[s.tab]();
   return html`
-    ${hero(s.cls)}
+    ${hero(s.session || s.cls)}
     ${tabs([
       { id: 'roster', label: 'Học viên', count: s.roster.length },
       { id: 'attendance', label: 'Điểm danh' },
@@ -160,35 +186,58 @@ function view(s) {
     ${body}`;
 }
 
+// buổi mặc định: buổi đang trong giờ điểm danh, không thì buổi sắp tới gần nhất, không nữa thì buổi gần nhất đã qua
+function defaultSession(sessions, wanted) {
+  const byId = sessions.find(x => String(x.sessionId) === String(wanted));
+  if (byId) return byId;
+  const live = sessions.filter(x => x.status !== 'POSTPONED' && x.status !== 'CANCELLED');
+  return live.find(x => attendanceWindow(x).open) || live.find(x => toDate(x.endTime) >= new Date()) || live[live.length - 1] || sessions[0] || null;
+}
+
+async function loadSession(sessionId, fallbackAttendances = []) {
+  const data = await settle({
+    sessionRoster: [() => coachApi.sessionRoster(sessionId), []],
+    attendances: [() => coachApi.attendances(sessionId), fallbackAttendances]
+  });
+  return data;
+}
+
 export default function CoachClassDetail(el, { params, query }) {
   const classId = Number(params.id);
   return mountPage(el, {
-    state: { tab: query?.tab || 'roster' },
+    state: { tab: query?.tab || (query?.session ? 'attendance' : 'roster'), sessionId: query?.session || null },
     load: async ctx => {
       const data = await settle({
         schedules: [() => coachApi.schedules(), []],
         roster: [() => coachApi.roster(classId), []],
         plans: [() => coachApi.classPlans(classId), []],
-        notifications: [() => coachApi.classNotifications(classId), []],
-        // GET điểm danh từng lỗi 500 ở BE -> lỗi thì giữ kết quả vừa lưu
-        attendances: [() => coachApi.attendances(classId), ctx.state.attendances || []]
+        notifications: [() => coachApi.classNotifications(classId), []]
       });
-      return { ...data, cls: data.schedules.find(c => c.classId === classId) || null };
+      const sessions = data.schedules.filter(c => c.classId === classId).sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
+      const session = defaultSession(sessions, ctx.state.sessionId);
+      const sessionData = session ? await loadSession(session.sessionId, ctx.state.attendances || []) : { sessionRoster: [], attendances: [] };
+      return { ...data, ...sessionData, sessions, session, sessionId: session?.sessionId ?? null, cls: sessions[0] || null };
     },
     view,
     actions: {
       tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),
+      'pick-session': async (t, e, ctx) => {
+        const session = ctx.state.sessions.find(x => String(x.sessionId) === t.dataset.id);
+        if (!session || session.sessionId === ctx.state.session?.sessionId) return;
+        ctx.set({ session, sessionId: session.sessionId, sessionRoster: [], attendances: [] });
+        ctx.set(await loadSession(session.sessionId));
+      },
       'all-present': (t, e, ctx) => {
         ctx.el.querySelectorAll('input[type=radio][value=PRESENT]').forEach(r => { r.checked = true; });
       },
       'save-attendance': async (form, e, ctx) => {
         const fd = new FormData(form);
-        const records = ctx.state.roster.map(m => ({
+        const records = ctx.state.sessionRoster.map(m => ({
           memberId: m.memberId,
           status: fd.get(`status-${m.memberId}`) || 'PRESENT',
           note: (fd.get(`note-${m.memberId}`) || '').trim() || null
         }));
-        const saved = await withBusy(form, () => coachApi.takeAttendance(classId, records));
+        const saved = await withBusy(form, () => coachApi.takeAttendance(ctx.state.session.sessionId, records));
         if (saved) {
           toast(`Đã lưu điểm danh ${saved.length} học viên`);
           ctx.state.attendances = saved;

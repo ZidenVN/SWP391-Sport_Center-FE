@@ -77,7 +77,7 @@ function warningsBox(pv) {
       <ul class="mt-3 space-y-2 text-sm text-amber-900">
         ${pv.warnings.map(w => html`
           <li class="rounded-xl bg-white/70 p-3">
-            <div class="font-semibold">${w.packageName} · còn ${w.daysLeft} ngày${w.remainingSessions != null ? ` · ${w.remainingSessions} buổi` : ''}</div>
+            <div class="font-semibold">${w.packageName} · còn ${w.daysLeft} ngày</div>
             <div class="text-xs mt-0.5">${w.message}</div>
           </li>`)}
       </ul>

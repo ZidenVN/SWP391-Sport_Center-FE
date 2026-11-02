@@ -14,7 +14,13 @@ const STYLE = {
   SCHEDULE_CHANGE: ['calendar-clock', 'bg-amber-50 text-amber-600'],
   CLASS_CANCELLED: ['calendar-x', 'bg-rose-50 text-rose-600'],
   // lễ tân gửi từ quầy (1 / nhiều / mọi hội viên)
-  STAFF_MESSAGE: ['message-square-text', 'bg-indigo-50 text-indigo-600']
+  STAFF_MESSAGE: ['message-square-text', 'bg-indigo-50 text-indigo-600'],
+  CLASS_STOPPED: ['octagon-x', 'bg-rose-50 text-rose-600'],
+  CLASS_UPDATED: ['calendar-clock', 'bg-amber-50 text-amber-600'],
+  SESSION_POSTPONED: ['calendar-x', 'bg-amber-50 text-amber-600'],
+  MAKEUP_SESSION_SCHEDULED: ['calendar-plus', 'bg-violet-50 text-violet-600'],
+  COACH_SUBSTITUTE: ['user-cog', 'bg-sky-50 text-sky-600'],
+  SUBSCRIPTION_REFUNDED: ['undo-2', 'bg-violet-50 text-violet-600']
 };
 
 // BE: category STAFF = HLV / nhân viên gửi (có senderName), SYSTEM = hệ thống tự gửi

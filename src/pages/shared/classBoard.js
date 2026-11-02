@@ -1,11 +1,12 @@
 import { html, icon } from '../../core/dom.js';
 import { pageHeader, emptyState, toast } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
-import { classApi, receptionApi, subjectApi } from '../../api/endpoints.js';
+import { classApi, receptionApi, subjectApi, packageApi } from '../../api/endpoints.js';
 import { classCard, isBookable } from '../../components/classCard.js';
 import { openMemberPicker } from '../../components/memberPicker.js';
 import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { fullName, isoDate } from '../../core/format.js';
+import { withDurations, matchingPackages, neededPackageText, pickPackage } from '../../components/classPackages.js';
 import { classSearchQuery, classFilterBar, classPager, filterByKeyword, classSearchActions } from '../../components/classSearch.js';
 
 // Lịch lớp của Lễ tân: tìm theo tuần qua GET /classes/search (FE-TODO #7), đặt chỗ hộ hội viên trên thẻ lớp.
@@ -48,7 +49,16 @@ export default function ClassBoard(el) {
           title: `Đặt lớp ${c.subjectName} cho hội viên`,
           onPick: async member => {
             try {
-              await receptionApi.register(member.memberId, c.classId);
+              // dùng 1 gói lớp đang chờ của hội viên, cùng môn + cùng thời hạn với lớp
+              const [subs, pkgs] = await Promise.all([receptionApi.subscriptions(member.memberId), packageApi.list().catch(() => [])]);
+              const options = matchingPackages(withDurations(subs, pkgs), c);
+              if (!options.length) {
+                toast(`${neededPackageText(c)}. Hãy bán gói lớp cho hội viên trước.`, 'warning', `${fullName(member)} chưa có gói phù hợp`);
+                return;
+              }
+              const sub = await pickPackage(options, c);
+              if (!sub) return;
+              await receptionApi.register(member.memberId, c.classId, sub.subscriptionId);
               toast(`Đã đặt lớp ${c.subjectName} cho ${fullName(member)}`);
               ctx.reload();
             } catch (err) {

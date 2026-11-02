@@ -115,7 +115,7 @@ const STATUS = {
   COMPLETED: ['Hoàn tất', 'emerald'],
   REFUNDED: ['Đã hoàn tiền', 'violet'],
   FAILED: ['Thất bại', 'rose'],
-  OPEN: ['Đang mở', 'amber'],
+  OPEN: ['Chờ xử lý', 'amber'],
   RESOLVED: ['Đã xử lý', 'emerald'],
   IN_PROGRESS: ['Đang thực hiện', 'indigo'],
   PRESENT: ['Có mặt', 'emerald'],
@@ -127,7 +127,23 @@ const STATUS = {
   SYSTEM: ['Hệ thống', 'amber'],
   SCHEDULE_CHANGE: ['Đổi lịch', 'amber'],
   CLASS_CANCELLED: ['Lớp bị hủy', 'rose'],
-  STAFF_MESSAGE: ['Từ trung tâm', 'indigo']
+  STAFF_MESSAGE: ['Từ trung tâm', 'indigo'],
+  CLASS_STOPPED: ['Lớp dừng', 'rose'],
+  CLASS_UPDATED: ['Đổi lịch lớp', 'amber'],
+  SESSION_POSTPONED: ['Hoãn buổi', 'amber'],
+  MAKEUP_SESSION_SCHEDULED: ['Buổi bù', 'violet'],
+  COACH_SUBSTITUTE: ['HLV dạy thay', 'sky'],
+  SUBSCRIPTION_REFUNDED: ['Hoàn tiền', 'violet'],
+  // mô hình gói / buổi học mới
+  WAITING_ACTIVATION: ['Chờ kích hoạt', 'sky'],
+  STOPPED: ['Đã dừng', 'rose'],
+  SCHEDULED: ['Sắp diễn ra', 'sky'],
+  POSTPONED: ['Đã hoãn', 'amber'],
+  DONE: ['Đã học', 'emerald'],
+  // báo cáo sự cố
+  REJECTED: ['Từ chối', 'rose'],
+  // loại buổi
+  MAKEUP: ['Buổi bù', 'violet']
 };
 
 const BADGE_CLASSES = {

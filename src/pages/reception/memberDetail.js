@@ -9,6 +9,7 @@ import { openSellPackage } from '../../components/sellPackage.js';
 import { openBookClass } from '../../components/bookClass.js';
 import { openInvoice } from '../../components/invoice.js';
 import { latestActive } from '../../components/billing.js';
+import { scheduleText, canCancelRegistration, firstSessionOf, openSwitchClass } from '../../components/switchClass.js';
 
 function membershipCard(s) {
   const latest = latestActive(s.subscriptions);
@@ -64,21 +65,25 @@ function paymentsTab(s) {
   });
 }
 
+const REG_LABEL = { SWITCHED: 'Đã đổi lớp', STOPPED: 'Lớp đã dừng' };
+
 function classesTab(s) {
-  const regs = [...s.registrations].sort((a, b) => toDate(b.startTime) - toDate(a.startTime));
+  const regs = [...s.registrations].sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)));
   return html`
     <div class="flex justify-end p-4 pb-0">
       <button type="button" class="btn-secondary btn-sm" data-action="book">${icon('calendar-plus', 'w-3.5 h-3.5')} Đặt lớp hộ</button>
     </div>
     ${table({
-      columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
+      columns: [{ label: 'Lớp' }, { label: 'Lịch học' }, { label: 'Gói' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
       rows: regs.map(r => [
-        html`<div class="font-semibold">${r.subjectName}</div><div class="text-xs text-slate-500">HLV ${r.coachName}</div>`,
-        html`${date(r.startTime)}<div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)}</div>`,
-        r.roomName,
-        badge(r.status),
-        r.status === 'REGISTERED' && isFuture(r.startTime)
-          ? html`<button type="button" class="btn-ghost btn-sm text-rose-600" data-action="cancel-reg" data-id="${r.registrationId}" data-testid="cancel-reg">Hủy</button>` : ''
+        html`<div class="font-semibold">${r.subjectName} <span class="text-xs text-slate-400 font-normal">#${r.classId}</span></div><div class="text-xs text-slate-500">HLV ${r.coachName} · ${r.roomName}</div>`,
+        html`<div class="text-sm">${scheduleText(r)}</div>${firstSessionOf(r) ? html`<div class="text-xs text-slate-500">Buổi đầu: ${dateTime(r.firstSessionAt || r.startTime)}</div>` : ''}`,
+        html`<span class="text-sm">${r.packageName || '—'}</span>${r.receptionistSwitchCount ? html`<div class="text-[11px] text-amber-700">Đã dùng lượt đổi lớp</div>` : ''}`,
+        badge(r.status, REG_LABEL[r.status]),
+        html`<div class="flex justify-end gap-1">
+          ${r.status === 'REGISTERED' && r.subscriptionId ? html`<button type="button" class="btn-ghost btn-sm" data-action="switch-reg" data-id="${r.registrationId}" data-testid="switch-reg">${icon('arrow-right-left', 'w-3.5 h-3.5')} Đổi lớp</button>` : ''}
+          ${canCancelRegistration(r) ? html`<button type="button" class="btn-ghost btn-sm text-rose-600" data-action="cancel-reg" data-id="${r.registrationId}" data-testid="cancel-reg">Hủy</button>` : ''}
+        </div>`
       ]),
       empty: 'Chưa đăng ký lớp nào'
     })}`;
@@ -116,7 +121,7 @@ const checkedToday = s => s.todayCheckIns.find(c => String(c.memberId) === Strin
 
 function view(s) {
   const m = s.member;
-  const upcoming = s.registrations.filter(r => r.status === 'REGISTERED' && isFuture(r.startTime)).length;
+  const upcoming = s.registrations.filter(r => r.status === 'REGISTERED').length;
   const openTickets = s.tickets.filter(t => t.status === 'OPEN').length;
   return html`
     <a href="#/reception/members" class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-900 mb-5">${icon('arrow-left', 'w-4 h-4')} Danh sách hội viên</a>
@@ -222,6 +227,20 @@ export default function ReceptionMemberDetail(el, { params, query }) {
         if (!(await confirmDialog('Hủy đăng ký lớp này cho hội viên?', { title: 'Hủy đăng ký', confirmText: 'Hủy đăng ký', danger: true }))) return;
         const res = await withBusy(btn, () => receptionApi.cancel(id, btn.dataset.id));
         if (res) { toast('Đã hủy đăng ký lớp'); ctx.reload(); }
+      },
+      'switch-reg': (btn, e, ctx) => {
+        const reg = ctx.state.registrations.find(r => String(r.registrationId) === btn.dataset.id);
+        if (!reg) return;
+        const started = firstSessionOf(reg) <= new Date();
+        openSwitchClass({
+          reg,
+          loadEligible: () => receptionApi.eligibleClasses(id, reg.subscriptionId),
+          doSwitch: newClassId => receptionApi.switchClass(reg.registrationId, newClassId),
+          note: started
+            ? `Lớp đã bắt đầu: lần đổi này tính 1 lượt, mỗi gói chỉ được 1 lượt${reg.receptionistSwitchCount ? ' (gói này đã dùng lượt đổi)' : ''}.`
+            : 'Lớp chưa bắt đầu: đổi lớp không tính lượt.',
+          onDone: () => ctx.reload()
+        });
       },
       'new-ticket': (t, e, ctx) => {
         const modal = openModal({

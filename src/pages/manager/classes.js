@@ -2,6 +2,7 @@ import { html, icon, render, readForm } from '../../core/dom.js';
 import { pageHeader, table, emptyState, field, input, select, textarea, tabs, openModal, timeInput, toast } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { classApi, subjectApi, roomApi, coachAdminApi, packageApi } from '../../api/endpoints.js';
+import { openClassSessions } from '../../components/classSessions.js';
 import { badge, date, weekday, timeRange, toDate, isoDate, fullName } from '../../core/format.js';
 import { subjectColor, classImage, classImageUrl } from '../../components/classCard.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
@@ -117,6 +118,10 @@ function scheduleChanged(c, d) {
     || d.endClock !== hhmm(c.endClock);
 }
 
+// HLV dạy được môn (coach.subjects từ BE); chọn HLV khác môn thì BE trả ERR_CLASS_400_COACH_SUBJECT
+const teaches = (coach, subjectId) => (coach.subjects || []).some(x => String(x.subjectId) === String(subjectId));
+const coachOptions = list => list.map(x => ({ value: x.coachId, label: `${fullName(x)}${(x.subjects || []).length ? ` · ${x.subjects.map(m => m.subjectName).join(', ')}` : ''}` }));
+
 // c = lớp đang sửa ({} khi mở lớp mới)
 function classFields(s, c = {}) {
   const tomorrow = new Date(Date.now() + 86400000);
@@ -126,7 +131,7 @@ function classFields(s, c = {}) {
   return html`
     ${field('Bộ môn', select('subjectId', s.subjects.filter(x => x.status !== 'INACTIVE').map(x => ({ value: x.subjectId, label: x.subjectName })), c.subjectId, { required: true, placeholder: 'Chọn bộ môn' }))}
     <div class="grid sm:grid-cols-2 gap-3">
-      ${field('Huấn luyện viên', select('coachId', s.coaches.map(x => ({ value: x.coachId, label: `${fullName(x)}${x.speciality ? ` · ${x.speciality}` : ''}` })), c.coachId, { required: true, placeholder: 'Chọn HLV' }))}
+      ${field('Huấn luyện viên', select('coachId', coachOptions(c.subjectId ? s.coaches.filter(x => teaches(x, c.subjectId)) : []), c.coachId, { required: true, placeholder: c.subjectId ? 'Chọn HLV' : 'Chọn bộ môn trước' }), 'Chỉ hiện HLV dạy môn đã chọn')}
       ${field('Phòng', select('roomId', s.rooms.filter(r => r.status === 'AVAILABLE').map(r => ({ value: r.roomId, label: `${r.roomName} (tối đa ${r.capacity})` })), c.roomId, { required: true, placeholder: 'Chọn phòng' }))}
     </div>
     <div class="grid sm:grid-cols-2 gap-3">
@@ -179,7 +184,21 @@ function classPayload(d, original) {
 function mountSchedule(modal, original) {
   const form = modal.el.querySelector('form');
   const durationEl = form.querySelector('select[name=durationDays]');
+  const coachEl = form.querySelector('select[name=coachId]');
   let loadedSubject;
+  let coachSubject = original?.subjectId ? String(original.subjectId) : '';
+  // đổi môn -> nạp lại HLV dạy môn đó (GET /coaches?subjectId=)
+  const loadCoaches = async subjectId => {
+    if (subjectId === coachSubject) return;
+    coachSubject = subjectId;
+    const keep = coachEl.value;
+    const list = subjectId ? await coachAdminApi.list(subjectId).catch(() => []) : [];
+    if (coachSubject !== subjectId) return;
+    const active = list.filter(x => (x.status || 'ACTIVE') === 'ACTIVE');
+    const placeholder = !subjectId ? 'Chọn bộ môn trước' : active.length ? 'Chọn HLV' : 'Chưa có HLV dạy môn này';
+    coachEl.replaceChildren(new Option(placeholder, ''), ...coachOptions(active).map(o => new Option(o.label, o.value)));
+    coachEl.value = active.some(x => String(x.coachId) === keep) ? keep : '';
+  };
   const update = () => {
     const d = readForm(form);
     const dates = sessionDates(d);
@@ -204,7 +223,7 @@ function mountSchedule(modal, original) {
     update();
   };
   // đợi ô ẩn giờ:phút cập nhật xong (nghe ở document) rồi mới tính
-  const later = () => setTimeout(() => { loadDurations(readForm(form).subjectId); update(); }, 0);
+  const later = () => setTimeout(() => { const sid = readForm(form).subjectId; loadDurations(sid); loadCoaches(sid); update(); }, 0);
   form.addEventListener('input', later);
   form.addEventListener('change', later);
   loadDurations(readForm(form).subjectId);
@@ -220,7 +239,7 @@ async function createClass(d) {
 
 // Nhóm theo trạng thái thật của BE: OPENING (sắp diễn ra / đã qua giờ nhưng chưa chốt), COMPLETED, CANCELLED
 function phase(c, now = new Date()) {
-  if (c.status === 'CANCELLED') return 'CANCELLED';
+  if (c.status === 'CANCELLED' || c.status === 'STOPPED') return 'CANCELLED';
   if (c.status === 'COMPLETED') return 'DONE';
   return toDate(c.endTime) < now ? 'PENDING' : 'UPCOMING';
 }
@@ -231,6 +250,11 @@ function stateOf(c, now = new Date()) {
   if (ph === 'UPCOMING') return c.availableSeats > 0 ? 'open' : 'closed';
   return { PENDING: 'pending', DONE: 'done', CANCELLED: 'cancelled' }[ph];
 }
+
+// lớp đã có buổi đầu diễn ra: không hủy được nữa (ERR_CLASS_400_CANCEL_STARTED), chỉ dừng lớp
+const started = (c, now = new Date()) => toDate(c.firstSessionAt || c.startTime) <= now;
+// lớp mở theo lịch cố định mới có danh sách buổi
+const hasSessions = c => Boolean(c.daysOfWeek || c.totalSessions);
 
 const TABS = [['UPCOMING', 'Sắp diễn ra'], ['PENDING', 'Chờ chốt buổi'], ['DONE', 'Đã hoàn thành'], ['CANCELLED', 'Đã hủy'], ['ALL', 'Tất cả']];
 
@@ -244,16 +268,17 @@ function actionsCell(c, ph) {
   const btn = (action, ic, title, cls = '') => html`<button type="button" class="btn-ghost btn-sm ${cls}" data-action="${action}" data-id="${c.classId}" title="${title}" data-testid="row-${action}">${icon(ic, 'w-3.5 h-3.5')}</button>`;
   if (ph === 'UPCOMING') {
     return html`<div class="flex justify-end gap-1">
+      ${hasSessions(c) ? btn('sessions', 'list-checks', 'Buổi học') : ''}
       ${btn('coach', 'user-cog', 'Đổi HLV')}
       ${btn('edit', 'pencil', 'Sửa lớp')}
-      ${btn('cancel', 'calendar-x', 'Hủy lớp', 'text-rose-600 hover:bg-rose-50')}
-      ${c.currentEnrolled ? '' : btn('remove', 'trash-2', 'Xóa lớp tạo nhầm', 'text-rose-600 hover:bg-rose-50')}
+      ${started(c) ? btn('stop', 'octagon-x', 'Dừng lớp', 'text-rose-600 hover:bg-rose-50') : btn('cancel', 'calendar-x', 'Hủy lớp', 'text-rose-600 hover:bg-rose-50')}
+      ${c.currentEnrolled || started(c) ? '' : btn('remove', 'trash-2', 'Xóa lớp tạo nhầm', 'text-rose-600 hover:bg-rose-50')}
     </div>`;
   }
   if (ph === 'PENDING') {
-    return html`<div class="flex justify-end"><button type="button" class="btn-primary btn-sm" data-action="complete" data-id="${c.classId}" data-testid="row-complete">${icon('check', 'w-3.5 h-3.5')} Hoàn thành</button></div>`;
+    return html`<div class="flex justify-end gap-1">${hasSessions(c) ? btn('sessions', 'list-checks', 'Buổi học') : ''}<button type="button" class="btn-primary btn-sm" data-action="complete" data-id="${c.classId}" data-testid="row-complete">${icon('check', 'w-3.5 h-3.5')} Hoàn thành</button></div>`;
   }
-  return '';
+  return hasSessions(c) ? html`<div class="flex justify-end">${btn('sessions', 'list-checks', 'Buổi học')}</div>` : '';
 }
 
 // Popup trên lịch: nút có chữ cho dễ bấm (bảng dùng nút icon cho gọn)
@@ -261,14 +286,15 @@ function detailActions(c, ph) {
   const btn = (action, ic, label, cls = 'btn-secondary') => html`<button type="button" class="${cls} btn-sm" data-action="${action}" data-id="${c.classId}" data-testid="detail-${action}">${icon(ic, 'w-3.5 h-3.5')} ${label}</button>`;
   if (ph === 'UPCOMING') {
     return html`<div class="flex flex-wrap justify-end gap-2">
+      ${hasSessions(c) ? btn('sessions', 'list-checks', 'Buổi học') : ''}
       ${btn('coach', 'user-cog', 'Đổi HLV')}
       ${btn('edit', 'pencil', 'Sửa lớp')}
-      ${btn('cancel', 'calendar-x', 'Hủy lớp', 'btn-secondary text-rose-600 hover:bg-rose-50')}
-      ${c.currentEnrolled ? '' : btn('remove', 'trash-2', 'Xóa lớp', 'btn-secondary text-rose-600 hover:bg-rose-50')}
+      ${started(c) ? btn('stop', 'octagon-x', 'Dừng lớp', 'btn-secondary text-rose-600 hover:bg-rose-50') : btn('cancel', 'calendar-x', 'Hủy lớp', 'btn-secondary text-rose-600 hover:bg-rose-50')}
+      ${c.currentEnrolled || started(c) ? '' : btn('remove', 'trash-2', 'Xóa lớp', 'btn-secondary text-rose-600 hover:bg-rose-50')}
     </div>`;
   }
-  if (ph === 'PENDING') return html`<div class="flex justify-end">${btn('complete', 'check', 'Hoàn thành buổi', 'btn-primary')}</div>`;
-  return '';
+  if (ph === 'PENDING') return html`<div class="flex flex-wrap justify-end gap-2">${hasSessions(c) ? btn('sessions', 'list-checks', 'Buổi học') : ''}${btn('complete', 'check', 'Hoàn thành buổi', 'btn-primary')}</div>`;
+  return hasSessions(c) ? html`<div class="flex justify-end">${btn('sessions', 'list-checks', 'Buổi học')}</div>` : '';
 }
 
 // Mỗi tab là 1 truy vấn GET /classes/search (lọc + phân trang ở BE, FE-TODO #7)
@@ -378,7 +404,7 @@ function classDetail(c) {
         <div class="flex items-center gap-2 text-slate-600">${icon('map-pin', 'w-4 h-4 text-slate-400')} ${c.roomName}</div>
         <div class="text-slate-600"><div class="text-xs font-semibold mb-1">${c.currentEnrolled}/${c.maxCapacity} học viên</div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#469B7E]" style="width:${pct}%"></div></div></div>
       </div>
-      ${ph === 'UPCOMING' || ph === 'PENDING' ? html`<div class="mt-4 pt-4 border-t border-slate-100">${detailActions(c, ph)}</div>` : ''}
+      ${detailActions(c, ph) ? html`<div class="mt-4 pt-4 border-t border-slate-100">${detailActions(c, ph)}</div>` : ''}
       </div>
     </div>`;
 }
@@ -390,7 +416,7 @@ function openDetail(ctx, classes, title, actions) {
     title,
     size: 'max-w-2xl',
     body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto">${classes.map(classDetail)}</div>`,
-    actions: Object.fromEntries(['coach', 'edit', 'cancel', 'remove', 'complete'].map(n => [n, run(n)]))
+    actions: Object.fromEntries(['coach', 'edit', 'cancel', 'stop', 'sessions', 'remove', 'complete'].map(n => [n, run(n)]))
   });
 }
 
@@ -440,11 +466,13 @@ export default function ManagerClasses(el) {
         onDone: () => ctx.reload()
       });
     },
-    coach: (t, e, ctx) => {
+    coach: async (t, e, ctx) => {
       const c = findClass(ctx, t.dataset.id);
+      const list = (await coachAdminApi.list(c.subjectId).catch(() => ctx.state.coaches.filter(x => teaches(x, c.subjectId))))
+        .filter(x => (x.status || 'ACTIVE') === 'ACTIVE');
       openFormModal({
         title: `Đổi HLV lớp ${c.subjectName}`,
-        fields: field('Huấn luyện viên mới', select('coachId', ctx.state.coaches.map(x => ({ value: x.coachId, label: `${fullName(x)}${x.speciality ? ` · ${x.speciality}` : ''}` })), c.coachId, { required: true })),
+        fields: field('Huấn luyện viên mới', select('coachId', coachOptions(list), c.coachId, { required: true, placeholder: list.length ? 'Chọn HLV' : 'Chưa có HLV dạy môn này' }), `Chỉ hiện HLV dạy môn ${c.subjectName}`),
         validate: d => requireFields(d, ['coachId']), success: 'Đã đổi huấn luyện viên', submitText: 'Đổi HLV',
         submit: d => classApi.assignCoach(c.classId, d.coachId), onDone: () => ctx.reload()
       });
@@ -462,6 +490,28 @@ export default function ManagerClasses(el) {
         submitText: 'Hủy lớp', success: 'Đã hủy lớp',
         submit: d => classApi.cancel(c.classId, String(d.reason || '').trim() || undefined), onDone: () => ctx.reload()
       });
+    },
+    // dừng lớp đã bắt đầu: BE hoàn tiền theo tỉ lệ buổi chưa học và báo học viên
+    stop: (t, e, ctx) => {
+      const c = findClass(ctx, t.dataset.id);
+      openFormModal({
+        title: `Dừng lớp ${c.subjectName} #${c.classId}`,
+        fields: html`
+          <div class="text-sm text-slate-600">${whenLine(c)} · ${c.roomName}</div>
+          <div class="rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm p-3">Lớp đã bắt đầu nên không hủy được. Dừng lớp sẽ hủy các buổi còn lại, ${c.currentEnrolled ? `hoàn tiền cho ${c.currentEnrolled} học viên theo số buổi chưa học` : 'hoàn tiền theo số buổi chưa học'} và gửi thông báo cho họ.</div>
+          ${field('Lý do dừng lớp', textarea('reason', '', { rows: 3, required: true, placeholder: 'VD: HLV nghỉ dài hạn, phòng hỏng...' }), 'Bắt buộc, gửi kèm trong thông báo')}`,
+        validate: d => {
+          const err = requireFields(d, ['reason']);
+          if (String(d.reason || '').length > 500) err.reason = 'Tối đa 500 ký tự';
+          return err;
+        },
+        submitText: 'Dừng lớp', success: 'Đã dừng lớp và hoàn tiền cho học viên',
+        submit: d => classApi.stop(c.classId, d.reason.trim()), onDone: () => ctx.reload()
+      });
+    },
+    sessions: (t, e, ctx) => {
+      const c = findClass(ctx, t.dataset.id);
+      openClassSessions({ cls: c, rooms: ctx.state.rooms, onChange: () => ctx.reload() });
     },
     complete: async (t, e, ctx) => {
       const c = findClass(ctx, t.dataset.id);

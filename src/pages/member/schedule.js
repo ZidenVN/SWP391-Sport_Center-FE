@@ -7,18 +7,34 @@ import { coachLink, openCoachInfo, coachFromButton } from '../../components/coac
 import { FEATURES } from '../../core/features.js';
 import { classImage } from '../../components/classCard.js';
 import { calendarGrid, calendarToolbar, viewModeTabs, scrollTimeGrid, whenLine } from '../../components/classCalendar.js';
+import { scheduleText, canCancelRegistration, canSelfSwitch, firstSessionOf, openSwitchClass, SELF_SWITCH_HOURS } from '../../components/switchClass.js';
 
-// Lịch tập của hội viên: lịch Tuần (khung giờ) / Tháng các buổi đã đăng ký, hoặc Danh sách theo tab như cũ.
+// Lịch tập của hội viên: lịch Tuần (khung giờ) / Tháng theo TỪNG BUỔI (GET /members/me/schedule),
+// tab "Lớp đã đăng ký" (GET /members/me/class-registrations) để hủy / đổi lớp.
 const MODE_KEY = 'sc_member_schedule_mode';
 const savedMode = () => { try { return localStorage.getItem(MODE_KEY); } catch { return null; } };
-const SCHEDULE_LEGEND = [['registered', 'Sắp học'], ['done', 'Đã học']];
-// các buổi lên lịch: mọi đăng ký trừ buổi đã hủy
-const calendarItems = s => s.registrations.filter(r => r.status !== 'CANCELLED');
-const stateOf = r => (toDate(r.endTime) < new Date() ? 'done' : 'registered');
+const SCHEDULE_LEGEND = [['registered', 'Sắp học'], ['postponed', 'Đã hoãn'], ['done', 'Đã học']];
+// các buổi lên lịch: mọi buổi trừ buổi đã hủy
+const calendarItems = s => s.schedule.filter(r => r.status !== 'CANCELLED');
+const stateOf = r => (r.status === 'POSTPONED' ? 'postponed' : r.status === 'DONE' || toDate(r.endTime) < new Date() ? 'done' : 'registered');
 
-function cancelButton(r) {
-  if (r.status !== 'REGISTERED' || !isFuture(r.startTime)) return '';
-  return html`<button type="button" class="btn-secondary btn-sm" data-action="cancel-booking" data-id="${r.registrationId}">Hủy</button>`;
+// nhãn của 1 buổi: hoãn / buổi bù / HLV dạy thay
+function sessionTags(r) {
+  return html`
+    ${r.status === 'POSTPONED' ? badge('POSTPONED') : ''}
+    ${r.type === 'MAKEUP' ? badge('MAKEUP') : ''}
+    ${r.substitute ? html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700" title="HLV chính: ${r.mainCoachName || ''}">HLV dạy thay</span>` : ''}`;
+}
+
+function registrationActions(r) {
+  const cancel = canCancelRegistration(r);
+  const sw = canSelfSwitch(r);
+  if (!cancel && !sw) return '';
+  return html`
+    <div class="flex justify-end gap-1.5">
+      ${sw ? html`<button type="button" class="btn-ghost btn-sm" data-action="switch-class" data-id="${r.registrationId}" data-testid="switch-class">${icon('arrow-right-left', 'w-3.5 h-3.5')} Đổi lớp</button>` : ''}
+      ${cancel ? html`<button type="button" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" data-action="cancel-booking" data-id="${r.registrationId}" data-testid="cancel-booking">${icon('x', 'w-3.5 h-3.5')} Hủy</button>` : ''}
+    </div>`;
 }
 
 function upcomingView(list) {
@@ -47,13 +63,13 @@ function upcomingView(list) {
                   <div class="text-[11px]">${timeRange(r.startTime, r.endTime).split(' – ')[1]}</div>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="font-bold">${r.subjectName}</div>
+                  <div class="font-bold flex flex-wrap items-center gap-1.5">${r.subjectName} ${sessionTags(r)}</div>
                   <div class="text-xs text-slate-500 flex flex-wrap gap-x-3">
                     <span class="flex items-center gap-1">${icon('map-pin', 'w-3.5 h-3.5')} ${r.roomName}</span>
                     <span class="flex items-center gap-1">${icon('user-round', 'w-3.5 h-3.5')} ${coachLink(r)}</span>
                   </div>
                 </div>
-                ${cancelButton(r)}
+                ${r.note ? html`<div class="hidden md:block text-xs text-slate-500 max-w-[12rem] truncate" title="${r.note}">${r.note}</div>` : ''}
               </div>`)}
           </div>
         </div>`)}
@@ -65,7 +81,7 @@ function attendanceCell(r, att) {
   if (att) {
     return html`${badge(att.status, att.statusDescription)}${att.note ? html`<div class="text-[11px] text-slate-400 mt-0.5 max-w-[12rem] truncate" title="${att.note}">${att.note}</div>` : ''}`;
   }
-  if (r.status === 'REGISTERED' && !isFuture(r.startTime)) return html`<span class="text-xs text-slate-400">Chưa điểm danh</span>`;
+  if (r.status !== 'POSTPONED' && r.status !== 'CANCELLED' && !isFuture(r.startTime)) return html`<span class="text-xs text-slate-400">Chưa điểm danh</span>`;
   return html`<span class="text-xs text-slate-300">—</span>`;
 }
 
@@ -101,19 +117,22 @@ function attendanceView(list) {
     </div>`;
 }
 
-function historyView(list, attByClass) {
+const REG_STATUS = { SWITCHED: ['Đã đổi lớp', 'violet'], STOPPED: ['Lớp đã dừng', 'rose'] };
+const regBadge = r => (REG_STATUS[r.status] ? badge(r.status, REG_STATUS[r.status][0]) : badge(r.status));
+
+function historyView(list) {
   return html`
+    <div class="rounded-xl bg-brand-sand/60 text-sm text-slate-600 p-3 mb-4 flex gap-2">${icon('info', 'w-4 h-4 mt-0.5 shrink-0 text-[#469B7E]')} Hủy được trước buổi đầu của lớp. Tự đổi lớp được khi còn hơn ${SELF_SWITCH_HOURS} tiếng trước buổi đầu; muộn hơn vui lòng liên hệ lễ tân.</div>
     <div class="card" data-testid="history-table">
       ${table({
-        columns: [{ label: 'Lớp' }, { label: 'Thời gian' }, { label: 'Phòng' }, { label: 'Đăng ký' }, { label: 'Điểm danh' }, { label: 'Đăng ký lúc' }, { label: '', cls: 'text-right' }],
+        columns: [{ label: 'Lớp' }, { label: 'Lịch học' }, { label: 'Gói' }, { label: 'Trạng thái' }, { label: 'Đăng ký lúc' }, { label: '', cls: 'text-right' }],
         rows: list.map(r => [
-          html`<div class="flex items-center gap-3"><div class="w-14 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100">${classImage(r)}</div><div><div class="font-semibold">${r.subjectName}</div><div class="text-xs text-slate-500">${coachLink(r)}</div></div></div>`,
-          html`${date(r.startTime)}<div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)}</div>`,
-          r.roomName,
-          badge(r.status),
-          attendanceCell(r, attByClass.get(r.classId)),
-          html`<span class="text-xs">${dateTime(r.registeredAt)}</span>${r.cancelledAt ? html`<div class="text-xs text-slate-400">Hủy: ${dateTime(r.cancelledAt)}</div>` : ''}`,
-          cancelButton(r)
+          html`<div class="flex items-center gap-3"><div class="w-14 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100">${classImage(r)}</div><div><div class="font-semibold">${r.subjectName} <span class="text-slate-400 font-normal text-xs">#${r.classId}</span></div><div class="text-xs text-slate-500">${coachLink(r)} · ${r.roomName}</div></div></div>`,
+          html`<div class="text-sm">${scheduleText(r)}</div>${firstSessionOf(r) ? html`<div class="text-xs text-slate-500">Buổi đầu: ${dateTime(r.firstSessionAt || r.startTime)}</div>` : ''}`,
+          html`<span class="text-sm">${r.packageName || '—'}</span>`,
+          regBadge(r),
+          html`<span class="text-xs">${dateTime(r.registeredAt)}</span>${r.cancelledAt ? html`<div class="text-xs text-slate-400">Hủy: ${dateTime(r.cancelledAt)}</div>` : ''}${r.switchedAt ? html`<div class="text-xs text-slate-400">Đổi: ${dateTime(r.switchedAt)}</div>` : ''}`,
+          registrationActions(r)
         ]),
         empty: 'Bạn chưa đăng ký lớp nào'
       })}
@@ -132,17 +151,17 @@ function visitsView(list) {
     </div>`;
 }
 
-function listView(s, upcoming, history, attByClass) {
+function listView(s, upcoming, history) {
   const body = {
     upcoming: () => upcomingView(upcoming),
-    history: () => historyView(history, attByClass),
+    history: () => historyView(history),
     attendance: () => attendanceView(s.attendances),
     visits: () => visitsView(s.checkIns)
   }[s.tab]();
   return html`
     ${tabs([
       { id: 'upcoming', label: 'Sắp tới', count: upcoming.length },
-      { id: 'history', label: 'Lịch sử đăng ký', count: history.length },
+      { id: 'history', label: 'Lớp đã đăng ký', count: history.length },
       { id: 'attendance', label: 'Điểm danh', count: s.attendances.length },
       // BE main chưa có lịch sử check-in của hội viên (FE-TODO #11)
       ...(FEATURES.checkInHistory ? [{ id: 'visits', label: 'Lượt đến', count: s.checkIns.length }] : [])
@@ -160,20 +179,19 @@ function calendarView(s, upcoming) {
 
 function view(s) {
   const upcoming = s.schedule
-    .filter(r => r.status === 'REGISTERED')
+    .filter(r => (r.status === 'SCHEDULED' || r.status === 'POSTPONED') && toDate(r.endTime) >= new Date())
     .sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
-  const history = [...s.registrations].sort((a, b) => toDate(b.startTime) - toDate(a.startTime));
-  const attByClass = new Map(s.attendances.map(a => [a.classId, a]));
+  const history = [...s.registrations].sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)));
   return html`
     ${pageHeader('Lịch tập của tôi', 'Các lớp bạn đã đăng ký và lịch sử điểm danh', html`
       <div class="flex flex-wrap items-center gap-2">
         ${viewModeTabs(s.mode)}
         <a href="#/member/classes" class="btn-primary">${icon('plus', 'w-4 h-4')} Đặt thêm lớp</a>
       </div>`)}
-    ${s.mode === 'list' ? listView(s, upcoming, history, attByClass) : calendarView(s, upcoming)}`;
+    ${s.mode === 'list' ? listView(s, upcoming, history) : calendarView(s, upcoming)}`;
 }
 
-// Chi tiết buổi học khi bấm trên lịch: ảnh, giờ, HLV, phòng, kết quả điểm danh, hủy nếu chưa diễn ra
+// Chi tiết buổi học khi bấm trên lịch: ảnh, giờ, HLV (dạy thay), phòng, kết quả điểm danh
 function sessionDetail(r, att) {
   const st = stateOf(r);
   return html`
@@ -185,28 +203,27 @@ function sessionDetail(r, att) {
             <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">${r.subjectName}</div>
             <div class="text-sm text-slate-500">${whenLine(r)}</div>
           </div>
-          <span class="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${st === 'registered' ? 'bg-brand-dark text-brand-lime' : 'bg-emerald-100 text-emerald-700'}">${st === 'registered' ? 'Sắp học' : 'Đã học'}</span>
+          <span class="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${st === 'registered' ? 'bg-brand-dark text-brand-lime' : st === 'postponed' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${st === 'registered' ? 'Sắp học' : st === 'postponed' ? 'Đã hoãn' : 'Đã học'}</span>
         </div>
         <div class="grid sm:grid-cols-2 gap-3 mt-4 text-sm text-slate-600">
-          <div class="flex items-center gap-2">${icon('user-round', 'w-4 h-4 text-slate-400')} ${coachLink(r)}</div>
+          <div class="flex items-center gap-2">${icon('user-round', 'w-4 h-4 text-slate-400')} ${coachLink(r)}${r.substitute ? html`<span class="text-[11px] text-amber-700">(dạy thay ${r.mainCoachName || ''})</span>` : ''}</div>
           <div class="flex items-center gap-2">${icon('map-pin', 'w-4 h-4 text-slate-400')} ${r.roomName}</div>
           <div class="flex items-center gap-2">${icon('clipboard-check', 'w-4 h-4 text-slate-400')} Điểm danh: ${attendanceCell(r, att)}</div>
-          <div class="flex items-center gap-2 text-xs text-slate-500">${icon('clock', 'w-4 h-4 text-slate-400')} Đăng ký lúc ${dateTime(r.registeredAt)}</div>
+          <div class="flex items-center gap-2 text-xs">${sessionTags(r)}</div>
         </div>
-        ${cancelButton(r) ? html`<div class="flex justify-end mt-4 pt-4 border-t border-slate-100">${cancelButton(r)}</div>` : ''}
+        ${r.note ? html`<div class="mt-3 rounded-xl bg-brand-sand/60 p-3 text-sm text-slate-600">${r.note}</div>` : ''}
       </div>
     </div>`;
 }
 
 function openSessions(ctx, list, title) {
-  const attByClass = new Map(ctx.state.attendances.map(a => [a.classId, a]));
+  const attBySession = new Map(ctx.state.attendances.map(a => [a.sessionId, a]));
   const modal = openModal({
     title,
     size: 'max-w-xl',
-    body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto">${list.map(r => sessionDetail(r, attByClass.get(r.classId)))}</div>`,
+    body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto">${list.map(r => sessionDetail(r, attBySession.get(r.sessionId)))}</div>`,
     actions: {
-      'coach-info': btn => openCoachInfo(coachFromButton(btn)),
-      'cancel-booking': async btn => { if (await cancelBooking(btn, ctx)) modal.close(); }
+      'coach-info': btn => openCoachInfo(coachFromButton(btn))
     }
   });
 }
@@ -245,7 +262,8 @@ export default function MemberSchedule(el) {
         ctx.set({ calOffset: d === 0 ? 0 : ctx.state.calOffset + d });
       },
       'cal-class': (t, e, ctx) => {
-        const r = calendarItems(ctx.state).find(x => String(x.classId) === t.dataset.id);
+        const items = calendarItems(ctx.state);
+        const r = items.find(x => t.dataset.session && String(x.sessionId) === t.dataset.session) || items.find(x => String(x.classId) === t.dataset.id);
         if (r) openSessions(ctx, [r], 'Chi tiết buổi học');
       },
       'cal-day': (t, e, ctx) => {
@@ -255,7 +273,18 @@ export default function MemberSchedule(el) {
         if (list.length) openSessions(ctx, list, `Buổi học ngày ${date(list[0].startTime)}`);
       },
       'coach-info': btn => openCoachInfo(coachFromButton(btn)),
-      'cancel-booking': (btn, e, ctx) => cancelBooking(btn, ctx)
+      'cancel-booking': (btn, e, ctx) => cancelBooking(btn, ctx),
+      'switch-class': (btn, e, ctx) => {
+        const reg = ctx.state.registrations.find(r => String(r.registrationId) === btn.dataset.id);
+        if (!reg) return;
+        openSwitchClass({
+          reg,
+          loadEligible: () => memberApi.eligibleClasses(reg.subscriptionId),
+          doSwitch: newClassId => memberApi.switchClass(reg.registrationId, newClassId),
+          note: `Chỉ đổi được khi còn hơn ${SELF_SWITCH_HOURS} tiếng trước buổi đầu của lớp hiện tại.`,
+          onDone: () => ctx.reload()
+        });
+      }
     }
   });
 }

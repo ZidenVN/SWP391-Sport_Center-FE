@@ -109,7 +109,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
           ${pv?.warnings?.length ? html`
             <div class="mt-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 p-3 text-xs space-y-1" data-testid="sell-warnings">
               <div class="font-bold flex items-center gap-1.5">${icon('alert-triangle', 'w-4 h-4')} Hội viên đang có gói dùng được cùng khu tập</div>
-              ${pv.warnings.map(w => html`<div>${w.packageName} · còn ${w.daysLeft} ngày${w.remainingSessions != null ? ` · ${w.remainingSessions} buổi` : ''} — ${w.message}</div>`)}
+              ${pv.warnings.map(w => html`<div>${w.packageName} · còn ${w.daysLeft} ngày — ${w.message}</div>`)}
             </div>` : ''}
           <div class="flex justify-between items-end pt-2 mt-2 border-t border-dashed border-slate-200">
             <span class="font-bold">Tổng thu</span><span class="text-2xl font-black">${money(p.price)}</span>

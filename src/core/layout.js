@@ -77,8 +77,8 @@ function sidebar(role) {
 export function renderShell(root) {
   const s = session.get();
   const role = s.role;
-  // chỉ hội viên nhận thông báo đẩy realtime
-  if (role === 'MEMBER') startRealtime(); else stopRealtime();
+  // thông báo đẩy realtime cho mọi vai trò (hội viên: thông báo; nhân viên: sự cố mới cần xử lý)
+  startRealtime();
   if (root.dataset.shell === role && root.querySelector('#page')) {
     return root.querySelector('#page');
   }

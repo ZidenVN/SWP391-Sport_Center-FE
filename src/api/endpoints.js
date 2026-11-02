@@ -38,7 +38,8 @@ export const auditApi = {
 };
 
 export const coachAdminApi = {
-  list: () => http.get('/coaches'),
+  // subjectId: chỉ HLV dạy được môn đó (chọn HLV cho lớp / dạy thay)
+  list: subjectId => http.get('/coaches', subjectId ? { subjectId } : undefined),
   get: id => http.get(`/coaches/${id}`),
   create: payload => http.post('/coaches', payload),
   update: (id, payload) => http.put(`/coaches/${id}`, payload),
@@ -96,8 +97,19 @@ export const classApi = {
   assignCoach: (classId, coachId) => http.put(`/classes/${classId}/coach/${coachId}`),
   // hủy lớp: giữ lịch sử, hủy các đăng ký và báo học viên; xóa chỉ dùng cho lớp tạo nhầm
   cancel: (id, reason) => http.patch(`/classes/${id}/cancel`, { reason }),
+  // dừng lớp đã bắt đầu: BE hoàn tiền theo số buổi chưa học và báo học viên
+  stop: (id, reason) => http.patch(`/classes/${id}/stop`, { reason }),
   complete: id => http.patch(`/classes/${id}/complete`),
   remove: id => http.delete(`/classes/${id}`)
+};
+
+// Buổi học của lớp (Quản lý): hoãn, HLV dạy thay, thêm buổi bù (BE tự gia hạn gói lớp của học viên)
+export const sessionApi = {
+  list: classId => http.get(`/classes/${classId}/sessions`),
+  postpone: (sessionId, reason) => http.patch(`/sessions/${sessionId}/postpone`, { reason }),
+  substitute: (sessionId, coachId, note) => http.patch(`/sessions/${sessionId}/substitute`, { coachId, note }),
+  // payload: { postponedSessionId, startTime, endTime, roomId, coachId, note }
+  makeup: (classId, payload) => http.post(`/classes/${classId}/makeup-sessions`, payload)
 };
 
 export const memberApi = {
@@ -109,9 +121,13 @@ export const memberApi = {
   purchasePreview: packageId => http.get('/members/me/subscriptions/preview', { packageId }),
   payments: () => http.get('/members/me/payments'),
   invoice: paymentId => http.get(`/members/me/payments/${paymentId}/invoice`),
-  register: classId => http.post('/members/me/registrations', { classId }),
-  cancel: registrationId => http.delete(`/members/me/registrations/${registrationId}`),
-  registrations: () => http.get('/members/me/registrations'),
+  // mỗi lần đăng ký dùng 1 gói lớp đang chờ (cùng môn, cùng thời hạn với lớp)
+  register: (classId, subscriptionId) => http.post('/members/me/class-registrations', { classId, subscriptionId }),
+  cancel: registrationId => http.patch(`/members/me/class-registrations/${registrationId}/cancel`),
+  registrations: () => http.get('/members/me/class-registrations'),
+  // đổi lớp: chỉ khi còn hơn 12 tiếng trước buổi đầu của lớp
+  eligibleClasses: subscriptionId => http.get(`/members/me/subscriptions/${subscriptionId}/eligible-classes`),
+  switchClass: (registrationId, newClassId) => http.patch(`/members/me/class-registrations/${registrationId}/switch`, { newClassId }),
   schedule: () => http.get('/members/me/schedule'),
   workoutPlans: () => http.get('/members/me/workout-plans'),
   workoutResults: () => http.get('/members/me/workout-results'),
@@ -181,9 +197,12 @@ export const receptionApi = {
   // bán gói tạo giao dịch PENDING; lễ tân xác nhận đã thu thì gói mới ACTIVE
   confirmPayment: (paymentId, payload) => http.patch(`/receptionist/payments/${paymentId}/confirm`, payload),
   cancelPayment: (paymentId, reason) => http.patch(`/receptionist/payments/${paymentId}/cancel`, { reason }),
-  register: (memberId, classId) => http.post(`/receptionist/members/${memberId}/registrations`, { classId }),
-  cancel: (memberId, registrationId) => http.delete(`/receptionist/members/${memberId}/registrations/${registrationId}`),
-  registrations: memberId => http.get(`/receptionist/members/${memberId}/registrations`),
+  register: (memberId, classId, subscriptionId) => http.post(`/receptionist/members/${memberId}/class-registrations`, { classId, subscriptionId }),
+  cancel: (memberId, registrationId) => http.patch(`/receptionist/members/${memberId}/class-registrations/${registrationId}/cancel`),
+  registrations: memberId => http.get(`/receptionist/members/${memberId}/class-registrations`),
+  // đổi lớp tại quầy: sau khi lớp đã bắt đầu thì tính 1 lượt, mỗi gói tối đa 1 lượt
+  eligibleClasses: (memberId, subscriptionId) => http.get(`/receptionist/members/${memberId}/subscriptions/${subscriptionId}/eligible-classes`),
+  switchClass: (registrationId, newClassId) => http.patch(`/receptionist/class-registrations/${registrationId}/switch`, { newClassId }),
   createTicket: (memberId, content) => http.post('/receptionist/tickets', { memberId, content }),
   tickets: memberId => http.get('/receptionist/tickets', memberId ? { memberId } : undefined),
   resolveTicket: ticketId => http.patch(`/receptionist/tickets/${ticketId}/resolve`),
@@ -200,9 +219,11 @@ export const receptionApi = {
 export const coachApi = {
   schedules: () => http.get('/coaches/me/schedules'),
   roster: classId => http.get(`/coaches/me/classes/${classId}/roster`),
+  // điểm danh theo buổi (sessionId có trong từng dòng lịch dạy)
+  sessionRoster: sessionId => http.get(`/coaches/me/sessions/${sessionId}/roster`),
   member: memberId => http.get(`/coaches/members/${memberId}`),
-  takeAttendance: (classId, records) => http.post(`/coaches/me/classes/${classId}/attendances`, { records }),
-  attendances: classId => http.get(`/coaches/me/classes/${classId}/attendances`),
+  takeAttendance: (sessionId, records) => http.post(`/coaches/me/sessions/${sessionId}/attendances`, { records }),
+  attendances: sessionId => http.get(`/coaches/me/sessions/${sessionId}/attendances`),
   createPlan: payload => http.post('/coaches/me/workout-plans', payload),
   myPlans: () => http.get('/coaches/me/workout-plans'),
   memberPlans: memberId => http.get(`/coaches/members/${memberId}/workout-plans`),
@@ -238,6 +259,26 @@ export const reportApi = {
   members: (fromDate, toDate) => http.get('/manager/reports/members', { fromDate, toDate }),
   classes: (fromDate, toDate) => http.get('/manager/reports/classes', { fromDate, toDate }),
   revenue: (fromDate, toDate) => http.get('/manager/reports/revenue', { fromDate, toDate })
+};
+
+// Báo cáo sự cố: hội viên / HLV / lễ tân gửi (SUBMIT_ISSUE_REPORT); lễ tân + quản lý xử lý (HANDLE_ISSUE_REPORT)
+function issueForm(payload, image) {
+  const fd = new FormData();
+  fd.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+  fd.append('image', image);
+  return fd;
+}
+
+export const issueApi = {
+  // payload: { category, title, content }; có ảnh thì gửi multipart
+  create: (payload, image) => http.post('/issue-reports', image ? issueForm(payload, image) : payload),
+  mine: () => http.get('/issue-reports/my'),
+  cancel: id => http.patch(`/issue-reports/${id}/cancel`),
+  // query: { desk (RECEPTION|MANAGER), status, category, fromDate, toDate, keyword, page, size }
+  list: query => http.get('/issue-reports', query),
+  get: id => http.get(`/issue-reports/${id}`),
+  setStatus: (id, status, response) => http.patch(`/issue-reports/${id}/status`, { status, response }),
+  escalate: (id, reason) => http.patch(`/issue-reports/${id}/escalate`, { reason })
 };
 
 // Dữ liệu cho trang giới thiệu khi chưa đăng nhập (BE mở GET công khai)

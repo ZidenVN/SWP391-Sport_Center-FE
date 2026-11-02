@@ -1,10 +1,10 @@
 import { html, icon } from '../../core/dom.js';
-import { emptyState } from '../../core/ui.js';
+import { emptyState, tabs } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { packageApi, memberApi } from '../../api/endpoints.js';
 import { money, date, daysUntil, toDate } from '../../core/format.js';
 import { expiryBanner } from '../../components/memberAlerts.js';
-import { latestActive, bestValueId, vnpayMark, packageScope, packageKind } from '../../components/billing.js';
+import { latestActive, bestValueId, vnpayMark, packageKind, subjectNameOf } from '../../components/billing.js';
 import { session } from '../../core/session.js';
 import { quizStore, recommendPackage } from '../../core/quiz.js';
 
@@ -44,15 +44,28 @@ function membershipHero(current, latest) {
     </div>`;
 }
 
+const isClass = p => p.packageType === 'CLASS';
+
+function perksOf(p) {
+  return isClass(p)
+    ? [
+      `Học 1 lớp môn ${subjectNameOf(p)}, khoá ${p.durationDays} ngày`,
+      'Chọn lớp cùng môn, cùng thời hạn sau khi mua',
+      'Bắt đầu tính ngày khi lớp bắt đầu',
+      'Nhận giáo án & nhận xét từ huấn luyện viên',
+      'Cần có Membership để mua gói lớp'
+    ]
+    : [
+      `${p.durationDays} ngày vào trung tâm, dùng cơ sở vật chất`,
+      'Kích hoạt ở lần check-in đầu tiên',
+      'Bắt buộc có để mua và học các gói lớp',
+      'Mua thêm được cộng nối tiếp, không mất ngày còn lại'
+    ];
+}
+
 function planCard(p, { best, isRenewal, suggested }) {
   const perDay = p.durationDays ? Math.round(p.price / p.durationDays) : null;
-  const perks = [
-    `${p.durationDays} ngày tập kể từ ngày kích hoạt`,
-    p.packageType === 'FREE' ? 'Vào khu tập tự do, không kèm đăng ký lớp' : p.sessionLimit ? `Đặt tối đa ${p.sessionLimit} buổi lớp, hủy lớp được hoàn buổi` : 'Đặt lớp không giới hạn trong thời hạn gói',
-    `Áp dụng: ${packageScope(p)}`,
-    'Nhận giáo án & nhận xét từ huấn luyện viên',
-    isRenewal ? 'Cộng nối tiếp, không mất ngày còn lại' : 'Kích hoạt ngay sau khi thanh toán'
-  ];
+  const perks = perksOf(p);
   // cùng kiểu bảng giá trang giới thiệu: gói tiết kiệm nhất nền xanh rừng + điểm nhấn vàng chanh
   return html`
     <div class="relative rounded-3xl ${best ? 'bg-brand-dark text-white shadow-2xl shadow-brand-dark/20' : 'bg-white border border-brand-line shadow-sm'} p-6 sm:p-7 flex flex-col hover-lift"
@@ -76,7 +89,7 @@ function planCard(p, { best, isRenewal, suggested }) {
       </ul>
       <a href="#/member/checkout/${p.packageId}" data-testid="choose-package"
         class="mt-7 w-full !py-3 ${best ? 'btn-lime' : 'btn-primary'}">
-        ${isRenewal ? 'Gia hạn với gói này' : 'Chọn gói này'} ${icon('arrow-right', 'w-4 h-4')}
+        ${isClass(p) ? 'Mua gói lớp này' : isRenewal ? 'Gia hạn với gói này' : 'Chọn gói này'} ${icon('arrow-right', 'w-4 h-4')}
       </a>
     </div>`;
 }
@@ -87,12 +100,63 @@ const TRUST = [
   ['file-text', 'Hóa đơn điện tử', 'Xem và in hóa đơn bất cứ lúc nào trong mục Thanh toán.']
 ];
 
+const grid = (list, opts) => html`
+  <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-3">
+    ${list.map(p => planCard(p, { best: p.packageId === opts.best, isRenewal: opts.isRenewal, suggested: p.packageId === opts.suggestedId }))}
+  </div>`;
+
+const sectionNote = (ic, text) => html`
+  <div class="flex items-start gap-3 rounded-2xl bg-brand-sand/70 p-4 text-sm text-slate-700 mb-4">
+    <span class="w-9 h-9 rounded-xl bg-brand-dark text-brand-lime flex items-center justify-center shrink-0">${icon(ic, 'w-4 h-4')}</span>
+    <span class="pt-1.5">${text}</span>
+  </div>`;
+
+function membershipSection(list, hasMembership, suggestedId) {
+  if (!list.length) return emptyState('Hiện chưa có gói Membership nào mở bán', 'package');
+  return html`
+    ${sectionNote('door-open', html`<b>Membership</b> là gói vào trung tâm, dùng cơ sở vật chất. Gói kích hoạt ở lần check-in đầu tiên và là điều kiện để mua gói lớp.`)}
+    ${grid(list, { best: bestValueId(list), isRenewal: hasMembership, suggestedId })}`;
+}
+
+// gói lớp chia theo môn, mỗi môn so "tiết kiệm nhất" riêng
+function classSection(list, hasMembership, suggestedId) {
+  if (!list.length) return emptyState('Hiện chưa có gói lớp nào mở bán', 'calendar-x');
+  const bySubject = new Map();
+  list.forEach(p => {
+    const key = subjectNameOf(p);
+    if (!bySubject.has(key)) bySubject.set(key, []);
+    bySubject.get(key).push(p);
+  });
+  return html`
+    ${hasMembership
+      ? sectionNote('calendar-check', html`Mỗi <b>gói lớp</b> dùng cho 1 lớp cùng môn, cùng thời hạn. Mua xong vào mục <a href="#/member/classes" class="font-bold text-brand-deep hover:underline">Lớp học</a> để chọn lớp.`)
+      : html`
+        <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 mb-4" data-testid="need-membership">
+          ${icon('alert-circle', 'w-5 h-5 shrink-0')}
+          <span class="flex-1">Bạn cần có <b>Membership</b> trước khi mua gói lớp.</span>
+          <button type="button" class="btn-primary btn-sm" data-action="tab" data-tab="MEMBERSHIP">Xem gói Membership</button>
+        </div>`}
+    <div class="space-y-10">
+      ${[...bySubject.entries()].map(([name, items]) => html`
+        <section data-testid="class-subject-group">
+          <h3 class="font-display text-2xl font-extrabold text-brand-dark mb-1 flex items-center gap-2">${icon('dumbbell', 'w-5 h-5 text-brand')} ${name}
+            <span class="text-sm font-sans font-semibold text-slate-400">${items.length} gói</span></h3>
+          ${grid(items, { best: bestValueId(items), isRenewal: false, suggestedId })}
+        </section>`)}
+    </div>`;
+}
+
 function view(s) {
-  const plans = s.packages.filter(p => p.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays);
+  const plans = s.packages.filter(p => p.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays || a.price - b.price);
+  const memberships = plans.filter(p => !isClass(p));
+  // gói lớp chưa gắn môn thì không dùng được (không lớp nào khớp) -> không bán cho hội viên
+  const classPlans = plans.filter(p => isClass(p) && subjectNameOf(p)).sort((a, b) => subjectNameOf(a).localeCompare(subjectNameOf(b), 'vi') || a.durationDays - b.durationDays);
   const latest = latestActive(s.subscriptions);
-  const best = bestValueId(plans);
+  // đã có Membership (đang dùng hoặc chờ kích hoạt) thì mới mua được gói lớp
+  const hasMembership = (s.subscriptions || []).some(x => !isClass(x) && ['ACTIVE', 'WAITING_ACTIVATION'].includes(x.status));
   const answers = quizStore.answers(session.get()?.email);
   const suggestedId = recommendPackage(answers, plans)?.best.packageId;
+  const tab = s.tab || (hasMembership && classPlans.length ? 'CLASS' : 'MEMBERSHIP');
   return html`
     ${expiryBanner(latest)}
     ${membershipHero(s.current, latest)}
@@ -105,15 +169,17 @@ function view(s) {
     </a>
     <div class="flex items-end justify-between mt-10 mb-5">
       <div>
-        <h2 class="font-display text-3xl font-extrabold text-brand-dark">${latest ? 'Gia hạn gói tập' : 'Chọn gói tập'}</h2>
+        <h2 class="font-display text-3xl font-extrabold text-brand-dark">${latest ? 'Mua thêm / gia hạn gói' : 'Chọn gói tập'}</h2>
         <p class="text-sm text-slate-500 mt-1">Giá đã bao gồm VAT, không phát sinh phí giao dịch.</p>
       </div>
       <a href="#/member/payments" class="hidden sm:inline-flex items-center gap-1 text-sm font-bold text-brand-deep hover:underline">${icon('history', 'w-4 h-4')} Lịch sử thanh toán</a>
     </div>
     ${plans.length ? html`
-      <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-3">
-        ${plans.map(p => planCard(p, { best: p.packageId === best, isRenewal: Boolean(latest), suggested: p.packageId === suggestedId }))}
-      </div>` : emptyState('Hiện chưa có gói tập nào đang mở bán', 'package')}
+      <div data-testid="package-tabs">${tabs([
+        { id: 'MEMBERSHIP', label: 'Membership', count: memberships.length },
+        { id: 'CLASS', label: 'Gói lớp', count: classPlans.length }
+      ], tab)}</div>
+      ${tab === 'CLASS' ? classSection(classPlans, hasMembership, suggestedId) : membershipSection(memberships, hasMembership, suggestedId)}` : emptyState('Hiện chưa có gói tập nào đang mở bán', 'package')}
     <div class="grid sm:grid-cols-3 gap-4 mt-10">
       ${TRUST.map(([ic, title, text]) => html`
         <div class="flex gap-3 p-4 rounded-2xl bg-brand-sand/70">
@@ -135,6 +201,9 @@ export default function MemberPackages(el) {
       if (res.packagesError) throw res.packagesError;
       return res;
     },
-    view
+    view,
+    actions: {
+      tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab })
+    }
   });
 }

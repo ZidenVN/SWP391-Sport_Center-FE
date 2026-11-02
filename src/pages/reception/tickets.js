@@ -23,7 +23,7 @@ function view(s) {
     <div class="card">
       <div class="px-4 pt-2 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div class="flex-1">${tabs([
-          { id: 'OPEN', label: 'Đang mở', count: open },
+          { id: 'OPEN', label: 'Chờ xử lý', count: open },
           { id: 'RESOLVED', label: 'Đã xử lý', count: s.tickets.length - open },
           { id: 'ALL', label: 'Tất cả', count: s.tickets.length }
         ], s.tab)}</div>
