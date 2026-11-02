@@ -205,60 +205,53 @@ function reportDetail(r, { canAct, canEscalate }) {
     </div>`;
 }
 
-// Nút theo trạng thái: Mới gửi -> Nhận xử lý / Từ chối; Đang xử lý -> Gửi cập nhật / Hoàn tất / Từ chối
+// Xử lý ngay trong popup chi tiết: gõ phản hồi rồi bấm 1 nút. Hoàn tất / Từ chối đi thẳng từ Mới gửi, không cần bước nhận xử lý
 function actionBar(r, { canAct, canEscalate }) {
   if (!canAct) {
     return html`<div class="rounded-xl bg-violet-50 text-violet-800 text-sm p-3 flex gap-2">${icon('info', 'w-4 h-4 shrink-0 mt-0.5')}<span>Báo cáo đã chuyển lên Quản lý, bạn chỉ xem để theo dõi. Kết quả sẽ hiện ở đây khi Quản lý xử lý xong.</span></div>`;
   }
   const btn = (action, ic, label, cls = 'btn-secondary') => html`<button type="button" class="${cls}" data-action="${action}" data-testid="${action}">${icon(ic, 'w-4 h-4')} ${label}</button>`;
   return html`
-    <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
-      ${canEscalate ? btn('escalate', 'arrow-up-right', 'Chuyển lên Quản lý') : ''}
-      ${btn('reject', 'x-circle', 'Từ chối', 'btn-secondary text-rose-600 hover:bg-rose-50')}
-      ${r.status === 'OPEN'
-        ? btn('accept', 'hand', 'Nhận xử lý', 'btn-primary')
-        : html`${btn('update', 'message-square-plus', 'Gửi cập nhật')}${btn('resolve', 'check-circle-2', 'Hoàn tất', 'btn-primary')}`}
-    </div>`;
+    <form class="space-y-3 border-t border-slate-100 pt-4" novalidate data-testid="respond-form">
+      ${field('Phản hồi cho người gửi', textarea('response', '', { rows: 3, placeholder: 'Bắt buộc khi Hoàn tất / Từ chối. Người gửi nhận thông báo kèm nội dung này' }), `Tối đa ${RESPONSE_MAX} ký tự`)}
+      <div class="flex flex-wrap justify-end gap-2">
+        ${canEscalate ? btn('escalate', 'arrow-up-right', 'Chuyển lên Quản lý') : ''}
+        ${r.status === 'OPEN' ? btn('progress', 'loader', 'Đang xử lý') : btn('progress', 'message-square-plus', 'Gửi cập nhật')}
+        ${btn('reject', 'x-circle', 'Từ chối', 'btn-secondary text-rose-600 hover:bg-rose-50')}
+        ${btn('resolve', 'check-circle-2', 'Hoàn tất', 'btn-primary')}
+      </div>
+    </form>`;
 }
-
-// Mỗi hành động 1 popup riêng: đóng báo cáo (Hoàn tất / Từ chối) bắt buộc phản hồi mới và có câu xác nhận
-const RESPOND = {
-  IN_PROGRESS: { title: 'Nhận xử lý', submitText: 'Gửi', success: 'Đã cập nhật báo cáo', required: false },
-  RESOLVED: { title: 'Hoàn tất báo cáo', submitText: 'Hoàn tất', success: 'Đã hoàn tất báo cáo', required: true, closes: true },
-  REJECTED: { title: 'Từ chối báo cáo', submitText: 'Từ chối', success: 'Đã từ chối báo cáo', required: true, closes: true }
-};
 
 function openReport(id, role, onChange) {
   let report = null;
-  const respond = status => {
-    const cfg = RESPOND[status];
-    // đang xử lý mà gửi thêm cập nhật thì bắt buộc có nội dung (BE chặn gửi lại cùng trạng thái không kèm phản hồi)
-    const required = cfg.required || report.status === status;
-    const title = report.status === 'IN_PROGRESS' && status === 'IN_PROGRESS' ? 'Gửi cập nhật cho người gửi' : cfg.title;
-    openFormModal({
-      title: `${title} #${report.reportId}`,
-      fields: html`
-        ${cfg.closes ? html`<div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3">Báo cáo sẽ được đóng và gửi kết quả cho người báo cáo. Sau khi đóng không chỉnh sửa được nữa.</div>` : ''}
-        ${field(required ? 'Phản hồi cho người gửi' : 'Ghi chú cho người gửi (tuỳ chọn)', textarea('response', '', { rows: 4, placeholder: status === 'REJECTED' ? 'Lý do từ chối...' : 'Người gửi nhận được thông báo kèm nội dung này' }), `Tối đa ${RESPONSE_MAX} ký tự`)}`,
-      validate: d => {
-        const text = String(d.response || '').trim();
-        if (required && !text) return { response: status === 'REJECTED' ? 'Nhập lý do từ chối để báo cho người gửi' : 'Nhập phản hồi cho người gửi' };
-        return text.length > RESPONSE_MAX ? { response: `Tối đa ${RESPONSE_MAX} ký tự` } : {};
-      },
-      submitText: cfg.submitText, success: cfg.success,
-      submit: d => issueApi.setStatus(report.reportId, status, String(d.response || '').trim() || undefined),
-      onDone: () => { modal.close(); onChange(); }
-    });
+  // status = trạng thái muốn chuyển sang; btn = nút vừa bấm (nằm trong form phản hồi)
+  const respond = async (status, btn) => {
+    const form = btn.closest('form');
+    const text = String(readForm(form).response || '').trim();
+    const closing = status === 'RESOLVED' || status === 'REJECTED';
+    // đóng báo cáo, hoặc gửi cập nhật khi đã Đang xử lý, thì phải có nội dung (khớp luật BE)
+    const needText = closing || report.status === status;
+    let error = '';
+    if (needText && !text) error = status === 'REJECTED' ? 'Nhập lý do từ chối để báo cho người gửi' : 'Nhập phản hồi cho người gửi';
+    else if (text.length > RESPONSE_MAX) error = `Tối đa ${RESPONSE_MAX} ký tự`;
+    showFormErrors(form, { fields: error ? { response: error } : {} });
+    if (error) return;
+    const res = await withBusy(form, () => issueApi.setStatus(report.reportId, status, text || undefined));
+    if (res !== undefined) {
+      toast({ RESOLVED: 'Đã hoàn tất báo cáo', REJECTED: 'Đã từ chối báo cáo' }[status] || 'Đã cập nhật báo cáo');
+      modal.close();
+      onChange();
+    }
   };
   const modal = openModal({
     title: 'Báo cáo sự cố',
     size: 'max-w-2xl',
     body: html`<div class="py-10 text-center text-slate-400 text-sm">Đang tải...</div>`,
     actions: {
-      accept: () => respond('IN_PROGRESS'),
-      update: () => respond('IN_PROGRESS'),
-      resolve: () => respond('RESOLVED'),
-      reject: () => respond('REJECTED'),
+      progress: btn => respond('IN_PROGRESS', btn),
+      resolve: btn => respond('RESOLVED', btn),
+      reject: btn => respond('REJECTED', btn),
       // lễ tân chuyển báo cáo ở quầy lên Quản lý, lý do tuỳ chọn
       escalate: () => openFormModal({
         title: `Chuyển báo cáo #${report.reportId} lên Quản lý`,
