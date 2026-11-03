@@ -37,7 +37,7 @@ function invoiceBody(inv) {
         <tr class="text-left text-xs text-slate-500"><th class="py-2">Gói tập</th><th>Thời hạn</th><th class="text-right">Thành tiền</th></tr>
         <tr class="border-t border-slate-100">
           <td class="py-2 font-semibold">${inv.packageName}</td>
-          <td>${inv.durationDays} ngày<div class="text-xs text-slate-500">${date(inv.startDate)} → ${date(inv.endDate)}</div></td>
+          <td>${inv.durationDays} ngày<div class="text-xs text-slate-500">${inv.startDate ? `${date(inv.startDate)} → ${date(inv.endDate)}` : 'Chờ kích hoạt'}</div></td>
           <td class="text-right font-semibold">${money(inv.amount)}</td>
         </tr>
       </table>

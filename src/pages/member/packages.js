@@ -8,19 +8,21 @@ import { latestActive, bestValueId, vnpayMark, packageKind, subjectNameOf } from
 import { session } from '../../core/session.js';
 import { quizStore, recommendPackage } from '../../core/quiz.js';
 
-function membershipHero(current, latest) {
+function membershipHero(current, latest, waiting = []) {
   if (!latest) {
     return html`
       <div class="rounded-3xl p-6 sm:p-8 bg-brand-dark text-white relative overflow-hidden" data-testid="membership-status">
         <div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-brand/30"></div>
         <div class="relative">
-          <div class="text-xs font-bold uppercase tracking-widest text-brand-lime">Hội viên</div>
-          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none mt-2">Bắt đầu hành trình tập luyện</h1>
-          <p class="text-white/70 mt-2 max-w-xl text-sm">Chọn một gói phù hợp bên dưới. Gói được kích hoạt ngay sau khi thanh toán và bạn có thể đặt lớp liền.</p>
+          <div class="text-xs font-bold uppercase tracking-widest text-brand-lime">${waiting.length ? 'Chờ kích hoạt' : 'Hội viên'}</div>
+          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none mt-2">${waiting.length ? waiting.map(x => x.packageName).join(', ') : 'Bắt đầu hành trình tập luyện'}</h1>
+          <p class="text-white/70 mt-2 max-w-xl text-sm">${waiting.length
+            ? 'Gói đã thanh toán, sẽ tự kích hoạt khi bạn check-in tại quầy hoặc đăng ký lớp lần đầu (chậm nhất 14 ngày sau khi thanh toán).'
+            : 'Chọn một gói phù hợp bên dưới. Gói tự kích hoạt khi bạn check-in hoặc đăng ký lớp lần đầu (chậm nhất 14 ngày sau khi thanh toán).'}</p>
         </div>
       </div>`;
   }
-  const start = toDate((current || latest).startDate);
+  const start = toDate((current?.startDate ? current : latest).startDate);
   const end = toDate(latest.endDate);
   const pct = Math.max(2, Math.min(100, Math.round(((Date.now() - start) / (end - start)) * 100)));
   const left = daysUntil(latest.endDate);
@@ -159,7 +161,7 @@ function view(s) {
   const tab = s.tab || (hasMembership && classPlans.length ? 'CLASS' : 'MEMBERSHIP');
   return html`
     ${expiryBanner(latest)}
-    ${membershipHero(s.current, latest)}
+    ${membershipHero(s.current, latest, (s.subscriptions || []).filter(x => x.status === 'WAITING_ACTIVATION'))}
     <a href="#/member/onboarding${answers ? '?redo=1' : ''}" class="mt-5 flex items-center gap-3 rounded-2xl border border-brand-line bg-white p-4 hover:border-brand/60" data-testid="quiz-link">
       <span class="w-10 h-10 rounded-xl bg-brand-sand text-brand-dark flex items-center justify-center shrink-0">${icon('sparkles', 'w-5 h-5')}</span>
       <span class="flex-1 text-sm">${answers

@@ -137,6 +137,11 @@ const STATUS = {
   ISSUE_REPORT_CREATED: ['Sự cố mới', 'amber'],
   ISSUE_REPORT_UPDATED: ['Phản hồi sự cố', 'sky'],
   ISSUE_REPORT_ESCALATED: ['Chuyển Quản lý', 'violet'],
+  CLASS_REMINDER: ['Nhắc lịch học', 'sky'],
+  CLASS_SWITCHED: ['Đổi lớp', 'sky'],
+  SUBSCRIPTION_ACTIVATED: ['Gói đã kích hoạt', 'emerald'],
+  SUBSCRIPTION_EXPIRING: ['Gói sắp hết hạn', 'amber'],
+  PAYMENT_NEEDS_REVIEW: ['Cần kiểm tra giao dịch', 'rose'],
   // mô hình gói / buổi học mới
   WAITING_ACTIVATION: ['Chờ kích hoạt', 'sky'],
   STOPPED: ['Đã dừng', 'rose'],

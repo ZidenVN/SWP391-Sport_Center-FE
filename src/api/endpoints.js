@@ -71,11 +71,13 @@ export const subjectApi = {
 };
 
 // BE main trả DANH SÁCH gói đang hiệu lực (gói tự do / gói lớp theo buổi có thể song song).
-// Các màn hình dùng 1 gói "hiện tại": lấy gói hết hạn muộn nhất, kèm cả danh sách ở .all; không có gói -> null.
+// Các màn hình dùng 1 gói "hiện tại": ưu tiên gói ACTIVE hết hạn muộn nhất, gói WAITING_ACTIVATION (chưa có ngày) xếp sau;
+// kèm cả danh sách ở .all; không có gói -> null.
 function pickCurrent(list) {
   if (!Array.isArray(list)) return list || null;
   if (!list.length) return null;
-  const sorted = [...list].sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+  const end = x => (x.endDate ? new Date(x.endDate).getTime() : 0);
+  const sorted = [...list].sort((a, b) => (b.status === 'ACTIVE') - (a.status === 'ACTIVE') || end(b) - end(a));
   return { ...sorted[0], all: sorted };
 }
 

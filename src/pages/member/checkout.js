@@ -3,10 +3,10 @@ import { toast, toastError } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { packageApi, memberApi, vnpayApi } from '../../api/endpoints.js';
 import { money, date, genderLabel, phoneText } from '../../core/format.js';
-import { checkoutSteps, vnpayMark, packageScope, packageKind } from '../../components/billing.js';
+import { checkoutSteps, vnpayMark, packageScope, packageKind, warningTitle } from '../../components/billing.js';
 
 // Thanh toán theo BE main:
-// - GET /members/me/subscriptions/preview?packageId= : ngày bắt đầu / hết hạn dự kiến + cảnh báo gói trùng khu tập (BR-SUB-08)
+// - GET /members/me/subscriptions/preview?packageId= : activationNote (khi nào gói bắt đầu tính hạn) + cảnh báo gói trùng khu tập (BR-SUB-08)
 // - POST /payments/vnpay/create-url?packageId= : BE tự gắn vnp_ReturnUrl, người dùng chọn ATM / thẻ quốc tế / QR ngay trên trang VNPay
 const PAY_OPTIONS = [
   ['landmark', 'Thẻ ATM / Tài khoản ngân hàng'],
@@ -77,7 +77,7 @@ function warningsBox(pv) {
       <ul class="mt-3 space-y-2 text-sm text-amber-900">
         ${pv.warnings.map(w => html`
           <li class="rounded-xl bg-white/70 p-3">
-            <div class="font-semibold">${w.packageName} · còn ${w.daysLeft} ngày</div>
+            <div class="font-semibold">${warningTitle(w)}</div>
             <div class="text-xs mt-0.5">${w.message}</div>
           </li>`)}
       </ul>
@@ -87,11 +87,8 @@ function warningsBox(pv) {
 
 function summary(s) {
   const p = s.pkg;
-  const pv = s.preview;
-  const start = pv?.startDate ? new Date(pv.startDate) : new Date();
-  const end = pv?.endDate ? new Date(pv.endDate) : new Date(start.getTime() + p.durationDays * 86400000);
-  // BE nối gói mới sau gói đang có -> bắt đầu ở tương lai = gia hạn nối tiếp
-  const isRenewal = start.getTime() - Date.now() > 60000;
+  // BE không còn trả ngày dự kiến: gói thanh toán xong ở trạng thái chờ kích hoạt, activationNote nói khi nào bắt đầu tính hạn
+  const note = s.preview?.activationNote;
   return html`
     <aside class="lg:sticky lg:top-24 rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden" data-testid="order-summary">
       <div class="p-6 bg-brand-dark text-white relative overflow-hidden">
@@ -105,9 +102,8 @@ function summary(s) {
       </div>
       <div class="p-6">
         <div class="divide-y divide-slate-100">
-          ${row('Loại giao dịch', isRenewal ? 'Gia hạn nối tiếp' : 'Đăng ký mới')}
-          ${row('Bắt đầu', html`<span data-testid="new-start-date">${date(start)}</span>`)}
-          ${row('Hết hạn', html`<span data-testid="new-end-date">${date(end)}</span>`)}
+          ${row('Thời hạn', `${p.durationDays} ngày`)}
+          ${row('Bắt đầu tính hạn', html`<span data-testid="new-start-date">Khi kích hoạt</span>`)}
           ${row('Đơn giá', money(p.price))}
           ${row('Phí giao dịch', html`<span class="text-emerald-600">Miễn phí</span>`)}
         </div>
@@ -115,9 +111,9 @@ function summary(s) {
           <span class="font-bold text-slate-700">Tổng thanh toán</span>
           <span class="text-3xl font-black text-slate-900" data-testid="total">${money(p.price)}</span>
         </div>
-        ${isRenewal ? html`
-          <div class="mt-4 text-xs rounded-xl bg-emerald-50 text-emerald-800 p-3 flex gap-2">
-            ${icon('info', 'w-4 h-4 shrink-0')}<span>Gói mới tự bắt đầu ngày ${date(start)}, nối tiếp sau gói bạn đang có.</span>
+        ${note ? html`
+          <div class="mt-4 text-xs rounded-xl bg-emerald-50 text-emerald-800 p-3 flex gap-2" data-testid="activation-note">
+            ${icon('info', 'w-4 h-4 shrink-0')}<span>${note}</span>
           </div>` : ''}
         ${s.payError ? html`
           <div class="mt-4 text-sm rounded-xl bg-rose-50 border border-rose-200 text-rose-700 p-3 flex gap-2" role="alert" data-testid="pay-error">

@@ -69,7 +69,6 @@ export const ROUTES = [
 
   // ----- Center Manager -----
   { path: '/manager/dashboard', roles: CM, nav: { label: 'Tổng quan', icon: 'layout-dashboard' }, load: () => import('./pages/manager/dashboard.js') },
-  { path: '/manager/reports', roles: CM, nav: { label: 'Báo cáo', icon: 'bar-chart-3' }, load: () => import('./pages/manager/reports.js') },
   { path: '/manager/payments', roles: CM, nav: { label: 'Giao dịch', icon: 'receipt' }, load: () => import('./pages/manager/payments.js') },
   { path: '/manager/issues', roles: CM, nav: { label: 'Sự cố & phản ánh', icon: 'siren' }, load: () => import('./pages/shared/issues.js') },
   { path: '/manager/classes', roles: CM, nav: { label: 'Lớp học', icon: 'calendar-days', group: 'Vận hành' }, load: () => import('./pages/manager/classes.js') },

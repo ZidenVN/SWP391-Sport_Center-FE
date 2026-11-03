@@ -2,7 +2,7 @@ import { html, raw, icon } from '../core/dom.js';
 import { openModal, loading, errorState, toast } from '../core/ui.js';
 import { packageApi, receptionApi } from '../api/endpoints.js';
 import { money, date, fullName, phoneText } from '../core/format.js';
-import { packageScope, packageKind } from './billing.js';
+import { packageScope, packageKind, warningTitle } from './billing.js';
 import { openInvoice } from './invoice.js';
 
 const METHODS = [
@@ -60,8 +60,6 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
   function formView() {
     const p = pkg();
     const pv = st.preview && st.preview.packageId === st.packageId ? st.preview : null;
-    const start = pv ? new Date(pv.startDate) : null;
-    const isRenewal = Boolean(start && start.getTime() - Date.now() > 60000);
     const active = st.packages.filter(x => x.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays);
     const cashShort = st.method === 'CASH' && p && Number(st.cash || 0) < p.price;
     const blocked = cashShort || refMissing();
@@ -104,12 +102,12 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
 
       ${p ? html`
         <div class="rounded-2xl border border-slate-200 p-4 mt-5 text-sm space-y-1.5" data-testid="sell-summary">
-          <div class="flex justify-between"><span class="text-slate-500">Loại giao dịch</span><b>${pv ? (isRenewal ? 'Gia hạn nối tiếp' : 'Đăng ký mới') : '…'}</b></div>
-          <div class="flex justify-between"><span class="text-slate-500">Hiệu lực</span><b data-testid="sell-dates">${pv ? `${date(pv.startDate)} → ${date(pv.endDate)}` : 'Đang tính...'}</b></div>
+          <div class="flex justify-between"><span class="text-slate-500">Thời hạn</span><b>${p.durationDays} ngày</b></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500 shrink-0">Kích hoạt</span><b class="text-right" data-testid="sell-activation">${pv ? pv.activationNote || 'Chờ kích hoạt' : 'Đang tải...'}</b></div>
           ${pv?.warnings?.length ? html`
             <div class="mt-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 p-3 text-xs space-y-1" data-testid="sell-warnings">
               <div class="font-bold flex items-center gap-1.5">${icon('alert-triangle', 'w-4 h-4')} Hội viên đang có gói dùng được cùng khu tập</div>
-              ${pv.warnings.map(w => html`<div>${w.packageName} · còn ${w.daysLeft} ngày — ${w.message}</div>`)}
+              ${pv.warnings.map(w => html`<div>${warningTitle(w)} — ${w.message}</div>`)}
             </div>` : ''}
           <div class="flex justify-between items-end pt-2 mt-2 border-t border-dashed border-slate-200">
             <span class="font-bold">Tổng thu</span><span class="text-2xl font-black">${money(p.price)}</span>
@@ -134,7 +132,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
       <div class="text-center py-2" data-testid="sell-success">
         <span class="mx-auto w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center">${icon('check', 'w-8 h-8')}</span>
         <div class="text-xl font-extrabold mt-4">Đã thu ${money(s.amount ?? p.price)}</div>
-        <div class="text-sm text-slate-600 mt-1">${s.packageName} · ${date(s.startDate)} → ${date(s.endDate)}</div>
+        <div class="text-sm text-slate-600 mt-1">${s.packageName} · ${s.startDate ? `${date(s.startDate)} → ${date(s.endDate)}` : 'Chờ kích hoạt'}</div>
         ${change > 0 ? html`<div class="mt-4 inline-block rounded-xl bg-amber-50 text-amber-800 px-4 py-2 text-sm font-bold">Thối lại khách: ${money(change)}</div>` : ''}
       </div>
       <div class="flex justify-end gap-2 mt-6">

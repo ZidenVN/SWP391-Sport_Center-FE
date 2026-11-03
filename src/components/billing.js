@@ -1,4 +1,5 @@
 import { html, raw, icon } from '../core/dom.js';
+import { date } from '../core/format.js';
 
 // Gói ACTIVE có ngày hết hạn xa nhất (khi đã gia hạn nối tiếp sẽ có nhiều gói ACTIVE)
 export function latestActive(subscriptions) {
@@ -16,6 +17,14 @@ export function packageScope(p) {
   if (!isClassPackage(p)) return 'Vào trung tâm, kích hoạt ở lần check-in đầu';
   return subjectNameOf(p) ? `1 lớp môn ${subjectNameOf(p)}` : 'Chưa gắn môn';
 }
+
+// Gói WAITING_ACTIVATION chưa có ngày bắt đầu / hết hạn (BE chỉ gán khi check-in, vào lớp hoặc sau 14 ngày)
+export const validityText = (x, fmt = date) => x?.startDate
+  ? `${fmt(x.startDate)} → ${fmt(x.endDate)}`
+  : x?.status === 'WAITING_ACTIVATION' ? 'Chờ kích hoạt' : '—';
+
+// Cảnh báo gói trùng của BE: gói đang chờ kích hoạt không có daysLeft
+export const warningTitle = w => `${w.packageName} · ${w.daysLeft != null ? `còn ${w.daysLeft} ngày` : 'chờ kích hoạt'}`;
 
 // Nhãn ngắn loại gói: "Membership", "Gói lớp · Yoga"
 export function packageKind(p) {

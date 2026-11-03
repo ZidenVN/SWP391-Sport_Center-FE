@@ -23,7 +23,11 @@ const STYLE = {
   SUBSCRIPTION_REFUNDED: ['undo-2', 'bg-violet-50 text-violet-600'],
   ISSUE_REPORT_CREATED: ['siren', 'bg-amber-50 text-amber-600'],
   ISSUE_REPORT_UPDATED: ['message-circle-reply', 'bg-sky-50 text-sky-600'],
-  ISSUE_REPORT_ESCALATED: ['arrow-up-right', 'bg-violet-50 text-violet-600']
+  ISSUE_REPORT_ESCALATED: ['arrow-up-right', 'bg-violet-50 text-violet-600'],
+  CLASS_REMINDER: ['alarm-clock', 'bg-sky-50 text-sky-600'],
+  CLASS_SWITCHED: ['arrow-left-right', 'bg-sky-50 text-sky-600'],
+  SUBSCRIPTION_ACTIVATED: ['badge-check', 'bg-emerald-50 text-emerald-600'],
+  SUBSCRIPTION_EXPIRING: ['hourglass', 'bg-amber-50 text-amber-600']
 };
 
 // BE: category STAFF = HLV / nhân viên gửi (có senderName), SYSTEM = hệ thống tự gửi

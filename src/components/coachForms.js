@@ -1,7 +1,7 @@
 import { html, readForm } from '../core/dom.js';
 import { openModal, field, input, select, textarea, withBusy, toast, showFormErrors, dateTimeInput } from '../core/ui.js';
 import { coachApi } from '../api/endpoints.js';
-import { isoDate, isoLocalMinute, fullName, date, isPlaceholderPhone } from '../core/format.js';
+import { isoDate, isoLocalMinute, fullName, date, isPlaceholderPhone, toDate } from '../core/format.js';
 
 const submitRow = text => html`
   <div class="flex justify-end gap-2 pt-2">
@@ -22,18 +22,35 @@ function required(form, keys) {
 // values: điền sẵn nội dung (vd từ gợi ý AI), HLV vẫn sửa được trước khi giao
 export function openPlanForm({ preset, classes = [], members = [], values = {}, onDone }) {
   const due = new Date(Date.now() + 28 * 86400000);
-  const st = { targetType: preset?.targetType || (classes.length ? 'CLASS' : 'INDIVIDUAL') };
+  const st = { targetType: preset?.targetType || (classes.length ? 'CLASS' : 'INDIVIDUAL'), classFilter: '' };
+  const classLabel = c => `${c.subjectName} #${c.classId} · ${date(c.startTime)} → ${date(c.endTime)}`;
+  // lớp của học viên (m.classes từ loadMyStudents), chỉ tính các lớp đang có trong danh sách chọn
+  const classIds = new Set(classes.map(c => String(c.classId)));
+  const classesOf = m => (m.classes || []).filter(c => classIds.has(String(c.classId)));
 
   const targetField = () => {
     if (preset) return '';
-    const opts = st.targetType === 'CLASS'
-      ? classes.map(c => ({ value: c.classId, label: `${c.subjectName} · ${date(c.startTime)}` }))
-      : members.map(m => ({ value: m.memberId, label: `${fullName(m)} · ${isPlaceholderPhone(m.phone) ? m.email : m.phone}` }));
+    const typeField = field('Giao cho', select('targetType', [{ value: 'CLASS', label: 'Cả lớp' }, { value: 'INDIVIDUAL', label: 'Một học viên' }], st.targetType));
+    if (st.targetType === 'CLASS') {
+      const opts = classes.map(c => ({ value: c.classId, label: classLabel(c) }));
+      return html`
+        <div class="grid sm:grid-cols-2 gap-3">
+          ${typeField}
+          ${field('Lớp', select('targetId', opts, '', { placeholder: opts.length ? 'Chọn...' : 'Chưa có dữ liệu' }))}
+        </div>`;
+    }
+    // 1 học viên: chọn lớp trước để lọc, tên lớp hiện kèm trong lựa chọn học viên
+    const inClass = st.classFilter ? members.filter(m => classesOf(m).some(c => String(c.classId) === st.classFilter)) : members;
+    const opts = inClass.map(m => {
+      const cls = classesOf(m).map(c => `${c.subjectName} #${c.classId}`).join(', ');
+      return { value: m.memberId, label: `${fullName(m)} · ${isPlaceholderPhone(m.phone) ? m.email : m.phone}${cls && !st.classFilter ? ` · ${cls}` : ''}` };
+    });
     return html`
       <div class="grid sm:grid-cols-2 gap-3">
-        ${field('Giao cho', select('targetType', [{ value: 'CLASS', label: 'Cả lớp' }, { value: 'INDIVIDUAL', label: 'Một học viên' }], st.targetType))}
-        ${field(st.targetType === 'CLASS' ? 'Lớp' : 'Học viên', select('targetId', opts, '', { placeholder: opts.length ? 'Chọn...' : 'Chưa có dữ liệu' }))}
-      </div>`;
+        ${typeField}
+        ${field('Lớp', select('classFilter', [{ value: '', label: 'Tất cả lớp' }, ...classes.map(c => ({ value: c.classId, label: classLabel(c) }))], st.classFilter))}
+      </div>
+      ${field('Học viên', select('targetId', opts, '', { placeholder: opts.length ? 'Chọn...' : 'Lớp này chưa có học viên' }))}`;
   };
 
   const body = () => html`
@@ -71,13 +88,13 @@ export function openPlanForm({ preset, classes = [], members = [], values = {}, 
   });
   // đổi loại đối tượng (cả lớp / 1 học viên) -> vẽ lại form, giữ phần đã gõ
   modal.el.addEventListener('change', e => {
-    if (e.target.name !== 'targetType') return;
+    if (e.target.name !== 'targetType' && e.target.name !== 'classFilter') return;
     const keep = readForm(modal.el.querySelector('form'));
-    st.targetType = e.target.value;
+    if (e.target.name === 'targetType') { st.targetType = e.target.value; st.classFilter = ''; } else st.classFilter = e.target.value;
     modal.setBody(body());
     Object.entries(keep).forEach(([k, v]) => {
       const box = modal.el.querySelector(`[name="${k}"]`);
-      if (box && k !== 'targetType' && k !== 'targetId') box.value = v;
+      if (box && !['targetType', 'targetId', 'classFilter'].includes(k)) box.value = v;
     });
   });
   return modal;
@@ -138,8 +155,21 @@ export function openNotifyForm({ title, send, onDone }) {
 }
 
 // BE không có API "học viên của tôi" -> gộp roster của mọi lớp HLV dạy, mỗi học viên kèm danh sách lớp
+// BE trả lịch dạy theo từng BUỔI -> gom về từng lớp: startTime = buổi đầu, endTime = hết buổi cuối, sessionCount = số buổi
+export function groupSessionsByClass(sessions) {
+  const map = new Map();
+  (sessions || []).forEach(x => {
+    const c = map.get(x.classId);
+    if (!c) { map.set(x.classId, { ...x, sessionCount: 1 }); return; }
+    c.sessionCount++;
+    if (toDate(x.startTime) < toDate(c.startTime)) c.startTime = x.startTime;
+    if (toDate(x.endTime) > toDate(c.endTime)) c.endTime = x.endTime;
+  });
+  return [...map.values()].sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
+}
+
 export async function loadMyStudents() {
-  const classes = await coachApi.schedules();
+  const classes = groupSessionsByClass(await coachApi.schedules());
   const rosters = await Promise.all(classes.map(c => coachApi.roster(c.classId).catch(() => [])));
   const byId = new Map();
   rosters.forEach((roster, i) => roster.forEach(m => {

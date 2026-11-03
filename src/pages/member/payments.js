@@ -28,8 +28,8 @@ function view(s) {
       }) : table({
         columns: [{ label: 'Gói tập' }, { label: 'Bắt đầu' }, { label: 'Hết hạn' }, { label: 'Số tiền', cls: 'text-right' }, { label: 'Trạng thái' }],
         rows: s.subscriptions.map(sub => [
-          html`<span class="font-semibold">${sub.packageName}</span>`,
-          date(sub.startDate),
+          html`<span class="font-semibold">${sub.packageName}</span>${sub.currentClassName ? html`<div class="text-xs text-slate-500">Lớp ${sub.currentClassName}</div>` : ''}`,
+          sub.startDate ? date(sub.startDate) : sub.status === 'WAITING_ACTIVATION' ? 'Chờ kích hoạt' : '—',
           date(sub.endDate),
           money(sub.amount),
           badge(sub.status)

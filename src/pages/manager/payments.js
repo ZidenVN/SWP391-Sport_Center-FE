@@ -37,7 +37,13 @@ export default function ManagerPayments(el) {
               <div class="flex justify-between"><span class="text-slate-500">Số tiền</span><b>${money(p.amount)} · ${paymentMethodLabel(p.paymentMethod)}</b></div>
               <div class="flex justify-between"><span class="text-slate-500">Thanh toán lúc</span><b>${dateTime(p.paidAt || p.paymentDate)}</b></div>
             </div>
-            <div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3">Gói tập của giao dịch này sẽ bị hủy và khoản tiền không còn tính vào doanh thu. Các lớp hội viên đã đặt bằng gói này mà chưa diễn ra cũng bị hủy để trả chỗ; hội viên nhận thông báo.</div>`,
+            <div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 space-y-1">
+              <div class="font-bold">Mức hoàn do hệ thống tính:</div>
+              <div>• Gói chờ kích hoạt, hoặc gói lớp mà lớp chưa học buổi nào: hoàn 100%.</div>
+              <div>• Gói lớp của lớp đã bị dừng giữa khoá: hoàn theo số buổi chưa học.</div>
+              <div>• Gói đã dùng (đã check-in, lớp đang học): không hoàn được.</div>
+              <div class="pt-1">Khoản hoàn được trừ vào doanh thu của kỳ hoàn tiền; hội viên nhận thông báo kèm số tiền.</div>
+            </div>`,
           submitText: 'Xác nhận hoàn tiền', success: 'Đã hoàn tiền giao dịch',
           submit: reason => managerPaymentApi.refund(p.paymentId, reason),
           onDone: () => ctx.reload()

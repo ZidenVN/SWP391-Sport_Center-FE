@@ -48,7 +48,7 @@ export function mountPaymentBoard(el, { title, subtitle, list, headerActions = '
             html`<span class="font-mono text-xs text-slate-500">#${p.paymentId}</span>`,
             html`<div class="font-semibold">${p.memberName || '—'}</div><div class="text-xs text-slate-500">#${p.memberId ?? '—'}</div>`,
             p.packageName || '—',
-            html`<b>${money(p.amount)}</b>`,
+            html`<b>${money(p.amount)}</b>${p.refundAmount != null && p.status === 'REFUNDED' ? html`<div class="text-[11px] font-semibold text-violet-600">Hoàn ${money(p.refundAmount)}</div>` : ''}`,
             html`<div>${paymentMethodLabel(p.paymentMethod)}</div>${p.transactionRef ? html`<div class="text-[11px] font-mono text-slate-400">${p.transactionRef}</div>` : ''}`,
             html`<div class="text-sm">${dateTime(p.paidAt || p.paymentDate)}</div>${p.confirmedBy ? html`<div class="text-[11px] text-slate-400">Thu bởi ${p.confirmedBy}</div>` : ''}`,
             html`${badge(p.status)}${p.note && p.status !== 'COMPLETED' ? html`<div class="text-[11px] text-slate-400 mt-0.5 max-w-[12rem] truncate" title="${p.note}">${p.note}</div>` : ''}`,

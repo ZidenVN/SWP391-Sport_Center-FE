@@ -8,16 +8,19 @@ import { FEATURES } from '../../core/features.js';
 import { openSellPackage } from '../../components/sellPackage.js';
 import { openBookClass } from '../../components/bookClass.js';
 import { openInvoice } from '../../components/invoice.js';
-import { latestActive } from '../../components/billing.js';
+import { latestActive, validityText } from '../../components/billing.js';
 import { scheduleText, canCancelRegistration, firstSessionOf, openSwitchClass } from '../../components/switchClass.js';
 
 function membershipCard(s) {
   const latest = latestActive(s.subscriptions);
-  if (!s.current) {
+  const waiting = (s.subscriptions || []).filter(x => x.status === 'WAITING_ACTIVATION');
+  if (!s.current || !latest) {
     return html`
-      <div class="rounded-2xl p-5 bg-rose-50 border border-rose-200" data-testid="membership-card" data-active="false">
-        <div class="flex items-center gap-2 text-rose-700 font-bold">${icon('alert-circle', 'w-5 h-5')} Chưa có gói còn hiệu lực</div>
-        <p class="text-sm text-rose-700/80 mt-1">${latest ? `Gói kế tiếp bắt đầu ${date(latest.startDate)}.` : 'Hội viên cần mua gói trước khi đặt lớp.'}</p>
+      <div class="rounded-2xl p-5 ${waiting.length ? 'bg-sky-50 border border-sky-200' : 'bg-rose-50 border border-rose-200'}" data-testid="membership-card" data-active="false">
+        <div class="flex items-center gap-2 font-bold ${waiting.length ? 'text-sky-700' : 'text-rose-700'}">${icon(waiting.length ? 'hourglass' : 'alert-circle', 'w-5 h-5')} ${waiting.length ? 'Gói đang chờ kích hoạt' : 'Chưa có gói còn hiệu lực'}</div>
+        <p class="text-sm mt-1 ${waiting.length ? 'text-sky-700/80' : 'text-rose-700/80'}">${waiting.length
+          ? `${waiting.map(x => x.packageName).join(', ')} — tự kích hoạt khi check-in hoặc đăng ký lớp lần đầu (chậm nhất 14 ngày sau khi thanh toán).`
+          : 'Hội viên cần mua gói trước khi đặt lớp.'}</p>
         <button type="button" class="btn bg-rose-600 text-white hover:bg-rose-700 mt-4 w-full" data-action="sell">${icon('package-plus', 'w-4 h-4')} Bán gói</button>
       </div>`;
   }
@@ -39,7 +42,7 @@ function subsTab(s) {
     columns: [{ label: 'Gói' }, { label: 'Hiệu lực' }, { label: 'Số tiền', cls: 'text-right' }, { label: 'Thanh toán' }, { label: 'Trạng thái' }],
     rows: subs.map(x => [
       html`<span class="font-semibold">${x.packageName}</span>`,
-      html`${date(x.startDate)} → ${date(x.endDate)}`,
+      html`${validityText(x)}${x.currentClassName ? html`<div class="text-xs text-slate-500">Lớp ${x.currentClassName}</div>` : ''}`,
       money(x.amount),
       html`${paymentMethodLabel(x.paymentMethod)} ${x.paymentStatus ? badge(x.paymentStatus) : ''}`,
       badge(x.status)

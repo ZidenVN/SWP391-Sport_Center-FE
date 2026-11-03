@@ -1,7 +1,7 @@
 import { html, icon } from '../../core/dom.js';
 import { pageHeader, table, emptyState, statCard } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
-import { fullName, genderLabel, toDate, phoneText } from '../../core/format.js';
+import { fullName, genderLabel, toDate, phoneText, date } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { loadMyStudents } from '../../components/coachForms.js';
 
@@ -32,7 +32,13 @@ function view(s) {
           html`<div class="flex items-center gap-3">${memberAvatar(m, 'w-9 h-9 text-sm')}<div><div class="font-semibold">${fullName(m)}</div><div class="text-xs text-slate-500">#${m.memberId} · ${genderLabel(m.gender)}</div></div></div>`,
           html`<div class="text-sm">${phoneText(m.phone)}</div><div class="text-xs text-slate-500">${m.email}</div>`,
           html`<span class="text-sm text-slate-600">${m.trainingGoal || '—'}</span>`,
-          html`<div class="flex flex-wrap gap-1">${m.classes.map(c => html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${c.subjectName}</span>`)}</div>`,
+          html`<div class="flex flex-col gap-1.5">${m.classes.map(c => {
+            const over = toDate(c.endTime) < now;
+            return html`<div class="flex items-center gap-2 min-w-0" data-testid="student-class">
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${over ? 'bg-slate-100 text-slate-500' : 'bg-brand-sand text-brand-deep'}">${c.subjectName} #${c.classId}</span>
+              <span class="text-xs text-slate-500 whitespace-nowrap">${date(c.startTime)} → ${date(c.endTime)}${over ? ' · đã kết thúc' : ''}</span>
+            </div>`;
+          })}</div>`,
           html`<a href="#/coach/members/${m.memberId}" class="btn-ghost btn-sm" data-testid="student-detail">Chi tiết ${icon('chevron-right', 'w-3.5 h-3.5')}</a>`
         ])
       }) : emptyState(s.students.length ? 'Không có học viên phù hợp' : 'Chưa có học viên nào đăng ký lớp của bạn', 'users')}
