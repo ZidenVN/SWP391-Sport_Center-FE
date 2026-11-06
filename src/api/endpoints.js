@@ -278,6 +278,8 @@ export const issueApi = {
   cancel: id => http.patch(`/issue-reports/${id}/cancel`),
   // query: { desk (RECEPTION|MANAGER), status, category, fromDate, toDate, keyword, page, size }
   list: query => http.get('/issue-reports', query),
+  // query: { desk, category, fromDate, toDate, keyword } -> { OPEN: n, IN_PROGRESS: n, ... }
+  stats: query => http.get('/issue-reports/stats', query),
   get: id => http.get(`/issue-reports/${id}`),
   setStatus: (id, status, response) => http.patch(`/issue-reports/${id}/status`, { status, response }),
   escalate: (id, reason) => http.patch(`/issue-reports/${id}/escalate`, { reason })

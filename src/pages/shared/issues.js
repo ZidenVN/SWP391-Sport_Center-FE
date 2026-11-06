@@ -295,12 +295,12 @@ export default function IssuesPage(el) {
       if (canHandle) {
         const f = s.filters;
         const base = { desk: f.desk || undefined, category: f.category || undefined, fromDate: f.fromDate || undefined, toDate: f.toDate || undefined, keyword: f.keyword.trim() || undefined };
-        const count = status => issueApi.list({ ...base, status, size: 1 }).then(p => p.totalElements).catch(() => undefined);
-        const [list, ALL, OPEN, IN_PROGRESS, RESOLVED, REJECTED, CANCELLED] = await Promise.all([
+        const [list, stats] = await Promise.all([
           issueApi.list({ ...base, status: s.statusTab || undefined, page: s.pageNo, size: s.pageSize }),
-          count(undefined), count('OPEN'), count('IN_PROGRESS'), count('RESOLVED'), count('REJECTED'), count('CANCELLED')
+          issueApi.stats(base).catch(() => null)
         ]);
-        Object.assign(out, { page: list, counts: { ALL, OPEN, IN_PROGRESS, RESOLVED, REJECTED, CANCELLED } });
+        const ALL = stats ? Object.values(stats).reduce((sum, n) => sum + n, 0) : undefined;
+        Object.assign(out, { page: list, counts: { ...stats, ALL } });
       }
       return out;
     },
