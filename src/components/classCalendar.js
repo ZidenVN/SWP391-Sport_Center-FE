@@ -68,14 +68,22 @@ export async function loadCalendarClasses(s, { includeCancelled = false } = {}) 
 
 export const isMultiDay = c => isoDate(toDate(c.startTime)) !== isoDate(toDate(c.endTime));
 
-// Thời gian hiển thị: lớp nhiều ngày ghi "27/10 → 31/10 · 08:00 – 09:00 mỗi ngày"
+// Mã thứ BE gửi trong daysOfWeek ("MON,WED,SUN"), cùng thứ tự với SHORT_WEEKDAYS (T2 → CN)
+const DAY_CODES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const codeOf = d => DAY_CODES[(d.getDay() + 6) % 7];
+// lớp lịch cố định: Set các mã thứ học; lớp kiểu cũ (không có daysOfWeek) trả null = học mọi ngày
+const classDays = c => (c.daysOfWeek ? new Set(String(c.daysOfWeek).split(',').map(d => d.trim().slice(0, 3).toUpperCase())) : null);
+
+// Thời gian hiển thị: lớp nhiều ngày ghi "27/10 → 31/10 · 08:00 – 09:00 T2, T4" (lớp kiểu cũ: "mỗi ngày")
 export function classWhen(c) {
   if (!isMultiDay(c)) return null;
   const s = toDate(c.startTime);
   const e = toDate(c.endTime);
   const dm = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   const days = Math.round((startOfDay(e) - startOfDay(s)) / 86400000) + 1;
-  return { range: `${dm(s)} → ${dm(e)}/${e.getFullYear()}`, clock: `${time(c.startTime)} – ${time(c.endTime)} mỗi ngày`, days };
+  const set = classDays(c);
+  const which = set ? DAY_CODES.filter(code => set.has(code)).map(code => SHORT_WEEKDAYS[DAY_CODES.indexOf(code)]).join(', ') : 'mỗi ngày';
+  return { range: `${dm(s)} → ${dm(e)}/${e.getFullYear()}`, clock: `${time(c.startTime)} – ${time(c.endTime)} ${which}`, days };
 }
 
 // 1 dòng thời gian cho popup/bảng: lớp 1 ngày "Thứ 3, 27/10/2026 · 08:00 – 09:00", lớp nhiều ngày ghi cả khoảng ngày
@@ -92,12 +100,13 @@ function occurrences(c) {
   const clock = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
   // giờ kết thúc trong ngày phải sau giờ bắt đầu, nếu không thì coi như 1 khối liền (qua đêm) và chỉ vẽ ngày đầu
   if (clock(e) <= clock(s)) return [c];
+  const set = classDays(c);
   const out = [];
-  const total = Math.round((startOfDay(e) - startOfDay(s)) / 86400000) + 1;
-  for (let d = startOfDay(s), i = 1; d <= e; d = addDays(d, 1), i++) {
-    out.push({ ...c, startTime: `${isoDate(d)}T${clock(s)}`, endTime: `${isoDate(d)}T${clock(e)}`, dayIndex: i, dayTotal: total });
+  for (let d = startOfDay(s); d <= e; d = addDays(d, 1)) {
+    if (set && !set.has(codeOf(d))) continue; // chỉ vẽ các thứ lớp có học
+    out.push({ ...c, startTime: `${isoDate(d)}T${clock(s)}`, endTime: `${isoDate(d)}T${clock(e)}`, dayIndex: out.length + 1 });
   }
-  return out;
+  return out.map(o => ({ ...o, dayTotal: out.length }));
 }
 
 // trạng thái của 1 lớp với hội viên: registered | open | closed
@@ -128,7 +137,7 @@ function chip(c, st, compact) {
     <button type="button" data-action="cal-class" data-id="${c.classId}" data-session="${c.sessionId ?? ''}" data-testid="cal-chip" title="${c.subjectName} · ${time(c.startTime)}–${time(c.endTime)} · ${c.roomName}"
       class="cal-chip ${TONES[st]} ${compact ? 'is-compact' : ''}">
       <span class="cal-chip-line"><span class="cal-chip-time">${time(c.startTime)}</span><span class="cal-chip-name">${st === 'registered' ? icon('check', 'w-3 h-3 inline -mt-0.5') : ''} ${c.subjectName}</span></span>
-      ${compact ? '' : html`<span class="cal-chip-sub">${c.dayTotal ? `Ngày ${c.dayIndex}/${c.dayTotal} · ` : ''}${c.coachName} · ${c.roomName}</span>`}
+      ${compact ? '' : html`<span class="cal-chip-sub">${c.dayTotal ? `Buổi ${c.dayIndex}/${c.dayTotal} · ` : ''}${c.coachName} · ${c.roomName}</span>`}
     </button>`;
 }
 
@@ -244,7 +253,7 @@ function timeCard(x, st, fromHour, order) {
       title="${c.subjectName} · ${time(c.startTime)} – ${time(c.endTime)} · ${c.coachName} · ${c.roomName}">
       <span class="cal-ev-head">
         <span class="cal-ev-title ${narrow ? 'line-clamp-2 break-words' : 'truncate'}">${st === 'registered' ? html`${icon('check', 'w-3 h-3 inline -mt-0.5')} ` : ''}${c.subjectName}</span>
-        ${c.dayTotal && !narrow ? html`<span class="cal-ev-badge" title="Ngày ${c.dayIndex}/${c.dayTotal}">${c.dayIndex}/${c.dayTotal}</span>` : ''}
+        ${c.dayTotal && !narrow ? html`<span class="cal-ev-badge" title="Buổi ${c.dayIndex}/${c.dayTotal}">${c.dayIndex}/${c.dayTotal}</span>` : ''}
       </span>
       <span class="cal-ev-time">${icon('clock', 'w-3 h-3 shrink-0')}<span class="truncate">${narrow ? time(c.startTime) : `${time(c.startTime)} – ${time(c.endTime)}`}</span></span>
       ${roomy ? html`
