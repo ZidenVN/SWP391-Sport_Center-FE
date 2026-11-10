@@ -8,7 +8,7 @@ import { classCard } from '../../components/classCard.js';
 import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import {
   quizStore, GOALS, SLOTS, FREQUENCIES, COMMITMENTS, find, bmiInfo, bmiAdvice,
-  recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, COMBO_PRICING,
+  recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, SUBJECT_CATEGORIES,
   quizSteps, validateStep, quizPayload, byCode, QUIZ_CODES, goalIdOf
 } from '../../core/quiz.js';
 
@@ -171,23 +171,41 @@ function quizView(s) {
 
 const kPrice = v => `${Math.round(v / 1000)}k`;
 
-// Thẻ combo đang chọn: giá combo vs mua lẻ, lịch xen kẽ trong tuần, lý do
-function comboDetail(c, chosen) {
+// Thẻ combo đang chọn: gói lớp thật của từng môn (mua riêng từng gói), lịch xen kẽ trong tuần, lý do
+// membership: gói Membership gợi ý khi hội viên chưa có (điều kiện để mua gói lớp)
+function comboDetail(c, { hasMembership, membership }) {
   return html`
     <div class="rounded-3xl bg-brand-dark text-white p-6 sm:p-7 relative overflow-hidden" data-testid="combo-detail" data-combo-id="${c.id}">
       <div class="absolute -right-10 -bottom-12 w-44 h-44 rounded-full bg-brand/30"></div>
       <div class="relative">
-        <div class="flex flex-wrap items-center gap-2">
-          ${c.best ? html`<span class="px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase flex items-center gap-1">${icon('sparkles', 'w-3.5 h-3.5')} Phù hợp nhất</span>` : ''}
-          <span class="px-2.5 py-1 rounded-full bg-amber-400 text-brand-dark text-[11px] font-extrabold uppercase">Tiết kiệm ${c.savingPct}%</span>
-        </div>
+        ${c.best ? html`<span class="inline-flex px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase items-center gap-1">${icon('sparkles', 'w-3.5 h-3.5')} Phù hợp nhất</span>` : ''}
         <div class="font-display text-3xl sm:text-4xl font-extrabold leading-tight mt-3" data-testid="combo-name">${c.name}</div>
         <div class="flex items-end gap-3 mt-3">
           <span class="font-display text-5xl font-extrabold text-brand-lime" data-testid="combo-price">${kPrice(c.price)}</span>
-          <span class="mb-1.5 text-white/60 text-sm">/ tháng</span>
-          <span class="mb-1.5 text-white/50 text-sm line-through">${kPrice(c.retail)}</span>
+          <span class="mb-1.5 text-white/60 text-sm">tổng ${c.items.length} gói lớp</span>
         </div>
-        <div class="text-sm text-white/75 mt-1">Mua lẻ từng môn ${money(c.retail)} — bạn tiết kiệm <b class="text-brand-lime">${money(c.saving)}</b> mỗi tháng · ${c.sessionsPerWeek} buổi/tuần</div>
+        <div class="text-sm text-white/75 mt-1">Mỗi môn là 1 gói lớp riêng, mua từng gói bên dưới · ${c.sessionsPerWeek} buổi/tuần</div>
+
+        <div class="mt-5 space-y-2" data-testid="combo-items">
+          ${!hasMembership ? html`
+            <div class="rounded-xl bg-amber-400/15 border border-amber-300/40 p-3 text-sm flex flex-wrap items-center gap-3" data-testid="combo-need-membership">
+              ${icon('alert-circle', 'w-4 h-4 shrink-0 text-amber-300')}
+              <span class="flex-1">Cần có <b>Membership</b> trước khi mua gói lớp.</span>
+              ${membership
+                ? html`<a href="#/member/checkout/${membership.packageId}" class="btn-lime btn-sm" data-testid="combo-buy-membership">${icon('shopping-cart', 'w-4 h-4')} Mua ${membership.packageName} · ${money(membership.price)}</a>`
+                : html`<a href="#/member/packages" class="btn-lime btn-sm">Xem gói Membership</a>`}
+            </div>` : ''}
+          ${c.items.map(({ subject, pkg }) => html`
+            <div class="rounded-xl bg-white/10 p-3 flex flex-wrap items-center gap-3" data-testid="combo-item" data-package-id="${pkg.packageId}">
+              <span class="flex-1 min-w-0">
+                <span class="block font-bold">${subject.subjectName}</span>
+                <span class="block text-xs text-white/60">${pkg.packageName} · ${pkg.durationDays} ngày · ${money(pkg.price)}</span>
+              </span>
+              ${hasMembership
+                ? html`<a href="#/member/checkout/${pkg.packageId}" class="btn-lime btn-sm" data-testid="combo-buy">${icon('shopping-cart', 'w-4 h-4')} Mua gói này</a>`
+                : html`<span class="text-xs text-white/50">Mua sau khi có Membership</span>`}
+            </div>`)}
+        </div>
 
         <div class="mt-6 text-xs font-bold uppercase tracking-widest text-white/50">Lịch tập xen kẽ gợi ý</div>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2" data-testid="combo-plan">
@@ -202,13 +220,6 @@ function comboDetail(c, chosen) {
         <ul class="mt-5 space-y-1.5 text-sm text-white/85">
           ${c.reasons.map(t => html`<li class="flex gap-2">${icon('check', 'w-4 h-4 shrink-0 mt-0.5 text-brand-lime')}<span>${t}</span></li>`)}
         </ul>
-
-        <div class="flex flex-wrap items-center gap-3 mt-6">
-          ${chosen
-            ? html`<span class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 text-sm font-bold" data-testid="combo-chosen">${icon('check-circle-2', 'w-4 h-4 text-brand-lime')} Đã chọn combo này</span>`
-            : html`<button type="button" class="btn-lime" data-action="choose-combo" data-testid="combo-choose">${icon('heart-handshake', 'w-4 h-4')} Chọn combo này</button>`}
-          <span class="text-xs text-white/50">Combo đang mở đăng ký trước — thanh toán combo sẽ có khi hệ thống hỗ trợ.</span>
-        </div>
       </div>
     </div>`;
 }
@@ -224,23 +235,24 @@ function comboOption(c, i, active) {
         </div>
         <div class="text-right shrink-0">
           <div class="font-extrabold text-brand-dark">${kPrice(c.price)}</div>
-          <div class="text-[11px] text-slate-400 line-through">${kPrice(c.retail)}</div>
+          <div class="text-[11px] text-slate-400">${c.items.length} gói lớp</div>
         </div>
       </div>
-      <div class="mt-2 text-xs font-bold text-emerald-700">Tiết kiệm ${money(c.saving)} (${c.savingPct}%)${c.best ? ' · Phù hợp nhất' : ''}</div>
+      ${c.best ? html`<div class="mt-2 text-xs font-bold text-emerald-700">Phù hợp nhất</div>` : ''}
     </button>`;
 }
 
-const subjectCategoryLabel = s => COMBO_PRICING.category[subjectCategory(s)].label;
+const subjectCategoryLabel = s => SUBJECT_CATEGORIES[subjectCategory(s)].label;
 
 function resultView(s) {
   const a = s.answers;
   const bmi = bmiInfo(a.height, a.weight);
   const goal = find(GOALS, a.goal);
-  const rec = recommendPackage(a, s.packages);
+  // phần "mua ngay" chỉ gợi ý Membership; gói lớp đã nằm trong combo theo từng môn
+  const rec = recommendPackage(a, (s.packages || []).filter(p => p.packageType !== 'CLASS'));
   const subjects = matchSubjects(a, s.subjects);
   const classes = recommendClasses(a, s.classes, s.subjects);
-  const combos = buildCombos(a, s.subjects, s.classes);
+  const combos = buildCombos(a, s.subjects, s.classes, s.packages);
   const combo = combos[s.comboIdx] || combos[0];
   const slotText = (a.slots || []).map(id => find(SLOTS, id)?.label).filter(Boolean).join(', ');
   return html`
@@ -264,9 +276,9 @@ function resultView(s) {
       ${combos.length ? html`
         <section class="mt-6" data-testid="quiz-combos">
           <h2 class="font-display text-2xl font-extrabold text-brand-dark">Combo bộ môn dành riêng cho bạn</h2>
-          <p class="text-sm text-slate-500 mb-3">Ghép các môn bổ trợ nhau, tập xen kẽ trong tuần — rẻ hơn mua lẻ từng môn.</p>
+          <p class="text-sm text-slate-500 mb-3">Ghép các môn bổ trợ nhau để tập xen kẽ trong tuần. Mỗi môn mua 1 gói lớp riêng, giá theo bảng giá hiện tại.</p>
           <div class="grid lg:grid-cols-5 gap-6">
-            <div class="lg:col-span-3">${comboDetail(combo, s.chosenCombo?.id === combo.id)}</div>
+            <div class="lg:col-span-3">${comboDetail(combo, { hasMembership: s.hasPackage, membership: rec?.best })}</div>
             <div class="lg:col-span-2 space-y-3">
               ${combos.map((c, i) => comboOption(c, i, i === s.comboIdx))}
             </div>
@@ -275,8 +287,8 @@ function resultView(s) {
 
       <div class="grid lg:grid-cols-5 gap-6 mt-8">
         <section class="lg:col-span-3">
-          <h2 class="font-display text-2xl font-extrabold text-brand-dark mb-1">Hoặc mua ngay gói đang mở bán</h2>
-          <p class="text-sm text-slate-500 mb-3">Gói hiện có cho phép tập mọi bộ môn trong thời hạn gói.</p>
+          <h2 class="font-display text-2xl font-extrabold text-brand-dark mb-1">Gói Membership gợi ý</h2>
+          <p class="text-sm text-slate-500 mb-3">Membership cho vào trung tâm, dùng khu tập tự do và là điều kiện để mua gói lớp.</p>
           ${rec ? html`
             <div class="card p-6 border-2 border-brand-dark" data-testid="quiz-best-package" data-package-id="${rec.best.packageId}">
               <div class="flex items-start justify-between gap-3">
@@ -352,7 +364,7 @@ export default function MemberOnboarding(el, { query } = {}) {
   const saved = quizStore.answers(email);
   return mountPage(el, {
     // ?redo=1 để làm lại; BE báo đã làm thì mở thẳng phần kết quả
-    state: { step: 1, answers: { slots: [], ...(saved || {}), extra: { ...(saved?.extra || {}) } }, errors: {}, done: undefined, comboIdx: 0, chosenCombo: quizStore.combo(email) },
+    state: { step: 1, answers: { slots: [], ...(saved || {}), extra: { ...(saved?.extra || {}) } }, errors: {}, done: undefined, comboIdx: 0 },
     load: async ctx => {
       const today = new Date();
       const res = await settle({
@@ -424,14 +436,6 @@ export default function MemberOnboarding(el, { query } = {}) {
       },
       redo: (t, e, ctx) => ctx.set({ done: false, step: 1, errors: {} }),
       combo: (t, e, ctx) => ctx.set({ comboIdx: Number(t.dataset.index) }),
-      'choose-combo': (t, e, ctx) => {
-        const s = ctx.state;
-        const combo = buildCombos(s.answers, s.subjects, s.classes)[s.comboIdx];
-        if (!combo) return;
-        quizStore.chooseCombo(email, combo);
-        toast(`Đã chọn combo ${combo.name} · ${money(combo.price)}/tháng. Lễ tân sẽ hỗ trợ bạn khi combo mở thanh toán.`);
-        ctx.set({ chosenCombo: quizStore.combo(email) });
-      },
       // đã làm rồi (đang làm lại) thì quay về kết quả; chưa làm thì để sau, lần đăng nhập tới không tự mở nữa
       skip: (t, e, ctx) => {
         if (ctx.state.completed) { ctx.set({ done: true, errors: {} }); return; }

@@ -128,15 +128,6 @@ function quizBanner(current) {
       </a>`;
   }
   if (current) return '';
-  const combo = quizStore.combo(session.get()?.email);
-  if (combo) {
-    return html`
-      <a href="#/member/onboarding" class="mb-5 flex items-center gap-3 rounded-2xl bg-brand-dark p-4 text-white hover:bg-brand-deep" data-testid="quiz-banner">
-        <span class="w-10 h-10 rounded-xl bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('heart-handshake', 'w-5 h-5')}</span>
-        <span class="flex-1 text-sm"><b>Combo bạn đã chọn: ${combo.name}</b> · ${Math.round(combo.price / 1000)}k/tháng<br /><span class="text-white/70">Xem lịch tập xen kẽ gợi ý và các lựa chọn khác.</span></span>
-        ${icon('chevron-right', 'w-5 h-5')}
-      </a>`;
-  }
   return html`
     <a href="#/member/onboarding" class="mb-5 flex items-center gap-3 rounded-2xl bg-brand-dark p-4 text-white hover:bg-brand-deep" data-testid="quiz-banner">
       <span class="w-10 h-10 rounded-xl bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('sparkles', 'w-5 h-5')}</span>

@@ -23,10 +23,7 @@ export const quizStore = {
   skip: email => { write(KEY(email), { ...(read(KEY(email)) || {}), skippedAt: new Date().toISOString() }); write(PENDING(email), null); },
   // đánh dấu ngay khi đăng ký xong để lần đăng nhập đầu luôn mở quiz
   markPending: email => write(PENDING(email), true),
-  answers: email => read(KEY(email))?.answers || null,
-  // combo hội viên đã chọn (chờ BE có API đăng ký combo)
-  chooseCombo: (email, combo) => write(KEY(email), { ...(read(KEY(email)) || {}), combo: { id: combo.id, name: combo.name, price: combo.price, chosenAt: new Date().toISOString() } }),
-  combo: email => read(KEY(email))?.combo || null
+  answers: email => read(KEY(email))?.answers || null
 };
 
 // Mở quiz sau đăng nhập khi BE báo chưa làm, trừ khi hội viên đã bấm "Bỏ qua" (vừa đăng ký thì luôn mở).
@@ -241,17 +238,13 @@ export function bmiAdvice(bmi, goal) {
 }
 
 // ===== Combo bộ môn cá nhân hóa =====
-// BE chưa có gói combo: bảng giá dưới đây là giá tạm ở FE (giá/tháng của 1 môn ở mức 3–4 buổi/tuần).
-// Khi BE có API combo, thay COMBO_PRICING/buildCombos bằng dữ liệu từ BE.
-export const COMBO_PRICING = {
-  category: {
-    strength: { label: 'Sức mạnh', price: 300000, keywords: ['gym', 'thể hình', 'crossfit', 'tạ'] },
-    cardio: { label: 'Đốt mỡ', price: 320000, keywords: ['boxing', 'zumba', 'aerobic', 'hiit', 'bơi', 'cardio', 'kickfit'] },
-    mind: { label: 'Dẻo dai', price: 290000, keywords: ['yoga', 'pilates', 'thiền', 'stretch'] },
-    other: { label: 'Kỹ năng', price: 300000, keywords: [] }
-  },
-  frequencyFactor: { low: 0.8, mid: 1, high: 1.2 },
-  discount: { 2: 0.83, 3: 0.75 } // giảm khi ghép 2 / 3 môn
+// BE không có gói combo: combo chỉ là gợi ý ghép môn, mỗi môn mua 1 gói lớp thật (giá lấy từ BE).
+// Nhóm môn chỉ dùng để chọn môn hợp mục tiêu và ghi nhãn.
+export const SUBJECT_CATEGORIES = {
+  strength: { label: 'Sức mạnh', keywords: ['gym', 'thể hình', 'crossfit', 'tạ'] },
+  cardio: { label: 'Đốt mỡ', keywords: ['boxing', 'zumba', 'aerobic', 'hiit', 'bơi', 'cardio', 'kickfit'] },
+  mind: { label: 'Dẻo dai', keywords: ['yoga', 'pilates', 'thiền', 'stretch'] },
+  other: { label: 'Kỹ năng', keywords: [] }
 };
 
 // trọng số mỗi nhóm môn theo mục tiêu
@@ -274,17 +267,15 @@ const DAY_INDEX = { 'Chủ nhật': 0, 'Thứ 2': 1, 'Thứ 3': 2, 'Thứ 4': 3,
 
 export function subjectCategory(subject) {
   const name = (subject?.subjectName || '').toLowerCase();
-  const hit = Object.entries(COMBO_PRICING.category).find(([, c]) => c.keywords.some(k => name.includes(k)));
+  const hit = Object.entries(SUBJECT_CATEGORIES).find(([, c]) => c.keywords.some(k => name.includes(k)));
   return hit ? hit[0] : 'other';
 }
 
-const roundPrice = v => Math.round(v / 10000) * 10000;
-
-function priceCombo(subjects, frequency) {
-  const factor = COMBO_PRICING.frequencyFactor[frequency] ?? 1;
-  const retail = roundPrice(subjects.reduce((sum, s) => sum + COMBO_PRICING.category[subjectCategory(s)].price, 0) * factor);
-  const price = roundPrice(retail * (COMBO_PRICING.discount[subjects.length] ?? 1));
-  return { retail, price, saving: retail - price, savingPct: Math.round(((retail - price) / retail) * 100) };
+// Gói lớp đang bán của 1 môn: ưu tiên thời hạn gần 30 ngày nhất, cùng thời hạn thì rẻ hơn
+export function classPackageFor(subject, packages) {
+  const list = (packages || []).filter(p => p.packageType === 'CLASS' && p.status === 'ACTIVE'
+    && (p.subject?.subjectId ?? p.subjectId) === subject.subjectId);
+  return list.sort((a, b) => Math.abs(a.durationDays - 30) - Math.abs(b.durationDays - 30) || a.price - b.price)[0] || null;
 }
 
 // Lịch tuần xen kẽ các môn; gắn lớp thật (nếu có) cùng môn, cùng thứ, trong khung giờ đã chọn
@@ -300,9 +291,10 @@ function weeklyPlan(subjects, answers, classes) {
   });
 }
 
-// Trả về tối đa 3 combo, combo đầu là phù hợp nhất
-export function buildCombos(answers, subjects, classes) {
-  const list = (subjects || []).filter(s => s.status !== 'INACTIVE');
+// Trả về tối đa 3 combo, combo đầu là phù hợp nhất. Chỉ ghép môn đang có gói lớp bán.
+export function buildCombos(answers, subjects, classes, packages) {
+  const pkgOf = new Map((subjects || []).map(s => [s.subjectId, classPackageFor(s, packages)]));
+  const list = (subjects || []).filter(s => s.status !== 'INACTIVE' && pkgOf.get(s.subjectId));
   if (!answers || list.length < 2) return [];
   const weight = { ...(GOAL_WEIGHT[answers.goal] || GOAL_WEIGHT.health) };
   const bmi = bmiInfo(answers.height, answers.weight);
@@ -324,7 +316,7 @@ export function buildCombos(answers, subjects, classes) {
   }).sort((a, b) => b.score - a.score);
   return scored.slice(0, 3).map(({ g }, idx) => {
     const ordered = [...g].sort((a, b) => w(b) - w(a));
-    const price = priceCombo(ordered, answers.frequency);
+    const items = ordered.map(s => ({ subject: s, pkg: pkgOf.get(s.subjectId) }));
     const plan = weeklyPlan(ordered, answers, classes);
     const reasons = ordered.map(s => `${s.subjectName}: ${ROLE_TEXT[subjectCategory(s)]}.`);
     reasons.push(`Tập xen kẽ ${plan.length} buổi/tuần để cơ thể kịp phục hồi giữa các buổi.`);
@@ -332,11 +324,12 @@ export function buildCombos(answers, subjects, classes) {
       id: ordered.map(s => s.subjectId).join('-'),
       name: ordered.map(s => s.subjectName).join(' + '),
       subjects: ordered,
+      items, // [{ subject, pkg }] gói lớp thật của từng môn
+      price: items.reduce((sum, x) => sum + x.pkg.price, 0), // tổng nếu mua đủ các gói lớp
       sessionsPerWeek: plan.length,
       plan,
       reasons,
-      best: idx === 0,
-      ...price
+      best: idx === 0
     };
   });
 }
