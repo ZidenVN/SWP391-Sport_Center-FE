@@ -33,7 +33,6 @@ function view(s) {
         <div class="font-display text-3xl leading-none font-extrabold text-brand-dark mt-3">${m.firstName} ${m.lastName}</div>
         <div class="text-sm text-slate-500 mt-1">${m.email}</div>
         <div class="mt-4 text-sm text-left space-y-2 border-t border-brand-line/60 pt-4">
-          <div class="flex justify-between"><span class="text-slate-500">Mã hội viên</span><b>#${m.memberId}</b></div>
           <div class="flex justify-between"><span class="text-slate-500">Giới tính</span><b>${genderLabel(m.gender)}</b></div>
           <div class="flex justify-between"><span class="text-slate-500">Điện thoại</span><b>${phoneText(m.phone)}</b></div>
         </div>

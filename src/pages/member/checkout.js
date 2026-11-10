@@ -189,7 +189,6 @@ function view(s) {
           </div>
           <dl class="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm" data-testid="buyer-info">
             <div><dt class="text-slate-500 text-xs">Họ và tên</dt><dd class="font-semibold mt-0.5">${me.firstName} ${me.lastName}</dd></div>
-            <div><dt class="text-slate-500 text-xs">Mã hội viên</dt><dd class="font-semibold mt-0.5">#${me.memberId}</dd></div>
             <div><dt class="text-slate-500 text-xs">Email</dt><dd class="font-semibold mt-0.5 break-all">${me.email}</dd></div>
             <div><dt class="text-slate-500 text-xs">Số điện thoại</dt><dd class="font-semibold mt-0.5">${phoneText(me.phone)} <span class="text-slate-400 font-normal">· ${genderLabel(me.gender)}</span></dd></div>
           </dl>
