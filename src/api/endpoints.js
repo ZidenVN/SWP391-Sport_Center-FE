@@ -123,6 +123,8 @@ export const memberApi = {
   purchasePreview: packageId => http.get('/members/me/subscriptions/preview', { packageId }),
   payments: () => http.get('/members/me/payments'),
   invoice: paymentId => http.get(`/members/me/payments/${paymentId}/invoice`),
+  // tự hủy giao dịch đang chờ (VNPay bỏ dở hoặc chờ thu tại quầy) để mua lại
+  cancelPayment: paymentId => http.patch(`/members/me/payments/${paymentId}/cancel`),
   // mỗi lần đăng ký dùng 1 gói lớp đang chờ (cùng môn, cùng thời hạn với lớp)
   register: (classId, subscriptionId) => http.post('/members/me/class-registrations', { classId, subscriptionId }),
   cancel: registrationId => http.patch(`/members/me/class-registrations/${registrationId}/cancel`),

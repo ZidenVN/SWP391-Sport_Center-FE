@@ -19,7 +19,7 @@ function view(s) {
           money(p.amount),
           paymentMethodLabel(p.paymentMethod),
           dateTime(p.paymentDate),
-          badge(p.status),
+          p.expired ? badge('CANCELLED', 'Hết hạn') : badge(p.status),
           p.status === 'COMPLETED'
             ? html`<button type="button" class="btn-ghost btn-sm" data-action="invoice" data-id="${p.paymentId}">${icon('file-text', 'w-3.5 h-3.5')} Hóa đơn</button>`
             : ''

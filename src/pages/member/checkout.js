@@ -1,8 +1,8 @@
 import { html, raw, icon, refreshIcons } from '../../core/dom.js';
-import { toast, toastError } from '../../core/ui.js';
+import { toast, toastError, confirmDialog } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { packageApi, memberApi, vnpayApi } from '../../api/endpoints.js';
-import { money, date, genderLabel, phoneText } from '../../core/format.js';
+import { money, date, dateTime, genderLabel, phoneText } from '../../core/format.js';
 import { checkoutSteps, vnpayMark, packageScope, packageKind, warningTitle } from '../../components/billing.js';
 
 // Thanh toán theo BE main:
@@ -85,6 +85,28 @@ function warningsBox(pv) {
     </section>`;
 }
 
+// Giao dịch đang chờ chặn mua mới (BE trả 409) -> cho hội viên thấy trước và tự hủy
+function pendingBox(p) {
+  if (!p) return '';
+  const vnpay = p.paymentMethod === 'VNPAY';
+  return html`
+    <section class="rounded-3xl border border-amber-300 bg-amber-50 p-5" role="alert" data-testid="pending-payment">
+      <div class="flex items-center gap-2 font-bold text-amber-900">${icon('clock', 'w-5 h-5')} Bạn có một giao dịch chưa hoàn tất</div>
+      <p class="text-sm text-amber-900 mt-2">
+        Giao dịch <b>#${p.paymentId}</b> · ${p.packageName} · ${money(p.amount)} · tạo lúc ${dateTime(p.paymentDate)}
+        ${vnpay ? 'chưa được thanh toán trên VNPay.' : 'đang chờ thanh toán tại quầy lễ tân.'}
+      </p>
+      <p class="text-xs text-amber-800 mt-1">
+        ${vnpay ? 'Nếu bạn đã quét QR và trả tiền, đừng hủy — hệ thống sẽ cập nhật sau vài phút.'
+          : 'Hủy nếu bạn muốn thanh toán online thay vì tại quầy.'}
+      </p>
+      <button type="button" class="btn btn-sm mt-3 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100"
+        data-action="cancel-pending" data-id="${p.paymentId}" data-testid="cancel-pending">
+        ${icon('x', 'w-4 h-4')} Hủy giao dịch này
+      </button>
+    </section>`;
+}
+
 function summary(s) {
   const p = s.pkg;
   // BE không còn trả ngày dự kiến: gói thanh toán xong ở trạng thái chờ kích hoạt, activationNote nói khi nào bắt đầu tính hạn
@@ -123,7 +145,7 @@ function summary(s) {
             <input type="checkbox" name="agree" data-action="agree" class="mt-0.5 rounded" ${s.agree ? 'checked' : ''} />
             <span>Tôi đồng ý với điều khoản sử dụng dịch vụ và chính sách hoàn tiền của trung tâm.</span>
           </label>
-          <button type="button" data-action="pay" data-testid="pay-button" ${s.agree && !s.busy ? '' : raw('disabled')}
+          <button type="button" data-action="pay" data-testid="pay-button" ${s.agree && !s.busy && !s.pending ? '' : raw('disabled')}
             class="btn w-full mt-5 !py-3.5 !text-base bg-brand-dark text-white hover:bg-emerald-800 shadow-lg shadow-emerald-600/20">
             ${s.busy ? html`<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Đang chuyển sang VNPay...`
               : html`${icon('lock', 'w-4 h-4')} Thanh toán ${money(p.price)} qua VNPay`}
@@ -140,6 +162,7 @@ function view(s) {
     ${checkoutSteps(1)}
     <div class="grid lg:grid-cols-5 gap-6 items-start">
       <div class="lg:col-span-3 space-y-6">
+        ${pendingBox(s.pending)}
         ${warningsBox(s.preview)}
         <section class="rounded-3xl bg-white border border-slate-200 shadow-sm p-6" data-testid="pay-methods">
           <div class="flex items-center justify-between mb-4">
@@ -184,11 +207,14 @@ export default function Checkout(el, { params, navigate }) {
       const res = await vnpayApi.createUrl(pkg.packageId);
       window.location.assign(res.paymentUrl);
     } catch (err) {
-      const payError = err.code === 'ERR_PAYMENT_409'
-        ? 'Bạn đang có một giao dịch VNPay chưa hoàn tất. Hãy hoàn tất giao dịch đó hoặc thử lại sau 15 phút.'
-        : err.message;
-      ctx.set({ busy: false, payError });
-      if (err.code !== 'ERR_PAYMENT_409') toastError(err);
+      if (err.code === 'ERR_PAYMENT_409') {
+        // vừa có giao dịch chờ (vd. tạo ở tab khác): tải lại để banner hiện ra kèm nút hủy
+        ctx.set({ busy: false, payError: null });
+        ctx.reload();
+        return;
+      }
+      ctx.set({ busy: false, payError: err.message });
+      toastError(err);
     }
   }
 
@@ -198,10 +224,13 @@ export default function Checkout(el, { params, navigate }) {
       const res = await settle({
         pkg: [() => packageApi.get(params.id), null],
         me: [memberApi.me, null],
-        preview: [() => memberApi.purchasePreview(params.id), null]
+        preview: [() => memberApi.purchasePreview(params.id), null],
+        payments: [memberApi.payments, []]
       });
       if (res.pkgError) throw res.pkgError;
       if (res.pkg.status !== 'ACTIVE') throw new Error('Gói tập này hiện không còn mở bán.');
+      // VNPay quá hạn link thì BE tự hủy khi mua mới, nên không cần chặn
+      res.pending = res.payments.find(p => p.status === 'PENDING' && !p.expired) || null;
       return res;
     },
     view,
@@ -209,6 +238,21 @@ export default function Checkout(el, { params, navigate }) {
       agree: (t, e, ctx) => ctx.set({ agree: t.checked, payError: null }),
       pay: (t, e, ctx) => {
         if (ctx.state.agree && !ctx.state.busy) createPayment(ctx);
+      },
+      'cancel-pending': async (btn, e, ctx) => {
+        const ok = await confirmDialog(
+          `Hủy giao dịch #${btn.dataset.id}? Sau khi hủy bạn có thể thanh toán lại.`,
+          { title: 'Hủy giao dịch', confirmText: 'Hủy giao dịch', danger: true });
+        if (!ok) return;
+        btn.disabled = true;
+        try {
+          await memberApi.cancelPayment(btn.dataset.id);
+          toast('Đã hủy giao dịch. Bạn có thể thanh toán lại.');
+          ctx.reload();
+        } catch (err) {
+          btn.disabled = false;
+          toastError(err);
+        }
       },
       copy: async btn => {
         try {
