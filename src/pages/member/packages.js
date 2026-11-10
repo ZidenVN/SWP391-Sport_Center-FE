@@ -5,6 +5,7 @@ import { packageApi, memberApi } from '../../api/endpoints.js';
 import { money, date, daysUntil, toDate } from '../../core/format.js';
 import { expiryBanner } from '../../components/memberAlerts.js';
 import { latestActive, bestValueId, vnpayMark, packageKind, subjectNameOf } from '../../components/billing.js';
+import { defaultClassImage } from '../../components/classCard.js';
 import { session } from '../../core/session.js';
 import { quizStore, recommendPackage } from '../../core/quiz.js';
 
@@ -141,8 +142,12 @@ function classSection(list, hasMembership, suggestedId) {
     <div class="space-y-10">
       ${[...bySubject.entries()].map(([name, items]) => html`
         <section data-testid="class-subject-group">
-          <h3 class="font-display text-2xl font-extrabold text-brand-dark mb-1 flex items-center gap-2">${icon('dumbbell', 'w-5 h-5 text-brand')} ${name}
-            <span class="text-sm font-sans font-semibold text-slate-400">${items.length} gói</span></h3>
+          <div class="relative h-28 sm:h-32 rounded-3xl overflow-hidden mb-4" data-testid="class-subject-banner">
+            <img src="${defaultClassImage(name)}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover" />
+            <span class="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/50 to-transparent"></span>
+            <h3 class="absolute left-6 bottom-5 font-display text-3xl font-extrabold text-white leading-none flex items-baseline gap-3">${name}
+              <span class="text-sm font-sans font-semibold text-white/75">${items.length} gói</span></h3>
+          </div>
           ${grid(items, { best: bestValueId(items), isRenewal: false, suggestedId })}
         </section>`)}
     </div>`;

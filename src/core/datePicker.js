@@ -2,7 +2,9 @@
 // Lịch gốc của trình duyệt không chỉnh giao diện được nên vẽ lại theo tông web (cùng kiểu ô chọn ở selectBox.js).
 // <input type="date"> gốc vẫn nằm trong ô (ẩn) và giữ giá trị yyyy-MM-dd -> readForm, validate, min/max,
 // sự kiện input/change của các trang giữ nguyên. Hai ô Từ/Đến cùng form thì tô khoảng ngày ở giữa.
+// <input type="month"> dùng chung lịch này nhưng chỉ có bảng tháng / năm, giá trị dạng yyyy-MM.
 const SKIP = '.auth-glass, [data-native-date]';
+const SELECTOR = 'input[type=date], input[type=month]';
 const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const MONTHS = Array.from({ length: 12 }, (_, i) => `Tháng ${i + 1}`);
 // cặp tên ô Từ -> Đến đang dùng trong app
@@ -11,10 +13,14 @@ let panel = null; // lịch đang mở { el, input, trigger, view, cursor }
 
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const isoMonth = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+// yyyy-MM-dd hoặc yyyy-MM (ô tháng, lấy ngày 1)
 const parse = v => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || '');
-  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(v || '');
+  return m ? new Date(+m[1], +m[2] - 1, m[3] ? +m[3] : 1) : null;
 };
+const isMonth = input => input.type === 'month';
+const startOfMonth = d => new Date(d.getFullYear(), d.getMonth(), 1);
 const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 // sang tháng khác nhưng giữ ngày trong giới hạn tháng đó (31/01 + 1 tháng = 28/02)
@@ -23,6 +29,7 @@ const addMonths = (d, n) => {
   return new Date(t.getFullYear(), t.getMonth(), Math.min(d.getDate(), new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate()));
 };
 const label = d => (d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : 'dd/mm/yyyy');
+const monthLabel = d => (d ? `Tháng ${pad(d.getMonth() + 1)}/${d.getFullYear()}` : 'mm/yyyy');
 
 function bounds(input) {
   return { min: parse(input.min), max: parse(input.max) };
@@ -43,7 +50,7 @@ function syncLabel(input) {
   const trigger = input.closest('.sc-dp');
   if (!trigger) return;
   const d = parse(input.value);
-  trigger.querySelector('.sc-dp-label').textContent = label(d);
+  trigger.querySelector('.sc-dp-label').textContent = isMonth(input) ? monthLabel(d) : label(d);
   trigger.classList.toggle('is-empty', !d);
   trigger.classList.toggle('is-disabled', input.disabled);
   trigger.tabIndex = input.disabled ? -1 : 0;
@@ -59,7 +66,7 @@ function enhance(input) {
   trigger.setAttribute('role', 'button');
   trigger.setAttribute('aria-haspopup', 'dialog');
   trigger.setAttribute('aria-expanded', 'false');
-  trigger.setAttribute('aria-label', input.getAttribute('aria-label') || 'Chọn ngày');
+  trigger.setAttribute('aria-label', input.getAttribute('aria-label') || (isMonth(input) ? 'Chọn tháng' : 'Chọn ngày'));
   trigger.dataset.fieldWrap = '';
   trigger.innerHTML = '<span class="sc-dp-label"></span><span class="sc-dp-ic" aria-hidden="true"></span>';
   input.replaceWith(trigger);
@@ -140,11 +147,15 @@ function monthGrid() {
   const { input, cursor } = panel;
   const value = parse(input.value);
   const now = new Date();
+  const lim = isMonth(input) ? bounds(input) : {}; // ô ngày: chọn tháng chỉ để chuyển trang, không chặn
   return `<div class="sc-dp-grid">${MONTHS.map((m, i) => {
     const cls = ['sc-dp-cell'];
     if (value && value.getFullYear() === cursor.getFullYear() && value.getMonth() === i) cls.push('is-selected');
     if (now.getFullYear() === cursor.getFullYear() && now.getMonth() === i) cls.push('is-today');
-    return `<button type="button" class="${cls.join(' ')}" data-month="${i}">${m}</button>`;
+    if (isMonth(input) && cursor.getMonth() === i) cls.push('is-cursor');
+    const off = outOfRange(new Date(cursor.getFullYear(), i, 1), lim);
+    if (off) cls.push('is-disabled');
+    return `<button type="button" class="${cls.join(' ')}" data-month="${i}" ${off ? 'disabled' : ''}>${m}</button>`;
   }).join('')}</div>`;
 }
 
@@ -167,7 +178,7 @@ function draw() {
   const from = y - (y % 12);
   const title = view === 'days' ? `${MONTHS[cursor.getMonth()]}, ${y}` : view === 'months' ? `Năm ${y}` : `${from} – ${from + 11}`;
   const lim = bounds(input);
-  const todayOff = outOfRange(parse(iso(new Date())), lim);
+  const todayOff = outOfRange(isMonth(input) ? startOfMonth(new Date()) : parse(iso(new Date())), lim);
   el.innerHTML = `
     <div class="sc-dp-head">
       <button type="button" class="sc-dp-nav" data-nav="-1" aria-label="Trước"><span class="sc-dp-arrow is-left"></span></button>
@@ -177,7 +188,7 @@ function draw() {
     <div class="sc-dp-body is-${view}">${view === 'days' ? dayGrid() : view === 'months' ? monthGrid() : yearGrid()}</div>
     <div class="sc-dp-foot">
       ${input.required ? '<span></span>' : '<button type="button" class="sc-dp-link is-muted" data-clear>Xóa</button>'}
-      <button type="button" class="sc-dp-link" data-today ${todayOff ? 'disabled' : ''}>Hôm nay</button>
+      <button type="button" class="sc-dp-link" data-today ${todayOff ? 'disabled' : ''}>${isMonth(input) ? 'Tháng này' : 'Hôm nay'}</button>
     </div>`;
 }
 
@@ -195,13 +206,13 @@ function choose(value) {
 }
 
 function open(trigger) {
-  const input = trigger.querySelector('input[type=date]');
+  const input = trigger.querySelector(SELECTOR);
   if (!input || input.disabled) return;
   close();
   const el = document.createElement('div');
   el.className = 'sc-dp-panel';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Chọn ngày');
+  el.setAttribute('aria-label', isMonth(input) ? 'Chọn tháng' : 'Chọn ngày');
   // popup đang mở thì gắn trong popup để không bị lớp phủ chặn
   (trigger.closest('#modal-root') || document.body).appendChild(el);
   const value = parse(input.value);
@@ -209,7 +220,7 @@ function open(trigger) {
   let cursor = value || new Date();
   if (min && cursor < min) cursor = min;
   if (max && cursor > max) cursor = max;
-  panel = { el, input, trigger, view: 'days', cursor };
+  panel = { el, input, trigger, view: homeView(input), cursor };
   trigger.setAttribute('aria-expanded', 'true');
   trigger.classList.add('is-open');
   draw();
@@ -218,21 +229,26 @@ function open(trigger) {
   el.addEventListener('click', onPanelClick);
 }
 
+// ô tháng không có bảng ngày: mở và quay về bảng tháng
+const homeView = input => (isMonth(input) ? 'months' : 'days');
+const valueOf = (input, d) => (isMonth(input) ? isoMonth(d) : iso(d));
+
 function onPanelClick(e) {
   if (!panel) return;
   const b = e.target.closest('button');
   if (!b || b.disabled) return;
   const p = panel;
   if (b.dataset.date) return choose(b.dataset.date);
-  if (b.hasAttribute('data-today')) return choose(iso(new Date()));
+  if (b.hasAttribute('data-today')) return choose(valueOf(p.input, new Date()));
   if (b.hasAttribute('data-clear')) return choose('');
   if (b.dataset.nav) {
     const n = Number(b.dataset.nav);
     p.cursor = p.view === 'days' ? addMonths(p.cursor, n) : addMonths(p.cursor, n * (p.view === 'months' ? 12 : 144));
   } else if (b.hasAttribute('data-zoom')) {
-    p.view = p.view === 'days' ? 'months' : p.view === 'months' ? 'years' : 'days';
+    p.view = p.view === 'days' ? 'months' : p.view === 'months' ? 'years' : homeView(p.input);
   } else if (b.dataset.month) {
     p.cursor = new Date(p.cursor.getFullYear(), Number(b.dataset.month), Math.min(p.cursor.getDate(), 28));
+    if (isMonth(p.input)) return choose(isoMonth(p.cursor));
     p.view = 'days';
   } else if (b.dataset.year) {
     p.cursor = new Date(Number(b.dataset.year), p.cursor.getMonth(), Math.min(p.cursor.getDate(), 28));
@@ -245,17 +261,17 @@ function onPanelClick(e) {
 // phím trên ô đang mở: mũi tên đi ngày / tuần, PageUp/PageDown đổi tháng, Enter chọn, Esc đóng
 function moveCursor(next) {
   const lim = bounds(panel.input);
-  if (outOfRange(next, lim)) return;
+  if (outOfRange(isMonth(panel.input) ? startOfMonth(next) : next, lim)) return;
   panel.cursor = next;
-  panel.view = 'days';
+  panel.view = homeView(panel.input);
   panel.el.classList.add('is-kbd'); // chỉ hiện ô con trỏ khi đang đi bằng phím
   draw();
 }
 
 export function initDatePickers() {
   const scan = root => {
-    if (root.matches?.('input[type=date]')) enhance(root);
-    root.querySelectorAll?.('input[type=date]').forEach(enhance);
+    if (root.matches?.(SELECTOR)) enhance(root);
+    root.querySelectorAll?.(SELECTOR).forEach(enhance);
   };
   scan(document.body);
   new MutationObserver(muts => muts.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && scan(n))))
@@ -277,6 +293,15 @@ export function initDatePickers() {
       return;
     }
     const c = panel.cursor;
+    if (isMonth(panel.input)) {
+      // bảng tháng 3 cột: trái/phải 1 tháng, lên/xuống 3 tháng
+      const mStep = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3, PageUp: -12, PageDown: 12 }[e.key];
+      if (mStep) { e.preventDefault(); moveCursor(addMonths(c, mStep)); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(isoMonth(c)); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(true); }
+      else if (e.key === 'Tab') close();
+      return;
+    }
     const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
     if (step) { e.preventDefault(); moveCursor(addDays(c, step)); }
     else if (e.key === 'PageUp' || e.key === 'PageDown') { e.preventDefault(); moveCursor(addMonths(c, e.key === 'PageUp' ? -1 : 1)); }
