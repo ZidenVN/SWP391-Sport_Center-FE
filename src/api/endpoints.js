@@ -65,8 +65,9 @@ export const roomApi = {
 
 export const subjectApi = {
   list: () => http.get('/subjects'),
-  create: payload => http.post('/subjects', payload),
-  update: (id, payload) => http.put(`/subjects/${id}`, payload),
+  // multipart giống lớp học: part "data" là JSON môn, part "image" là ảnh (tạo môn bắt buộc, sửa không gửi = giữ ảnh cũ)
+  create: (payload, image) => http.post('/subjects', classForm(payload, image)),
+  update: (id, payload, image) => http.put(`/subjects/${id}`, classForm(payload, image)),
   remove: id => http.delete(`/subjects/${id}`)
 };
 
@@ -221,7 +222,8 @@ export const receptionApi = {
 };
 
 export const coachApi = {
-  schedules: () => http.get('/coaches/me/schedules'),
+  // không truyền range: BE trả từ hôm qua tới 30 ngày tới; { from, to } (yyyy-MM-dd) để xem lớp cũ
+  schedules: range => http.get('/coaches/me/schedules', range),
   roster: classId => http.get(`/coaches/me/classes/${classId}/roster`),
   // điểm danh theo buổi (sessionId có trong từng dòng lịch dạy)
   sessionRoster: sessionId => http.get(`/coaches/me/sessions/${sessionId}/roster`),

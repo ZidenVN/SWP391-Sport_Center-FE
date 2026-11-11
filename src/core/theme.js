@@ -33,7 +33,7 @@ export function toggleTheme() {
 export function chartTheme() {
   return isDark()
     ? { text: '#c9d6cf', grid: 'rgba(255,255,255,0.08)' }
-    : { text: '#64748b', grid: '#EFE9DC' };
+    : { text: '#64748b', grid: '#ECEFE8' };
 }
 
 export function styleChart(chart) {

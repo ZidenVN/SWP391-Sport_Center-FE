@@ -2,9 +2,10 @@ import { html, icon } from '../../core/dom.js';
 import { pageHeader, emptyState, field, input, textarea, select } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { subjectApi } from '../../api/endpoints.js';
-import { subjectColor } from '../../components/classCard.js';
+import { subjectColor, defaultClassImage } from '../../components/classCard.js';
 import { openFormModal, requireFields, confirmAction, rowActions, matches, searchBox } from '../../components/crud.js';
 import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
+import { imageField, imageErrors, mountImagePicker, attachImageError, hasFile } from '../../components/imageField.js';
 
 // areaAccess: OPEN = có khu tập chung (gói tự do của môn vào được), CLASS_ONLY = chỉ học theo lớp (chỉ gói lớp của môn)
 export const AREA_ACCESS = [
@@ -16,9 +17,17 @@ const areaLabel = v => AREA_ACCESS.find(a => a.value === v)?.label || 'Có khu t
 const form = (s = {}) => html`
   ${field('Tên bộ môn', input('subjectName', { value: s.subjectName, required: true, placeholder: 'VD: Boxing' }))}
   ${field('Khu tập', select('areaAccess', AREA_ACCESS, s.areaAccess || 'OPEN', { required: true }), 'Có khu tập tự do: gói tự do vào được · Chỉ học theo lớp: chỉ gói lớp của môn')}
-  ${field('Mô tả', textarea('description', s.description, { rows: 3, placeholder: 'Giới thiệu ngắn về bộ môn' }))}`;
+  ${field('Mô tả', textarea('description', s.description, { rows: 3, placeholder: 'Giới thiệu ngắn về bộ môn' }))}
+  ${imageField({
+    label: 'Ảnh bộ môn', required: !s.subjectId,
+    currentUrl: s.subjectId ? subjectImage(s) : '',
+    currentText: s.imageUrl ? 'Ảnh hiện tại của bộ môn' : 'Môn chưa có ảnh (đang dùng ảnh mặc định)'
+  })}`;
 
-const validate = d => requireFields(d, ['subjectName']);
+// môn cũ chưa có ảnh -> ảnh mặc định theo tên môn
+const subjectImage = s => s.imageUrl || defaultClassImage(s.subjectName);
+// ảnh bắt buộc khi tạo môn, tuỳ chọn khi sửa
+const validator = original => d => ({ ...requireFields(d, ['subjectName']), ...imageErrors(d, !original, 'Vui lòng chọn ảnh cho bộ môn') });
 const payload = d => ({ subjectName: d.subjectName, description: d.description || '', areaAccess: d.areaAccess || 'OPEN' });
 
 function view(s) {
@@ -32,7 +41,10 @@ function view(s) {
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="subject-list">
         ${page.content.map(x => html`
           <div class="card overflow-hidden flex flex-col" data-testid="subject-card">
-            <div class="h-2 bg-gradient-to-r ${subjectColor(x.subjectName)}"></div>
+            <div class="relative h-32">
+              <img src="${subjectImage(x)}" alt="${x.subjectName}" class="w-full h-full object-cover" loading="lazy" />
+              <div class="absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r ${subjectColor(x.subjectName)}"></div>
+            </div>
             <div class="p-5 flex-1 flex flex-col">
               <div class="flex items-start justify-between gap-2">
                 <div class="font-bold text-lg">${x.subjectName}</div>
@@ -54,14 +66,16 @@ export default function ManagerSubjects(el) {
       search: (t, e, ctx) => ctx.set({ keyword: t.value, pageNo: 0 }),
       ...pagerActions(),
       create: (t, e, ctx) => openFormModal({
-        title: 'Thêm bộ môn', fields: form(), validate, success: 'Đã thêm bộ môn',
-        submit: d => subjectApi.create(payload(d)), onDone: () => ctx.reload()
+        title: 'Thêm bộ môn', fields: form(), validate: validator(), success: 'Đã thêm bộ môn', onMount: mountImagePicker,
+        submit: d => subjectApi.create(payload(d), d.image).catch(err => { throw attachImageError(err); }), onDone: () => ctx.reload()
       }),
       edit: (t, e, ctx) => {
         const x = ctx.state.subjects.find(y => String(y.subjectId) === t.dataset.id);
         openFormModal({
-          title: `Sửa ${x.subjectName}`, fields: form(x), validate, success: 'Đã cập nhật bộ môn',
-          submit: d => subjectApi.update(x.subjectId, payload(d)), onDone: () => ctx.reload()
+          title: `Sửa ${x.subjectName}`, fields: form(x), validate: validator(x), success: 'Đã cập nhật bộ môn', onMount: mountImagePicker,
+          // không chọn ảnh mới -> không gửi part image, BE giữ ảnh cũ
+          submit: d => subjectApi.update(x.subjectId, payload(d), hasFile(d.image) ? d.image : undefined).catch(err => { throw attachImageError(err); }),
+          onDone: () => ctx.reload()
         });
       },
       remove: async (t, e, ctx) => {

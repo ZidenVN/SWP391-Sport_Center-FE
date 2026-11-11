@@ -36,7 +36,7 @@ function view(s) {
           <div class="card p-5" data-testid="room-card">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <span class="w-11 h-11 rounded-2xl ${r.status === 'MAINTENANCE' ? 'bg-amber-50 text-amber-600' : 'bg-[#469B7E]/10 text-[#2F6B55]'} flex items-center justify-center shrink-0">${icon('door-open', 'w-5 h-5')}</span>
+                <span class="w-11 h-11 rounded-2xl ${r.status === 'MAINTENANCE' ? 'bg-amber-50 text-amber-600' : 'bg-[#1E9E64]/10 text-[#156B45]'} flex items-center justify-center shrink-0">${icon('door-open', 'w-5 h-5')}</span>
                 <div class="min-w-0"><div class="font-bold truncate">${r.roomName}</div><div class="text-xs text-slate-500">Mã #${r.roomId}</div></div>
               </div>
               ${badge(r.status)}

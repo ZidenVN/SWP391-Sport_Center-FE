@@ -51,7 +51,7 @@ function classRow(c) {
       </div>
       <div class="hidden sm:block w-40">
         <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Học viên</span><b class="text-slate-700">${c.currentEnrolled}/${c.maxCapacity}</b></div>
-        <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#469B7E]" style="width:${pct}%"></div></div>
+        <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#1E9E64]" style="width:${pct}%"></div></div>
       </div>
       ${icon('chevron-right', 'w-5 h-5 text-slate-300 shrink-0')}
     </a>`;

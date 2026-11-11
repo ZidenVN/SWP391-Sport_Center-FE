@@ -36,7 +36,7 @@ export function pickPackage(list, cls) {
         <div class="space-y-2" data-testid="package-choices">
           ${list.map(s => html`
             <button type="button" data-action="choose" data-id="${s.subscriptionId}"
-              class="w-full text-left rounded-2xl border border-brand-line bg-white/70 px-4 py-3 hover:border-[#469B7E] hover:bg-[#469B7E]/5 flex items-center gap-3">
+              class="w-full text-left rounded-2xl border border-brand-line bg-white/70 px-4 py-3 hover:border-[#1E9E64] hover:bg-[#1E9E64]/5 flex items-center gap-3">
               <span class="w-9 h-9 rounded-xl bg-brand-sand text-brand-deep flex items-center justify-center shrink-0">${icon('ticket', 'w-4 h-4')}</span>
               <span class="flex-1 min-w-0">
                 <span class="block font-bold text-sm">${s.packageName}</span>

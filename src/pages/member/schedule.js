@@ -122,7 +122,7 @@ const regBadge = r => (REG_STATUS[r.status] ? badge(r.status, REG_STATUS[r.statu
 
 function historyView(list) {
   return html`
-    <div class="rounded-xl bg-brand-sand/60 text-sm text-slate-600 p-3 mb-4 flex gap-2">${icon('info', 'w-4 h-4 mt-0.5 shrink-0 text-[#469B7E]')} Hủy được trước buổi đầu của lớp. Tự đổi lớp được khi còn hơn ${SELF_SWITCH_HOURS} tiếng trước buổi đầu; muộn hơn vui lòng liên hệ lễ tân.</div>
+    <div class="rounded-xl bg-brand-sand/60 text-sm text-slate-600 p-3 mb-4 flex gap-2">${icon('info', 'w-4 h-4 mt-0.5 shrink-0 text-[#1E9E64]')} Hủy được trước buổi đầu của lớp. Tự đổi lớp được khi còn hơn ${SELF_SWITCH_HOURS} tiếng trước buổi đầu; muộn hơn vui lòng liên hệ lễ tân.</div>
     <div class="card" data-testid="history-table">
       ${table({
         columns: [{ label: 'Lớp' }, { label: 'Lịch học' }, { label: 'Gói' }, { label: 'Trạng thái' }, { label: 'Đăng ký lúc' }, { label: '', cls: 'text-right' }],

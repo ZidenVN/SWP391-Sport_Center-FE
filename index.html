@@ -14,11 +14,11 @@
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="./css/styles.css" />
   <script>
-    // Tông màu chung lấy từ trang giới thiệu: xanh rừng #173F31, xanh thương hiệu #469B7E, vàng chanh #D7F25B, nền kem.
+    // Tông màu chung: xanh rừng #173F31 làm nền khối, xanh thể thao #1E9E64, vàng chanh #D7F25B làm điểm nhấn, nền trung tính.
     // emerald/teal được thay bằng thang xanh rừng để mọi trang của 4 role tự đồng bộ theo.
     const forest = {
-      50: '#F0F6F2', 100: '#DCEBE2', 200: '#BAD8C7', 300: '#8EBFA6', 400: '#64A688', 500: '#469B7E',
-      600: '#3A8569', 700: '#2F6B55', 800: '#245543', 900: '#173F31', 950: '#0E2A20'
+      50: '#ECF8F1', 100: '#D2F0DF', 200: '#A5E0C0', 300: '#6FCB9C', 400: '#3BB57B', 500: '#1E9E64',
+      600: '#178553', 700: '#156B45', 800: '#14553A', 900: '#173F31', 950: '#0E2A20'
     };
     tailwind.config = {
       theme: {
@@ -27,7 +27,7 @@
           colors: {
             emerald: forest,
             teal: forest,
-            brand: { DEFAULT: '#469B7E', deep: '#2F6B55', dark: '#173F31', lime: '#D7F25B', cream: '#FBF9F4', sand: '#EFE9DC', line: '#E7E1D3' }
+            brand: { DEFAULT: '#1E9E64', deep: '#156B45', dark: '#173F31', lime: '#D7F25B', cream: '#F7F8F4', sand: '#ECEFE8', line: '#E1E5DD' }
           }
         }
       }

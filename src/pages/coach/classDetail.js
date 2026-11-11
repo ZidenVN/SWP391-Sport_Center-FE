@@ -1,8 +1,8 @@
 import { html, icon } from '../../core/dom.js';
 import { tabs, table, emptyState, withBusy, toast } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
-import { coachApi } from '../../api/endpoints.js';
-import { badge, date, dateTime, weekday, timeRange, fullName, genderLabel, toDate, phoneText } from '../../core/format.js';
+import { coachApi, classApi } from '../../api/endpoints.js';
+import { badge, date, dateTime, weekday, timeRange, fullName, genderLabel, toDate, phoneText, isoDate } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { planList } from '../../components/training.js';
 import { openPlanForm, openNotifyForm } from '../../components/coachForms.js';
@@ -88,7 +88,7 @@ function sessionPicker(s) {
           const past = toDate(x.endTime) < new Date();
           return html`
             <button type="button" data-action="pick-session" data-id="${x.sessionId}"
-              class="shrink-0 rounded-2xl border px-3 py-2 text-left text-xs transition ${on ? 'border-brand-dark bg-brand-dark text-white' : 'border-brand-line bg-white/70 hover:border-[#469B7E]'} ${x.status === 'POSTPONED' ? 'opacity-70' : ''}">
+              class="shrink-0 rounded-2xl border px-3 py-2 text-left text-xs transition ${on ? 'border-brand-dark bg-brand-dark text-white' : 'border-brand-line bg-white/70 hover:border-[#1E9E64]'} ${x.status === 'POSTPONED' ? 'opacity-70' : ''}">
               <span class="block font-bold">Buổi ${i + 1} · ${weekday(x.startTime)} ${date(x.startTime).slice(0, 5)}</span>
               <span class="block ${on ? 'text-white/80' : 'text-slate-500'}">${timeRange(x.startTime, x.endTime)}${x.status === 'POSTPONED' ? ' · Hoãn' : x.type === 'MAKEUP' ? ' · Bù' : past ? ' · Đã qua' : ''}</span>
             </button>`;
@@ -208,11 +208,17 @@ export default function CoachClassDetail(el, { params, query }) {
     state: { tab: query?.tab || (query?.session ? 'attendance' : 'roster'), sessionId: query?.session || null },
     load: async ctx => {
       const data = await settle({
-        schedules: [() => coachApi.schedules(), []],
+        info: [() => classApi.get(classId), null],
         roster: [() => coachApi.roster(classId), []],
         plans: [() => coachApi.classPlans(classId), []],
         notifications: [() => coachApi.classNotifications(classId), []]
       });
+      // Lịch dạy mặc định chỉ có hôm qua -> 30 ngày tới: lấy theo đúng thời gian của lớp để xem được lớp đã kết thúc
+      // và các buổi đã qua (+30 ngày sau ngày kết thúc cho buổi học bù)
+      const range = data.info?.startDate && data.info?.endDate
+        ? { from: data.info.startDate, to: isoDate(new Date(toDate(`${data.info.endDate}T00:00:00`).getTime() + 30 * 86400000)) }
+        : undefined;
+      data.schedules = await coachApi.schedules(range).catch(() => []);
       const sessions = data.schedules.filter(c => c.classId === classId).sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
       const session = defaultSession(sessions, ctx.state.sessionId);
       const sessionData = session ? await loadSession(session.sessionId, ctx.state.attendances || []) : { sessionRoster: [], attendances: [] };

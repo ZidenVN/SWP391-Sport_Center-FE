@@ -118,7 +118,7 @@ function view(s) {
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2"><span class="font-bold truncate">${fullName(c)}</span>${badge(status, status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa')}</div>
                   ${subjectsOf(c).length ? html`
-                    <div class="flex flex-wrap gap-1 mt-1">${subjectsOf(c).map(x => html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#469B7E]/10 text-[#2F6B55]">${x.subjectName}</span>`)}</div>`
+                    <div class="flex flex-wrap gap-1 mt-1">${subjectsOf(c).map(x => html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#1E9E64]/10 text-[#156B45]">${x.subjectName}</span>`)}</div>`
                     : html`<div class="text-xs font-semibold text-rose-600 mt-0.5">Chưa gắn môn, chưa xếp lớp được</div>`}
                 </div>
               </div>
