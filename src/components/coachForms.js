@@ -60,7 +60,7 @@ export function openPlanForm({ preset, classes = [], members = [], values = {}, 
       ${field('Nội dung bài tập', textarea('exerciseDetails', values.exerciseDetails || '', { rows: values.exerciseDetails ? 10 : 4, required: true, placeholder: 'VD: Squat 4x12, Plank 3x60s...' }))}
       <div class="grid sm:grid-cols-2 gap-3">
         ${field('Thời lượng', input('duration', { value: values.duration || '', placeholder: 'VD: 4 tuần' }))}
-        ${field('Hạn hoàn thành', input('dueDate', { type: 'date', value: isoDate(due) }))}
+        ${field('Hạn hoàn thành', input('dueDate', { type: 'date', value: isoDate(due), attrs: `min="${isoDate(new Date())}"` }))}
       </div>
       ${submitRow('Giao giáo án')}
     </form>`;
@@ -73,6 +73,11 @@ export function openPlanForm({ preset, classes = [], members = [], values = {}, 
       save: async form => {
         const data = required(form, preset ? ['planName', 'exerciseDetails'] : ['planName', 'exerciseDetails', 'targetId']);
         if (!data) return;
+        // không cho đặt hạn trong quá khứ (BE cũng chặn, ERR_PLAN_003)
+        if (data.dueDate && data.dueDate < isoDate(new Date())) {
+          showFormErrors(form, { fields: { dueDate: 'Hạn hoàn thành không được ở trong quá khứ' } });
+          return;
+        }
         const payload = {
           planName: data.planName,
           exerciseDetails: data.exerciseDetails,
