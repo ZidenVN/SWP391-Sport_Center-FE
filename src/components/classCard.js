@@ -4,8 +4,8 @@ import { coachLink } from './coachInfo.js';
 
 // Tông đất cùng bộ với trang giới thiệu; đều đủ đậm để đặt chữ trắng lên trên (hero lớp, ô ngày của HLV)
 const SUBJECT_COLORS = [
-  'from-[#173F31] to-[#2F6B55]',
-  'from-[#2F6B55] to-[#469B7E]',
+  'from-[#173F31] to-[#156B45]',
+  'from-[#156B45] to-[#1E9E64]',
   'from-[#3F5A1E] to-[#6E8F2E]',
   'from-[#8A3F22] to-[#C0683A]',
   'from-[#1E4A57] to-[#3A7A88]'
@@ -26,7 +26,7 @@ const DEFAULT_PHOTOS = [
   [/tennis|cau long|pickle|badminton/, 'tennis.jpg'],
   [/bong da|football|soccer|futsal/, 'football.jpg'],
   [/bong ro|basket/, 'basketball.jpg'],
-  [/boxing|vo|kick|mma/, 'boxing.jpg'],
+  [/boxing|vo|kick|mma|karate|taekwondo|teakwondo/, 'boxing.jpg'],
   [/gym|ta|the hinh|strength/, 'gym.jpg'],
   [/aerobic|zumba|fitness|cardio|dance|nhay/, 'fitness.jpg']
 ];

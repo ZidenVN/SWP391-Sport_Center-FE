@@ -19,7 +19,7 @@ function priceCard(p, hot) {
         <span class="font-bold">${p.packageName}</span>
         <span class="text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap ${hot ? 'bg-white/15' : 'bg-brand-sand'}">${p.durationDays} ngày</span>
       </div>
-      <div class="text-xs font-bold mt-1 ${hot ? 'text-brand-lime/80' : 'text-[#2F6B55]'}">${packageKind(p)}</div>
+      <div class="text-xs font-bold mt-1 ${hot ? 'text-brand-lime/80' : 'text-[#156B45]'}">${packageKind(p)}</div>
       <div class="font-display text-5xl font-extrabold mt-3 ${hot ? 'text-brand-lime' : 'text-brand-dark'}">${money(p.price)}</div>
       <div class="text-xs mt-1 ${hot ? 'text-white/60' : 'text-slate-500'}">≈ ${money(Math.round(p.price / p.durationDays))} / ngày</div>
       <p class="text-sm mt-4 flex-1 ${hot ? 'text-white/75' : 'text-slate-600'}">${p.description || ''}</p>

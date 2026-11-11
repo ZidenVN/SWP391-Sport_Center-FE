@@ -95,7 +95,7 @@ function goalCard(s) {
   const stat = (label, value) => html`<div><small class="block text-xs text-slate-500">${label}</small><b class="font-display text-2xl">${value}</b></div>`;
   return html`
     <div class="card rounded-3xl p-5 flex flex-col sm:flex-row gap-6 sm:items-center min-w-0">
-      <div class="w-[132px] h-[132px] shrink-0 rounded-full grid place-items-center" style="background:conic-gradient(#469B7E ${pct * 3.6}deg, rgba(100,116,139,.15) 0)">
+      <div class="w-[132px] h-[132px] shrink-0 rounded-full grid place-items-center" style="background:conic-gradient(#1E9E64 ${pct * 3.6}deg, rgba(100,116,139,.15) 0)">
         <div class="w-[106px] h-[106px] rounded-full bg-white grid place-items-center text-center">
           <div><b class="font-display text-[32px] leading-none">${pct}%</b><small class="block text-[11px] text-slate-500">giáo án xong</small></div>
         </div>

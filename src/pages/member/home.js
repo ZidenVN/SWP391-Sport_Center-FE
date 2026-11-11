@@ -80,7 +80,7 @@ function classPackageLine(x) {
   const left = waiting ? null : daysUntil(x.endDate);
   return html`
     <li class="flex items-center gap-3 py-3" data-testid="class-package-line">
-      <span class="w-10 h-10 rounded-xl ${waiting ? 'bg-amber-50 text-amber-600' : 'bg-[#469B7E]/10 text-[#2F6B55]'} flex items-center justify-center shrink-0">${icon(waiting ? 'ticket' : 'dumbbell', 'w-5 h-5')}</span>
+      <span class="w-10 h-10 rounded-xl ${waiting ? 'bg-amber-50 text-amber-600' : 'bg-[#1E9E64]/10 text-[#156B45]'} flex items-center justify-center shrink-0">${icon(waiting ? 'ticket' : 'dumbbell', 'w-5 h-5')}</span>
       <div class="min-w-0 flex-1">
         <div class="text-sm font-bold truncate">${x.subjectName || x.packageName}</div>
         <div class="text-xs text-slate-500 truncate">${waiting

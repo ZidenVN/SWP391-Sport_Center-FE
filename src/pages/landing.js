@@ -269,8 +269,8 @@ function subjectsSection(s) {
       <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8" data-reveal>
           <div>
-            <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em]" style="color:#2F6B55">
-              <span class="anim-line h-px" style="background:#2F6B55;--lw:1.5rem"></span> Bộ môn
+            <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em]" style="color:#156B45">
+              <span class="anim-line h-px" style="background:#156B45;--lw:1.5rem"></span> Bộ môn
             </div>
             <h2 class="font-display font-extrabold text-4xl sm:text-6xl text-slate-900 mt-2 leading-none" aria-label="Bộ môn nổi bật"><span aria-hidden="true">${maskWords('Bộ môn nổi bật')}</span></h2>
             <p class="anim-fade text-slate-600 mt-3 max-w-xl" style="--d:.45s">Từ thư giãn nhẹ nhàng đến cường độ cao — chọn môn hợp với bạn, lớp mở mỗi ngày trong tuần.</p>

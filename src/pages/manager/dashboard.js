@@ -75,7 +75,7 @@ function breakdownTable(rows) {
       html`<span class="inline-flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${CHART_COLORS[i % CHART_COLORS.length]}"></span>${r.categoryName}</span>`,
       r.transactionCnt,
       html`<b>${money(r.totalAmount)}</b>`,
-      html`<div class="flex items-center gap-2"><div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#469B7E]" style="width:${r.percentage}%"></div></div><span class="text-xs font-semibold w-12 text-right">${Number(r.percentage).toFixed(1)}%</span></div>`
+      html`<div class="flex items-center gap-2"><div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#1E9E64]" style="width:${r.percentage}%"></div></div><span class="text-xs font-semibold w-12 text-right">${Number(r.percentage).toFixed(1)}%</span></div>`
     ])
   });
 }
@@ -128,7 +128,7 @@ function membersTab(m) {
       <div class="card rounded-3xl p-6 flex flex-col justify-center">
         <div class="text-sm text-slate-500">Tỷ lệ hội viên đang có gói</div>
         <div class="font-display text-6xl font-extrabold text-brand-deep mt-2">${rate.toFixed(1)}%</div>
-        <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden mt-4"><div class="h-full bg-[#469B7E]" style="width:${rate}%"></div></div>
+        <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden mt-4"><div class="h-full bg-[#1E9E64]" style="width:${rate}%"></div></div>
         <p class="text-sm text-slate-600 mt-4">${m.expiredOrNoSubMembers ?? 0} hội viên chưa có gói hoặc đã hết hạn — có thể liên hệ mời gia hạn.</p>
       </div>
     </div>`;
@@ -139,7 +139,7 @@ function upcomingCard(list) {
     <div class="card rounded-3xl min-w-0">
       <div class="flex items-center justify-between px-5 pt-5 pb-3">
         <div class="font-bold">Lớp sắp diễn ra</div>
-        <a href="#/manager/classes" class="text-xs font-bold text-[#2F6B55] hover:underline">Quản lý lớp</a>
+        <a href="#/manager/classes" class="text-xs font-bold text-[#156B45] hover:underline">Quản lý lớp</a>
       </div>
       ${list.length ? html`
         <div class="divide-y divide-slate-100">

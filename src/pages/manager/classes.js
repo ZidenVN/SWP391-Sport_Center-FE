@@ -7,73 +7,19 @@ import { badge, date, weekday, timeRange, toDate, isoDate, fullName } from '../.
 import { subjectColor, classImage, classImageUrl } from '../../components/classCard.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
 import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
+import { imageField, imageErrors, mountImagePicker, attachImageError, hasFile } from '../../components/imageField.js';
 import { calendarGrid, calendarToolbar, viewModeTabs, loadCalendarClasses, scrollTimeGrid, MANAGER_LEGEND, classWhen, whenLine } from '../../components/classCalendar.js';
 
 // Lớp học của Quản lý: xem dạng lịch Tuần (khung giờ) / Tháng hoặc bảng Danh sách theo tab trạng thái.
 const MODE_KEY = 'sc_manager_classes_mode';
 const savedMode = () => { try { return localStorage.getItem(MODE_KEY); } catch { return null; } };
 
-// ===== Ảnh lớp: bắt buộc khi tạo, tuỳ chọn khi sửa (không chọn = giữ ảnh cũ). BE nhận jpg/jpeg/png/webp/heic/heif, tối đa 10MB =====
-const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
-const IMAGE_MAX = 10 * 1024 * 1024;
-const hasFile = f => f && typeof f === 'object' && f.size > 0;
-const fileExt = f => (f.name.includes('.') ? f.name.split('.').pop() : '').toLowerCase();
-
-function imageField(c = {}, { required }) {
-  const current = c.classId ? classImageUrl(c) : '';
-  return field(required ? 'Ảnh lớp' : 'Ảnh lớp (tuỳ chọn)', html`
-    <div data-field-wrap>
-      <label class="group relative flex items-center gap-4 rounded-2xl border-2 border-dashed border-brand-line hover:border-brand/60 bg-brand-cream/40 p-3 cursor-pointer transition-colors" data-testid="image-picker">
-        <span class="w-28 h-20 shrink-0 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center text-slate-400" data-image-preview>
-          ${current ? html`<img src="${current}" alt="" class="w-full h-full object-cover" />` : icon('image-plus', 'w-7 h-7')}
-        </span>
-        <span class="min-w-0 text-sm">
-          <span class="block font-semibold text-slate-700" data-image-name>${current ? (c.imageUrl ? 'Ảnh hiện tại của lớp' : 'Lớp chưa có ảnh (đang dùng ảnh mặc định)') : 'Bấm để chọn ảnh'}</span>
-          <span class="block text-xs text-slate-500 mt-0.5">JPG, PNG, WEBP, HEIC · tối đa 10MB${required ? '' : ' · không chọn sẽ giữ ảnh cũ'}</span>
-        </span>
-        <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif" class="sr-only" data-testid="image-input" />
-      </label>
-    </div>`);
-}
-
-// kiểm tra file ở FE trước khi gửi (BE vẫn kiểm tra lại)
-function imageErrors(d, required) {
-  if (!hasFile(d.image)) return required ? { image: 'Vui lòng chọn ảnh cho lớp' } : {};
-  if (!IMAGE_EXT.includes(fileExt(d.image))) return { image: 'Chỉ nhận ảnh JPG, JPEG, PNG, WEBP, HEIC hoặc HEIF' };
-  if (d.image.size > IMAGE_MAX) return { image: `Ảnh nặng ${(d.image.size / 1024 / 1024).toFixed(1)}MB, tối đa 10MB` };
-  return {};
-}
-
-// xem trước ảnh vừa chọn (HEIC: trình duyệt không xem trước được, chỉ hiện tên file)
-function mountImagePicker(modal) {
-  const inputEl = modal.el.querySelector('[data-testid=image-input]');
-  if (!inputEl) return;
-  let url = '';
-  inputEl.addEventListener('change', () => {
-    const file = inputEl.files?.[0];
-    const box = modal.el.querySelector('[data-image-preview]');
-    const name = modal.el.querySelector('[data-image-name]');
-    if (url) URL.revokeObjectURL(url);
-    url = '';
-    if (!file) return;
-    name.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)}MB`;
-    if (['heic', 'heif'].includes(fileExt(file))) {
-      render(box, html`<span class="text-[11px] font-bold text-slate-500 text-center px-2">HEIC<br />không xem trước được</span>`);
-    } else {
-      url = URL.createObjectURL(file);
-      render(box, html`<img src="${url}" alt="" class="w-full h-full object-cover" data-testid="image-preview-img" />`);
-    }
-    // chọn lại ảnh thì xoá thông báo lỗi cũ ngay dưới ô ảnh
-    const wrap = inputEl.closest('[data-field-wrap]');
-    if (wrap.nextElementSibling?.classList.contains('field-error')) wrap.nextElementSibling.remove();
-  });
-}
-
-// lỗi ảnh của BE (ERR_IMG_001..003) hiện ngay dưới ô chọn ảnh; ERR_IMG_004 (Cloudinary lỗi) chỉ báo, cho thử lại
-const attachImageError = err => {
-  if (/^ERR_IMG_00[123]$/.test(err?.code || '')) err.fields = { ...(err.fields || {}), image: err.message };
-  return err;
-};
+// Ảnh lớp: bắt buộc khi tạo, tuỳ chọn khi sửa (ô chọn ảnh dùng chung ở components/imageField.js)
+const classImageField = (c = {}, { required }) => imageField({
+  label: 'Ảnh lớp', required,
+  currentUrl: c.classId ? classImageUrl(c) : '',
+  currentText: c.imageUrl ? 'Ảnh hiện tại của lớp' : 'Lớp chưa có ảnh (đang dùng ảnh mặc định)'
+});
 
 // ===== Lớp = 1 khoá học có lịch cố định: ngày bắt đầu + thời hạn khoá + các thứ trong tuần + khung giờ =====
 // BE tạo toàn bộ buổi trong 1 request: trùng phòng/HLV ở bất kỳ buổi nào thì không tạo gì.
@@ -151,7 +97,7 @@ function classFields(s, c = {}) {
       ${field('Giờ kết thúc', timeInput('endClock', hhmm(c.endClock) || '09:30'))}
     </div>
     ${field('Sĩ số tối đa', input('maxCapacity', { type: 'number', value: c.maxCapacity || 20, required: true, attrs: 'min="1"' }), 'Không vượt quá sức chứa của phòng')}
-    ${imageField(c, { required: !c.classId })}
+    ${classImageField(c, { required: !c.classId })}
     <div class="sc-note rounded-2xl p-3.5 text-sm text-slate-700 flex gap-2.5" data-testid="session-preview"></div>`;
 }
 
@@ -169,7 +115,7 @@ function classValidator(s, original) {
     const room = s.rooms.find(r => String(r.roomId) === d.roomId);
     if (room && Number(d.maxCapacity) > room.capacity) e.maxCapacity = `Phòng chỉ chứa tối đa ${room.capacity} người`;
     if (d.maxCapacity && Number(d.maxCapacity) < 1) e.maxCapacity = 'Tối thiểu 1 học viên';
-    return { ...e, ...imageErrors(d, !original) };
+    return { ...e, ...imageErrors(d, !original, 'Vui lòng chọn ảnh cho lớp') };
   };
 }
 
@@ -344,7 +290,7 @@ function listView(s) {
               : html`<div class="text-sm font-semibold">${weekday(c.startTime)}, ${date(c.startTime)}</div><div class="text-xs text-slate-500">${timeRange(c.startTime, c.endTime)}</div>`,
             c.coachName,
             c.roomName,
-            html`<div class="w-24"><div class="text-xs font-semibold mb-1">${c.currentEnrolled}/${c.maxCapacity}</div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#469B7E]" style="width:${pct}%"></div></div></div>`,
+            html`<div class="w-24"><div class="text-xs font-semibold mb-1">${c.currentEnrolled}/${c.maxCapacity}</div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#1E9E64]" style="width:${pct}%"></div></div></div>`,
             statusCell(c, ph),
             actionsCell(c, ph)
           ];
@@ -402,7 +348,7 @@ function classDetail(c) {
       <div class="grid sm:grid-cols-3 gap-3 mt-4 text-sm">
         <div class="flex items-center gap-2 text-slate-600">${icon('user-round', 'w-4 h-4 text-slate-400')} ${c.coachName}</div>
         <div class="flex items-center gap-2 text-slate-600">${icon('map-pin', 'w-4 h-4 text-slate-400')} ${c.roomName}</div>
-        <div class="text-slate-600"><div class="text-xs font-semibold mb-1">${c.currentEnrolled}/${c.maxCapacity} học viên</div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#469B7E]" style="width:${pct}%"></div></div></div>
+        <div class="text-slate-600"><div class="text-xs font-semibold mb-1">${c.currentEnrolled}/${c.maxCapacity} học viên</div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#1E9E64]" style="width:${pct}%"></div></div></div>
       </div>
       ${detailActions(c, ph) ? html`<div class="mt-4 pt-4 border-t border-slate-100">${detailActions(c, ph)}</div>` : ''}
       </div>

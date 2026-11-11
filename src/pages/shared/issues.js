@@ -63,7 +63,7 @@ function openReportForm(role, onDone) {
               <label class="cursor-pointer">
                 <input type="radio" name="category" value="${id}" class="peer sr-only" ${i === 0 ? 'checked' : ''} />
                 <span class="flex items-center gap-2.5 h-full rounded-xl border-2 border-brand-line p-2.5 peer-checked:border-brand-dark peer-checked:bg-brand-sand/60">
-                  <span class="w-8 h-8 rounded-lg bg-white text-[#469B7E] flex items-center justify-center shrink-0">${icon(ic, 'w-4 h-4')}</span>
+                  <span class="w-8 h-8 rounded-lg bg-white text-[#1E9E64] flex items-center justify-center shrink-0">${icon(ic, 'w-4 h-4')}</span>
                   <span class="min-w-0"><span class="block text-sm font-bold leading-tight">${label}</span><span class="block text-[11px] text-slate-500">${DESK[desk]} xử lý</span></span>
                 </span>
               </label>`)}

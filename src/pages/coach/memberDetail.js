@@ -26,7 +26,7 @@ function view(s) {
           <span class="flex items-center gap-1">${icon('phone', 'w-3.5 h-3.5')} ${phoneText(m.phone)}</span>
           <span class="flex items-center gap-1">${icon('mail', 'w-3.5 h-3.5')} ${m.email}</span>
         </div>
-        <div class="mt-3 text-sm rounded-xl bg-[#469B7E]/10 text-[#2F6B55] px-3 py-2 inline-flex items-center gap-2">
+        <div class="mt-3 text-sm rounded-xl bg-[#1E9E64]/10 text-[#156B45] px-3 py-2 inline-flex items-center gap-2">
           ${icon('target', 'w-4 h-4')} <span><b>Mục tiêu:</b> ${m.trainingGoal || 'Chưa cập nhật'}</span>
         </div>
       </div>

@@ -18,7 +18,7 @@ export function openBookClass({ member, onDone }) {
     <div class="flex flex-wrap gap-2 mb-4" data-testid="book-packages">
       ${packages.map(p => html`
         <button type="button" data-action="pick-package" data-id="${p.subscriptionId}"
-          class="rounded-2xl border px-3 py-2 text-left text-sm transition ${selected?.subscriptionId === p.subscriptionId ? 'border-[#469B7E] bg-[#469B7E]/10 ring-2 ring-[#469B7E]/20' : 'border-brand-line bg-white/60 hover:border-[#469B7E]/60'}">
+          class="rounded-2xl border px-3 py-2 text-left text-sm transition ${selected?.subscriptionId === p.subscriptionId ? 'border-[#1E9E64] bg-[#1E9E64]/10 ring-2 ring-[#1E9E64]/20' : 'border-brand-line bg-white/60 hover:border-[#1E9E64]/60'}">
           <span class="block font-bold text-brand-dark">${p.subjectName || p.packageName}${p.durationDays ? ` · ${p.durationDays} ngày` : ''}</span>
           <span class="block text-xs text-slate-500">${p.packageName} · #${p.subscriptionId}</span>
         </button>`)}

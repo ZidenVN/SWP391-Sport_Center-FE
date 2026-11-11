@@ -50,8 +50,8 @@ function recipientPanel(s, active) {
         </div>` : ''}
       <div class="max-h-80 overflow-y-auto divide-y divide-brand-line/50">
         ${shown.length ? shown.map(m => html`
-          <label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-brand-sand/50 has-[:checked]:bg-[#469B7E]/5">
-            <input type="checkbox" class="rounded accent-[#469B7E]" data-action="toggle" data-member="${m.memberId}" ${picked.has(m.memberId) ? 'checked' : ''} />
+          <label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-brand-sand/50 has-[:checked]:bg-[#1E9E64]/5">
+            <input type="checkbox" class="rounded accent-[#1E9E64]" data-action="toggle" data-member="${m.memberId}" ${picked.has(m.memberId) ? 'checked' : ''} />
             ${memberAvatar(m, 'w-8 h-8 text-xs')}
             <span class="min-w-0 flex-1">
               <span class="block text-sm font-semibold truncate">${fullName(m)}</span>
@@ -79,7 +79,7 @@ function view(s) {
               ['ALL_ACTIVE', 'users', 'Tất cả hội viên', `${active.length} hội viên đang hoạt động`]
             ].map(([id, ic, label, hint]) => html`
               <button type="button" role="radio" aria-checked="${s.mode === id}" data-action="mode" data-mode="${id}" data-testid="mode-${id}"
-                class="flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${s.mode === id ? 'border-[#469B7E] bg-[#469B7E]/10 ring-2 ring-[#469B7E]/20' : 'border-brand-line bg-white/60 hover:border-[#469B7E]/60'}">
+                class="flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${s.mode === id ? 'border-[#1E9E64] bg-[#1E9E64]/10 ring-2 ring-[#1E9E64]/20' : 'border-brand-line bg-white/60 hover:border-[#1E9E64]/60'}">
                 <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${s.mode === id ? 'bg-brand-dark text-brand-lime' : 'bg-brand-sand text-brand-deep'}">${icon(ic, 'w-4 h-4')}</span>
                 <span><span class="block text-sm font-bold text-brand-dark">${label}</span><span class="block text-xs text-slate-500">${hint}</span></span>
               </button>`)}
@@ -93,7 +93,7 @@ function view(s) {
             <span class="field-label text-xs font-bold text-slate-600">Mẫu soạn nhanh</span>
           </div>
           <div class="flex flex-wrap gap-1.5">
-            ${TEMPLATES.map((t, i) => html`<button type="button" class="rounded-full border border-brand-line bg-white/70 px-3 py-1 text-xs font-semibold text-brand-deep hover:border-[#469B7E] hover:bg-[#469B7E]/10" data-action="template" data-index="${i}">${t.label}</button>`)}
+            ${TEMPLATES.map((t, i) => html`<button type="button" class="rounded-full border border-brand-line bg-white/70 px-3 py-1 text-xs font-semibold text-brand-deep hover:border-[#1E9E64] hover:bg-[#1E9E64]/10" data-action="template" data-index="${i}">${t.label}</button>`)}
           </div>
         </div>
         <label class="block">
@@ -114,7 +114,7 @@ function view(s) {
 
       <div class="lg:col-span-2 space-y-6">
         <section class="card p-5">
-          <h2 class="font-bold mb-3 flex items-center gap-2">${icon('smartphone', 'w-4 h-4 text-[#469B7E]')} Hội viên sẽ thấy</h2>
+          <h2 class="font-bold mb-3 flex items-center gap-2">${icon('smartphone', 'w-4 h-4 text-[#1E9E64]')} Hội viên sẽ thấy</h2>
           <div class="rounded-2xl border border-emerald-200 ring-2 ring-emerald-100 bg-white/80 p-4 flex gap-3" data-testid="notify-preview">
             <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">${icon('message-square-text', 'w-5 h-5')}</div>
             <div class="min-w-0 flex-1">
@@ -125,7 +125,7 @@ function view(s) {
           </div>
         </section>
         <section class="card p-5">
-          <h2 class="font-bold mb-3 flex items-center gap-2">${icon('history', 'w-4 h-4 text-[#469B7E]')} Đã gửi trong phiên này</h2>
+          <h2 class="font-bold mb-3 flex items-center gap-2">${icon('history', 'w-4 h-4 text-[#1E9E64]')} Đã gửi trong phiên này</h2>
           ${s.sent.length ? html`
             <ul class="space-y-3" data-testid="sent-log">
               ${s.sent.map(x => html`

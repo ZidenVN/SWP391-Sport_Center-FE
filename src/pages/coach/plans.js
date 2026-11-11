@@ -8,8 +8,8 @@ import { openPlanForm, loadMyStudents } from '../../components/coachForms.js';
 const norm = v => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
 
 function targetLink(p) {
-  if (p.targetType === 'CLASS') return html`<a class="font-semibold text-[#2F6B55] hover:underline" href="#/coach/classes/${p.targetId}?tab=plans">${p.targetName}</a>`;
-  if (p.targetType === 'INDIVIDUAL') return html`<a class="font-semibold text-[#2F6B55] hover:underline" href="#/coach/members/${p.targetId}?tab=plans">${p.targetName}</a>`;
+  if (p.targetType === 'CLASS') return html`<a class="font-semibold text-[#156B45] hover:underline" href="#/coach/classes/${p.targetId}?tab=plans">${p.targetName}</a>`;
+  if (p.targetType === 'INDIVIDUAL') return html`<a class="font-semibold text-[#156B45] hover:underline" href="#/coach/members/${p.targetId}?tab=plans">${p.targetName}</a>`;
   return html`<span class="text-slate-400">Chưa giao</span>`;
 }
 
