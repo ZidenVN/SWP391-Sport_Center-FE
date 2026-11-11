@@ -60,7 +60,13 @@ export const roomApi = {
   list: () => http.get('/rooms'),
   create: payload => http.post('/rooms', payload),
   update: (id, payload) => http.put(`/rooms/${id}`, payload),
-  remove: id => http.delete(`/rooms/${id}`)
+  remove: id => http.delete(`/rooms/${id}`),
+  // đổi ảnh phòng: multipart part "image" (BE upload Cloudinary) -> trả phòng kèm imageUrl
+  uploadImage: (id, image) => {
+    const fd = new FormData();
+    fd.append('image', image);
+    return http.patch(`/rooms/${id}/image`, fd);
+  }
 };
 
 export const subjectApi = {

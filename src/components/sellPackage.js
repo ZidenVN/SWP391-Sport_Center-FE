@@ -14,12 +14,21 @@ const METHODS = [
 
 const QUICK_CASH = [100000, 200000, 500000, 1000000];
 
+const KINDS = [
+  { id: 'MEMBERSHIP', label: 'Membership' },
+  { id: 'CLASS', label: 'Gói lớp' }
+];
+const kindOf = p => (p.packageType === 'CLASS' ? 'CLASS' : 'MEMBERSHIP');
+
 // Hộp bán / gia hạn gói tại quầy. onDone(subscription) gọi sau khi bán thành công.
 export function openSellPackage({ member, onDone, packageId: preselect }) {
   // preview: GET /receptionist/members/{id}/subscriptions/preview?packageId= (ngày dự kiến + cảnh báo gói trùng khu tập)
-  const st = { packages: [], packageId: null, preview: null, method: 'CASH', cash: '', ref: '', busy: false, error: null, sold: null };
+  const st = { packages: [], kind: 'MEMBERSHIP', packageId: null, preview: null, method: 'CASH', cash: '', ref: '', busy: false, error: null, sold: null };
 
   const pkg = () => st.packages.find(p => p.packageId === st.packageId);
+  // gói đang bán; gói lớp xếp theo môn rồi thời hạn
+  const activePackages = () => st.packages.filter(p => p.status === 'ACTIVE')
+    .sort((a, b) => packageScope(a).localeCompare(packageScope(b), 'vi') || a.durationDays - b.durationDays || a.price - b.price);
 
   function cashBlock(p) {
     if (st.method !== 'CASH' || !p) return '';
@@ -60,7 +69,8 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
   function formView() {
     const p = pkg();
     const pv = st.preview && st.preview.packageId === st.packageId ? st.preview : null;
-    const active = st.packages.filter(x => x.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays);
+    const all = activePackages();
+    const active = all.filter(x => kindOf(x) === st.kind);
     const cashShort = st.method === 'CASH' && p && Number(st.cash || 0) < p.price;
     const blocked = cashShort || refMissing();
     return html`
@@ -69,8 +79,20 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
         <div class="min-w-0"><div class="font-bold">${fullName(member)}</div><div class="text-xs text-slate-600">#${member.memberId} · ${phoneText(member.phone)}</div></div>
       </div>
 
-      <div class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">1. Chọn gói</div>
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <div class="text-xs font-bold uppercase tracking-wide text-slate-500">1. Chọn gói</div>
+        <div class="inline-flex rounded-xl bg-slate-100 p-1" role="tablist" data-testid="sell-kind">
+          ${KINDS.map(k => {
+            const on = k.id === st.kind;
+            return html`<button type="button" role="tab" aria-selected="${on}" data-action="pick-kind" data-kind="${k.id}" data-testid="sell-kind-${k.id}"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${on ? 'bg-white text-brand-dark shadow-sm' : 'text-slate-500 hover:text-slate-800'}">
+              ${k.label} <span class="${on ? 'text-brand' : 'text-slate-400'}">${all.filter(x => kindOf(x) === k.id).length}</span></button>`;
+          })}
+        </div>
+      </div>
+      ${st.kind === 'CLASS' ? html`<p class="text-xs text-slate-500 mb-2">Hội viên cần có Membership (đang dùng hoặc chờ kích hoạt) mới mua được gói lớp.</p>` : ''}
       <div class="grid sm:grid-cols-2 gap-3" data-testid="sell-packages">
+        ${active.length ? '' : html`<div class="sm:col-span-2 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">Chưa có ${st.kind === 'CLASS' ? 'gói lớp' : 'gói Membership'} nào đang mở bán</div>`}
         ${active.map(x => {
           const on = x.packageId === st.packageId;
           return html`
@@ -148,6 +170,17 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     size: 'max-w-2xl',
     body: loading(),
     actions: {
+      // đổi loại gói: gói đang chọn không thuộc loại mới thì chọn gói đầu tiên của loại đó
+      'pick-kind': btn => {
+        st.kind = btn.dataset.kind;
+        st.error = null;
+        if (pkg() && kindOf(pkg()) !== st.kind) {
+          st.packageId = activePackages().find(p => kindOf(p) === st.kind)?.packageId ?? null;
+          st.preview = null;
+          loadPreview();
+        }
+        rerender();
+      },
       'pick-package': btn => { st.packageId = Number(btn.dataset.id); st.error = null; rerender(); loadPreview(); },
       'pick-method': btn => { st.method = btn.dataset.method; st.error = null; rerender(); },
       'cash-quick': btn => { st.cash = btn.dataset.value; rerender(); },
@@ -231,9 +264,13 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     try {
       const packages = await packageApi.list();
       st.packages = packages;
-      const first = packages.filter(p => p.status === 'ACTIVE').sort((a, b) => a.durationDays - b.durationDays)[0];
-      const chosen = packages.find(p => p.packageId === Number(preselect) && p.status === 'ACTIVE');
-      st.packageId = chosen ? chosen.packageId : first ? first.packageId : null;
+      // mở theo gói được chọn sẵn; không có thì mở tab Membership (hết Membership thì sang gói lớp)
+      const list = activePackages();
+      const chosen = list.find(p => p.packageId === Number(preselect));
+      const first = list.find(p => kindOf(p) === 'MEMBERSHIP') || list[0];
+      const start = chosen || first;
+      st.packageId = start ? start.packageId : null;
+      st.kind = start ? kindOf(start) : 'MEMBERSHIP';
       rerender();
       loadPreview();
     } catch (err) {

@@ -39,12 +39,14 @@ export function toastError(err, fallback = 'Có lỗi xảy ra, vui lòng thử 
 export function openModal({ title, body, actions = {}, size = 'max-w-lg', onClose, onMount }) {
   const host = document.getElementById('modal-root');
   const wrapper = document.createElement('div');
-  wrapper.className = 'fixed inset-0 z-40 flex items-start sm:items-center justify-center p-4 overflow-y-auto';
+  // không dùng items-center: popup cao hơn màn hình sẽ bị cắt phần trên, không cuộn lên được.
+  // my-auto vẫn căn giữa khi popup ngắn, còn popup dài thì cuộn được từ đầu
+  wrapper.className = 'fixed inset-0 z-40 flex items-start justify-center p-4 overflow-y-auto';
   wrapper.setAttribute('role', 'dialog');
   wrapper.setAttribute('aria-modal', 'true');
   render(wrapper, html`
     <div class="sc-backdrop fixed inset-0" data-action="__close"></div>
-    <div class="sc-modal relative w-full ${size} my-8">
+    <div class="sc-modal relative w-full ${size} my-auto">
       <div class="sc-modal-head">
         <h3 class="sc-modal-title font-display font-extrabold text-2xl leading-none">${title}</h3>
         <button type="button" data-action="__close" class="sc-modal-close" aria-label="Đóng">${icon('x', 'w-4 h-4')}</button>

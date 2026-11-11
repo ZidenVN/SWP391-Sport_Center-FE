@@ -1,6 +1,7 @@
 import { html, icon } from '../core/dom.js';
 import { badge, date, weekday, timeRange, isFuture } from '../core/format.js';
 import { coachLink } from './coachInfo.js';
+import { courseOf, courseBlock } from './courseSchedule.js';
 
 // Tông đất cùng bộ với trang giới thiệu; đều đủ đậm để đặt chữ trắng lên trên (hero lớp, ô ngày của HLV)
 const SUBJECT_COLORS = [
@@ -68,6 +69,7 @@ export function classCard(c, footer = '') {
           <div class="flex items-center gap-2">${icon('map-pin', 'w-4 h-4 text-slate-400')} ${c.roomName}</div>
           <div class="flex items-center gap-2">${icon('user-round', 'w-4 h-4 text-slate-400')} ${coachLink(c)}</div>
         </div>
+        ${c.daysOfWeek ? html`<div class="mt-3">${courseBlock(courseOf(c))}</div>` : ''}
         ${c.subjectDescription ? html`<p class="mt-3 text-xs text-slate-500 line-clamp-2" title="${c.subjectDescription}">${c.subjectDescription}</p>` : ''}
         ${c.maxCapacity ? html`
           <div class="mt-4">

@@ -10,7 +10,7 @@ import { openFormModal, requireFields, confirmAction, matches, searchBox } from 
 // - CLASS: gói lớp, gắn đúng 1 môn (subjectId). Mỗi lần đăng ký lớp dùng 1 gói lớp đang chờ, cùng môn và cùng thời hạn với lớp.
 // Gói đã có người mua chỉ sửa được tên, mô tả, giá, trạng thái (BE trả ERR_PACKAGE_409).
 const TYPES = [
-  ['MEMBERSHIP', 'Membership', 'Vào trung tâm, kích hoạt ở lần check-in đầu'],
+  ['MEMBERSHIP', 'Membership', 'Vào trung tâm, kích hoạt khi check-in / đăng ký lớp lần đầu (tối đa 14 ngày)'],
   ['CLASS', 'Gói lớp', 'Học 1 lớp của 1 môn, thời hạn bằng thời hạn lớp']
 ];
 const subjectIdOf = p => p.subject?.subjectId ?? p.subjectId ?? null;

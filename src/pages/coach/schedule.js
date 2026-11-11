@@ -4,6 +4,7 @@ import { mountPage } from '../../core/page.js';
 import { coachApi } from '../../api/endpoints.js';
 import { badge, date, weekday, timeRange, toDate, isToday, isoDate } from '../../core/format.js';
 import { subjectColor, classImage } from '../../components/classCard.js';
+import { courseOf, courseInline } from '../../components/courseSchedule.js';
 import { calendarGrid, calendarToolbar, viewModeTabs, scrollTimeGrid } from '../../components/classCalendar.js';
 
 // Lịch dạy của HLV: xem dạng lịch Tuần (khung giờ) / Tháng như Hội viên & Quản lý, hoặc Danh sách theo tab.
@@ -25,7 +26,10 @@ const startOfWeek = () => {
 const isCancelled = c => c.status === 'CANCELLED' || c.classStatus === 'CANCELLED' || c.classStatus === 'STOPPED';
 const sessionLink = c => `#/coach/classes/${c.classId}${c.sessionId ? `?session=${c.sessionId}` : ''}`;
 
-function classRow(c) {
+// các thứ lớp có buổi dạy (tính từ các buổi của lớp trong lịch đã tải)
+const daysOf = (all, c) => courseOf(null, all.filter(x => x.classId === c.classId && x.status !== 'CANCELLED').map(x => x.startTime));
+
+function classRow(c, all = []) {
   const cancelled = isCancelled(c);
   const ended = !cancelled && toDate(c.endTime) < new Date();
   const pct = c.maxCapacity ? Math.round((c.currentEnrolled / c.maxCapacity) * 100) : 0;
@@ -48,6 +52,7 @@ function classRow(c) {
           <span class="flex items-center gap-1">${icon('clock', 'w-3.5 h-3.5')} ${timeRange(c.startTime, c.endTime)}</span>
           <span class="flex items-center gap-1">${icon('map-pin', 'w-3.5 h-3.5')} ${c.roomName}</span>
         </div>
+        ${all.length ? html`<div class="mt-1.5">${courseInline(c, { course: daysOf(all, c), dates: false })}</div>` : ''}
       </div>
       <div class="hidden sm:block w-40">
         <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Học viên</span><b class="text-slate-700">${c.currentEnrolled}/${c.maxCapacity}</b></div>
@@ -66,7 +71,7 @@ function listView(s, { upcoming, past, sorted }) {
       { id: 'ALL', label: 'Tất cả', count: sorted.length }
     ], s.tab)}
     ${list.length
-      ? html`<div class="space-y-3" data-testid="coach-schedule">${list.map(classRow)}</div>`
+      ? html`<div class="space-y-3" data-testid="coach-schedule">${list.map(c => classRow(c, s.classes))}</div>`
       : emptyState(s.tab === 'PAST' ? 'Chưa có lớp nào đã dạy' : 'Chưa có lớp sắp tới', 'calendar-x')}`;
 }
 
@@ -101,11 +106,11 @@ function view(s) {
 }
 
 // danh sách các buổi trong 1 ngày (bấm "+N lớp" hoặc bấm ô ngày trên điện thoại); bấm buổi -> trang chi tiết lớp
-function openDay(list) {
+function openDay(list, all) {
   const modal = openModal({
     title: `Lớp ngày ${date(list[0].startTime)}`,
     size: 'max-w-2xl',
-    body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto" data-testid="coach-day">${list.map(classRow)}</div>`
+    body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto" data-testid="coach-day">${list.map(c => classRow(c, all))}</div>`
   });
   modal.el.addEventListener('click', e => { if (e.target.closest('a[href^="#/coach/classes/"]')) modal.close(); });
 }
@@ -134,7 +139,7 @@ export default function CoachSchedule(el) {
         const list = ctx.state.classes
           .filter(c => c.status !== 'CANCELLED' && isoDate(toDate(c.startTime)) === t.dataset.date)
           .sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
-        if (list.length) openDay(list);
+        if (list.length) openDay(list, ctx.state.classes);
       }
     }
   });

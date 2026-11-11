@@ -14,7 +14,7 @@ export const isClassPackage = p => p?.packageType === 'CLASS';
 
 // Phạm vi gói: MEMBERSHIP = vào trung tâm; CLASS = 1 lớp của 1 môn
 export function packageScope(p) {
-  if (!isClassPackage(p)) return 'Vào trung tâm, kích hoạt ở lần check-in đầu';
+  if (!isClassPackage(p)) return 'Vào trung tâm, kích hoạt khi check-in / đăng ký lớp lần đầu';
   return subjectNameOf(p) ? `1 lớp môn ${subjectNameOf(p)}` : 'Chưa gắn môn';
 }
 

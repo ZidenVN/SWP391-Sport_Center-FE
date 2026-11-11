@@ -4,7 +4,7 @@ import { receptionApi, packageApi } from '../api/endpoints.js';
 import { fullName } from '../core/format.js';
 import { subjectColor } from './classCard.js';
 import { withDurations, waitingClassPackages } from './classPackages.js';
-import { scheduleText } from './switchClass.js';
+import { courseInline } from './courseSchedule.js';
 
 // Lễ tân đặt lớp hộ 1 hội viên theo mô hình gói lớp của BE:
 // chọn 1 gói lớp đang chờ -> BE trả các lớp cùng môn, cùng thời hạn, còn chỗ, không trùng lịch (eligible-classes) -> Đặt.
@@ -36,7 +36,7 @@ export function openBookClass({ member, onDone }) {
             <span class="w-1.5 self-stretch rounded-full bg-gradient-to-b ${subjectColor(c.subjectName)}"></span>
             <div class="flex-1 min-w-0">
               <div class="font-bold text-sm">${c.subjectName} <span class="text-slate-400 font-semibold">#${c.classId}</span></div>
-              <div class="text-xs text-slate-500">${scheduleText(c)}</div>
+              <div class="mt-1">${courseInline(c)}</div>
               <div class="text-xs text-slate-500">${c.roomName} · HLV ${c.coachName}</div>
               <div class="text-[11px] mt-0.5 font-semibold ${c.maxCapacity - (c.registeredCount || 0) > 3 ? 'text-emerald-600' : 'text-amber-600'}">Còn ${c.maxCapacity - (c.registeredCount || 0)}/${c.maxCapacity} chỗ</div>
             </div>

@@ -7,13 +7,14 @@ import { memberAvatar } from '../../components/memberPicker.js';
 import { planList } from '../../components/training.js';
 import { openPlanForm, openNotifyForm } from '../../components/coachForms.js';
 import { subjectColor, classImage } from '../../components/classCard.js';
+import { courseOf, courseBlock } from '../../components/courseSchedule.js';
 
 const ATTENDANCE = [
   { id: 'PRESENT', label: 'Có mặt', on: 'peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600' },
-  { id: 'LATE', label: 'Muộn', on: 'peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500' },
-  { id: 'ON_LEAVE', label: 'Có phép', on: 'peer-checked:bg-sky-500 peer-checked:text-white peer-checked:border-sky-500' },
   { id: 'ABSENT', label: 'Vắng', on: 'peer-checked:bg-rose-600 peer-checked:text-white peer-checked:border-rose-600' }
 ];
+// chỉ điểm danh Có mặt / Vắng; bản ghi cũ "Muộn" tính là có mặt, "Có phép" tính là vắng
+const attendanceChoice = status => (status === 'LATE' ? 'PRESENT' : status === 'ON_LEAVE' ? 'ABSENT' : status || 'PRESENT');
 
 // Điểm danh theo TỪNG BUỔI (sessionId lấy từ GET /coaches/me/schedules).
 // Khung giờ giống BE (app.attendance.*): mở trước giờ học 15 phút, đóng sau giờ kết thúc 24 giờ; buổi hoãn / hủy thì không
@@ -119,7 +120,7 @@ function attendanceTab(s) {
       </div>
       <div class="divide-y divide-slate-100">
         ${s.sessionRoster.map(m => {
-          const cur = marked[m.memberId]?.status || 'PRESENT';
+          const cur = attendanceChoice(marked[m.memberId]?.status);
           return html`
             <div class="px-5 py-4 flex flex-col lg:flex-row lg:items-center gap-3" data-testid="attendance-row">
               <div class="flex items-center gap-3 lg:w-64 shrink-0">
@@ -177,6 +178,7 @@ function view(s) {
   }[s.tab]();
   return html`
     ${hero(s.session || s.cls)}
+    <div class="mb-6">${courseBlock(courseOf(s.info, s.sessions.map(x => x.startTime)))}</div>
     ${tabs([
       { id: 'roster', label: 'Học viên', count: s.roster.length },
       { id: 'attendance', label: 'Điểm danh' },

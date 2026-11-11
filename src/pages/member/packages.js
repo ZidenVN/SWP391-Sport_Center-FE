@@ -54,15 +54,15 @@ function perksOf(p) {
     ? [
       `Học 1 lớp môn ${subjectNameOf(p)}, khoá ${p.durationDays} ngày`,
       'Chọn lớp cùng môn, cùng thời hạn sau khi mua',
-      'Bắt đầu tính ngày khi lớp bắt đầu',
+      'Kích hoạt khi đăng ký lớp, hết hạn theo ngày kết thúc của lớp',
       'Nhận giáo án & nhận xét từ huấn luyện viên',
       'Cần có Membership để mua gói lớp'
     ]
     : [
       `${p.durationDays} ngày vào trung tâm, dùng cơ sở vật chất`,
-      'Kích hoạt ở lần check-in đầu tiên',
-      'Bắt buộc có để mua và học các gói lớp',
-      'Mua thêm được cộng nối tiếp, không mất ngày còn lại'
+      'Kích hoạt khi check-in hoặc đăng ký lớp lần đầu, chậm nhất 14 ngày sau khi thanh toán',
+      'Bắt buộc có để mua các gói lớp',
+      'Mua thêm được cộng nối tiếp sau ngày hết hạn, không mất ngày còn lại'
     ];
 }
 
@@ -99,7 +99,7 @@ function planCard(p, { best, isRenewal, suggested }) {
 
 const TRUST = [
   ['shield-check', 'Thanh toán an toàn', 'Xử lý qua cổng VNPay, hỗ trợ thẻ ATM, thẻ quốc tế và QR.'],
-  ['zap', 'Kích hoạt tức thì', 'Gói có hiệu lực ngay khi thanh toán thành công.'],
+  ['zap', 'Không mất ngày khi chưa dùng', 'Gói chỉ bắt đầu tính ngày khi bạn check-in hoặc đăng ký lớp (Membership tự kích hoạt sau 14 ngày).'],
   ['file-text', 'Hóa đơn điện tử', 'Xem và in hóa đơn bất cứ lúc nào trong mục Thanh toán.']
 ];
 
@@ -117,7 +117,7 @@ const sectionNote = (ic, text) => html`
 function membershipSection(list, hasMembership, suggestedId) {
   if (!list.length) return emptyState('Hiện chưa có gói Membership nào mở bán', 'package');
   return html`
-    ${sectionNote('door-open', html`<b>Membership</b> là gói vào trung tâm, dùng cơ sở vật chất. Gói kích hoạt ở lần check-in đầu tiên và là điều kiện để mua gói lớp.`)}
+    ${sectionNote('door-open', html`<b>Membership</b> là gói vào trung tâm, dùng cơ sở vật chất. Gói kích hoạt khi check-in hoặc đăng ký lớp lần đầu, chậm nhất 14 ngày sau khi thanh toán, và là điều kiện để mua gói lớp.`)}
     ${grid(list, { best: bestValueId(list), isRenewal: hasMembership, suggestedId })}`;
 }
 

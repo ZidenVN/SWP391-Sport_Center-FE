@@ -9,7 +9,8 @@ import { openSellPackage } from '../../components/sellPackage.js';
 import { openBookClass } from '../../components/bookClass.js';
 import { openInvoice } from '../../components/invoice.js';
 import { latestActive, validityText } from '../../components/billing.js';
-import { scheduleText, canCancelRegistration, firstSessionOf, openSwitchClass } from '../../components/switchClass.js';
+import { canCancelRegistration, firstSessionOf, openSwitchClass } from '../../components/switchClass.js';
+import { courseInline } from '../../components/courseSchedule.js';
 
 function membershipCard(s) {
   const latest = latestActive(s.subscriptions);
@@ -80,7 +81,7 @@ function classesTab(s) {
       columns: [{ label: 'Lớp' }, { label: 'Lịch học' }, { label: 'Gói' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
       rows: regs.map(r => [
         html`<div class="font-semibold">${r.subjectName} <span class="text-xs text-slate-400 font-normal">#${r.classId}</span></div><div class="text-xs text-slate-500">HLV ${r.coachName} · ${r.roomName}</div>`,
-        html`<div class="text-sm">${scheduleText(r)}</div>${firstSessionOf(r) ? html`<div class="text-xs text-slate-500">Buổi đầu: ${dateTime(r.firstSessionAt || r.startTime)}</div>` : ''}`,
+        html`<div>${courseInline(r)}</div>${firstSessionOf(r) ? html`<div class="text-xs text-slate-500">Buổi đầu: ${dateTime(r.firstSessionAt || r.startTime)}</div>` : ''}`,
         html`<span class="text-sm">${r.packageName || '—'}</span>${r.receptionistSwitchCount ? html`<div class="text-[11px] text-amber-700">Đã dùng lượt đổi lớp</div>` : ''}`,
         badge(r.status, REG_LABEL[r.status]),
         html`<div class="flex justify-end gap-1">

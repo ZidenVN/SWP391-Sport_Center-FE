@@ -3,6 +3,7 @@ import { openModal } from '../core/ui.js';
 import { classApi } from '../api/endpoints.js';
 import { date, weekday, timeRange, toDate, isFuture } from '../core/format.js';
 import { classImage, isBookable } from './classCard.js';
+import { courseOf, courseBlock } from './courseSchedule.js';
 
 // Thẻ lớp dạng ảnh tràn thẻ: chữ chi tiết đè ở đáy ảnh; bấm cả thẻ để mở popup thông tin lớp + HLV + nút đặt lớp.
 // registered: hội viên đã đăng ký lớp này
@@ -73,6 +74,7 @@ export function openClassDetail(c, { footer, actions = {} }) {
         <div class="rounded-xl border border-brand-line p-3"><div class="text-xs text-slate-500 flex items-center gap-1">${icon('clock', 'w-3.5 h-3.5')} Thời gian</div><div class="font-bold mt-0.5">${timeRange(c.startTime, c.endTime)}</div></div>
         <div class="rounded-xl border border-brand-line p-3"><div class="text-xs text-slate-500 flex items-center gap-1">${icon('map-pin', 'w-3.5 h-3.5')} Phòng</div><div class="font-bold mt-0.5 truncate">${c.roomName}</div></div>
       </div>
+      <div class="mt-3">${courseBlock(courseOf(c))}</div>
       <div class="mt-3 rounded-xl border border-brand-line p-3">
         <div class="flex justify-between text-sm"><span class="text-slate-500">${c.currentEnrolled ?? 0}/${c.maxCapacity} học viên</span><span class="font-bold ${c.availableSeats > 0 ? 'text-emerald-600' : 'text-rose-600'}">${c.availableSeats > 0 ? `Còn ${c.availableSeats} chỗ` : 'Hết chỗ'}</span></div>
         <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2"><div class="h-full bg-emerald-500" style="width:${pct}%"></div></div>

@@ -5,6 +5,7 @@ import { classApi, subjectApi, roomApi, coachAdminApi, packageApi } from '../../
 import { openClassSessions } from '../../components/classSessions.js';
 import { badge, date, weekday, timeRange, toDate, isoDate, fullName } from '../../core/format.js';
 import { subjectColor, classImage, classImageUrl } from '../../components/classCard.js';
+import { courseOf, courseBlock, courseInline } from '../../components/courseSchedule.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
 import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 import { imageField, imageErrors, mountImagePicker, attachImageError, hasFile } from '../../components/imageField.js';
@@ -286,7 +287,7 @@ function listView(s) {
           return [
             html`<div class="flex items-center gap-3"><div class="w-14 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100">${classImage(c)}</div><div><div class="font-semibold">${c.subjectName}</div><div class="text-xs text-slate-500">#${c.classId}${c.imageUrl ? '' : ' · ảnh mặc định'}</div></div></div>`,
             classWhen(c)
-              ? html`<div class="text-sm font-semibold">${classWhen(c).range}</div><div class="text-xs text-slate-500">${classWhen(c).clock} · ${classWhen(c).days} ngày</div>`
+              ? html`<div class="text-sm font-semibold">${classWhen(c).range}</div><div class="mt-1">${c.daysOfWeek ? courseInline(c, { dates: false }) : html`<span class="text-xs text-slate-500">${classWhen(c).clock} · ${classWhen(c).days} ngày</span>`}</div>`
               : html`<div class="text-sm font-semibold">${weekday(c.startTime)}, ${date(c.startTime)}</div><div class="text-xs text-slate-500">${timeRange(c.startTime, c.endTime)}</div>`,
             c.coachName,
             c.roomName,
@@ -350,6 +351,7 @@ function classDetail(c) {
         <div class="flex items-center gap-2 text-slate-600">${icon('map-pin', 'w-4 h-4 text-slate-400')} ${c.roomName}</div>
         <div class="text-slate-600"><div class="text-xs font-semibold mb-1">${c.currentEnrolled}/${c.maxCapacity} học viên</div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#1E9E64]" style="width:${pct}%"></div></div></div>
       </div>
+      <div class="mt-4">${courseBlock(courseOf(c))}</div>
       ${detailActions(c, ph) ? html`<div class="mt-4 pt-4 border-t border-slate-100">${detailActions(c, ph)}</div>` : ''}
       </div>
     </div>`;

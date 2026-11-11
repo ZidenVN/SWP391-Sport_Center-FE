@@ -71,7 +71,7 @@ function view(s) {
         { id: 'CLASS', label: 'Gói lớp', count: classPlans.length }
       ], s.tab)}</div>
       ${s.tab === 'CLASS' ? classView(classPlans) : memberships.length ? html`
-        ${note('door-open', html`<b>Membership</b> là gói vào trung tâm, dùng cơ sở vật chất. Kích hoạt ở lần check-in đầu tiên và là điều kiện để mua gói lớp.`)}
+        ${note('door-open', html`<b>Membership</b> là gói vào trung tâm, dùng cơ sở vật chất. Kích hoạt khi check-in hoặc đăng ký lớp lần đầu, chậm nhất 14 ngày sau khi thanh toán, và là điều kiện để mua gói lớp.`)}
         ${grid(memberships)}` : emptyState('Chưa có gói Membership đang mở bán', 'package')}`
       : emptyState('Chưa có gói tập đang mở bán', 'package')}`;
 }

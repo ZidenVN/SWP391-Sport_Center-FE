@@ -6,6 +6,7 @@ import { date, weekday, timeRange, dateTime, badge, isFuture, toDate, time, isoD
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { FEATURES } from '../../core/features.js';
 import { classImage } from '../../components/classCard.js';
+import { courseOf, courseBlock } from '../../components/courseSchedule.js';
 import { calendarGrid, calendarToolbar, viewModeTabs, scrollTimeGrid, whenLine } from '../../components/classCalendar.js';
 import { scheduleText, canCancelRegistration, canSelfSwitch, firstSessionOf, openSwitchClass, SELF_SWITCH_HOURS } from '../../components/switchClass.js';
 
@@ -191,8 +192,14 @@ function view(s) {
     ${s.mode === 'list' ? listView(s, upcoming, history) : calendarView(s, upcoming)}`;
 }
 
-// Chi tiết buổi học khi bấm trên lịch: ảnh, giờ, HLV (dạy thay), phòng, kết quả điểm danh
-function sessionDetail(r, att) {
+// Lịch cả khóa của lớp chứa buổi này: lấy từ lớp đã đăng ký; thiếu thì tính từ các buổi của lớp trên lịch
+function courseOfSession(s, r) {
+  const reg = s.registrations.find(x => x.classId === r.classId && x.status === 'REGISTERED') || s.registrations.find(x => x.classId === r.classId);
+  return courseOf(reg, s.schedule.filter(x => x.classId === r.classId && x.status !== 'CANCELLED').map(x => x.startTime));
+}
+
+// Chi tiết buổi học khi bấm trên lịch: ảnh, giờ, HLV (dạy thay), phòng, kết quả điểm danh, lịch cả khóa
+function sessionDetail(r, att, course) {
   const st = stateOf(r);
   return html`
     <div class="rounded-2xl border border-brand-line overflow-hidden" data-testid="cal-detail" data-class-id="${r.classId}">
@@ -211,6 +218,7 @@ function sessionDetail(r, att) {
           <div class="flex items-center gap-2">${icon('clipboard-check', 'w-4 h-4 text-slate-400')} Điểm danh: ${attendanceCell(r, att)}</div>
           <div class="flex items-center gap-2 text-xs">${sessionTags(r)}</div>
         </div>
+        <div class="mt-4">${courseBlock(course)}</div>
         ${r.note ? html`<div class="mt-3 rounded-xl bg-brand-sand/60 p-3 text-sm text-slate-600">${r.note}</div>` : ''}
       </div>
     </div>`;
@@ -221,7 +229,7 @@ function openSessions(ctx, list, title) {
   const modal = openModal({
     title,
     size: 'max-w-xl',
-    body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto">${list.map(r => sessionDetail(r, attBySession.get(r.sessionId)))}</div>`,
+    body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto">${list.map(r => sessionDetail(r, attBySession.get(r.sessionId), courseOfSession(ctx.state, r)))}</div>`,
     actions: {
       'coach-info': btn => openCoachInfo(coachFromButton(btn))
     }
