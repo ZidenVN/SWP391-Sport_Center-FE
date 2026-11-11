@@ -197,7 +197,7 @@ function view(s) {
   const o = s.overview || {};
   const current = monthKey(new Date());
   return html`
-    ${pageHeader(`Xin chào, ${session.get()?.fullName || 'Quản lý'}!`, 'Tình hình trung tâm',
+    ${pageHeader(`Xin chào, ${session.get()?.fullName || 'Quản lý'}!`, 'Doanh thu, hội viên và lớp học của trung tâm theo thời gian',
       html`<button type="button" class="btn-secondary" data-action="export" data-testid="export">${icon('download', 'w-4 h-4')} Xuất CSV</button>`)}
 
     <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">

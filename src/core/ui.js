@@ -152,7 +152,7 @@ export function loading(text = 'Đang tải dữ liệu...') {
 
 export function emptyState(text, iconName = 'inbox') {
   return html`
-    <div class="flex flex-col items-center justify-center py-12 text-slate-400 text-sm gap-2" data-state="empty">
+    <div class="flex flex-col items-center justify-center py-12 text-slate-500 text-sm gap-2" data-state="empty">
       ${icon(iconName, 'w-8 h-8')}<span>${text}</span>
     </div>`;
 }
@@ -174,7 +174,7 @@ export function pageHeader(title, subtitle, actions = '') {
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
       <div>
         <h1 class="font-display text-4xl font-extrabold tracking-tight leading-none text-brand-dark">${title}</h1>
-        ${subtitle ? html`<p class="text-sm text-slate-500 mt-1">${subtitle}</p>` : ''}
+        ${subtitle ? html`<p class="text-sm text-slate-600 mt-1">${subtitle}</p>` : ''}
       </div>
       <div class="flex flex-wrap gap-2">${actions}</div>
     </div>`;

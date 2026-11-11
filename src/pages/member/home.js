@@ -3,7 +3,7 @@ import { pageHeader, statCard, emptyState } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { memberApi, quizApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
-import { date, dateTime, daysUntil, weekday, timeRange, badge, isPlaceholderPhone, toDate } from '../../core/format.js';
+import { date, dateTime, time, daysUntil, weekday, timeRange, badge, isPlaceholderPhone, toDate } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
 import { quizStore } from '../../core/quiz.js';
@@ -139,7 +139,8 @@ function quizBanner(current) {
 }
 
 function view(s) {
-  const name = session.get()?.firstName || '';
+  // chào bằng tên (lastName), không phải họ (firstName)
+  const name = session.get()?.lastName || session.get()?.firstName || '';
   const upcoming = (s.schedule || []).filter(r => r.status === 'SCHEDULED' && toDate(r.endTime) >= new Date()).sort((a, b) => toDate(a.startTime) - toDate(b.startTime)).slice(0, 4);
   const notis = (s.notifications || []).slice(0, 4);
   const p = s.progress;
@@ -149,7 +150,7 @@ function view(s) {
   // nhắc gia hạn theo Membership hết hạn muộn nhất
   const latestMembership = memberships.filter(x => x.status === 'ACTIVE').sort(byEnd).at(-1) || null;
   return html`
-    ${pageHeader(`Xin chào, ${name}!`, 'Tổng quan hoạt động tập luyện của bạn')}
+    ${pageHeader(`Xin chào, ${name}!`, upcoming.length ? `Buổi tiếp theo: ${upcoming[0].subjectName} lúc ${time(upcoming[0].startTime)}, ${weekday(upcoming[0].startTime)} ${date(upcoming[0].startTime)}` : 'Chưa có buổi tập nào sắp tới, chọn một lớp để bắt đầu')}
     ${s.me && isPlaceholderPhone(s.me.phone) ? html`
       <a href="#/member/profile" class="mb-5 flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sky-900 hover:bg-sky-100" data-testid="complete-profile">
         <span class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0">${icon('user-pen', 'w-5 h-5')}</span>

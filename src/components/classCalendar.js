@@ -123,9 +123,15 @@ const TONES = {
   postponed: 'tone-pending'
 };
 
-const statusText = (c, st) => ({
-  registered: 'Đã đăng ký', pending: 'Chờ chốt buổi', done: 'Hoàn thành', cancelled: 'Đã hủy', postponed: 'Đã hoãn'
-}[st] || (c.availableSeats <= 0 ? 'Hết chỗ' : `Còn ${c.availableSeats} chỗ`));
+// lịch dạy của HLV không trả availableSeats -> tự tính từ sĩ số; thiếu cả hai thì không ghi số chỗ
+const seatsLeft = c => c.availableSeats ?? (c.maxCapacity != null ? c.maxCapacity - (c.currentEnrolled ?? 0) : null);
+const statusText = (c, st) => {
+  const fixed = { registered: 'Đã đăng ký', pending: 'Chờ chốt buổi', done: 'Hoàn thành', cancelled: 'Đã hủy', postponed: 'Đã hoãn' }[st];
+  if (fixed) return fixed;
+  const left = seatsLeft(c);
+  if (left == null) return '';
+  return left <= 0 ? 'Hết chỗ' : `Còn ${left} chỗ`;
+};
 
 // chú thích màu: [[trạng thái, nhãn], ...]
 export const MEMBER_LEGEND = [['registered', 'Đã đăng ký'], ['open', 'Còn nhận đăng ký'], ['closed', 'Đã qua / hết chỗ']];
