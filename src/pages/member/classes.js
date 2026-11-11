@@ -43,7 +43,7 @@ function view(s) {
   const mine = new Map(s.registrations.filter(r => r.status === 'REGISTERED').map(r => [r.classId, r]));
   const list = filterByKeyword(s.page?.content || [], s.keyword);
   return html`
-    ${pageHeader('Lớp học', 'Chọn lớp phù hợp và đặt chỗ chỉ với một cú nhấp',
+    ${pageHeader('Lớp học', 'Tìm lớp hợp môn, hợp giờ và giữ chỗ trước khi lớp kín',
       html`<a href="#/member/schedule" class="btn-secondary" data-testid="to-schedule">${icon('calendar-days', 'w-4 h-4')} Lịch tập của tôi</a>`)}
     ${waitingClassPackages(s.subscriptions).length ? html`
       <div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 flex items-center gap-3" data-testid="waiting-packages">
@@ -66,7 +66,16 @@ function view(s) {
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5" data-testid="class-list">
         ${list.map(c => classPhotoCard(c, { registered: mine.has(c.classId) }))}
       </div>
-      ${classPager(s.page)}` : emptyState(s.keyword?.trim() ? 'Không có lớp phù hợp từ khóa trong trang này' : 'Không có lớp nào trong tuần này, thử tuần sau hoặc đổi bộ môn', 'calendar-x')}`;
+      ${classPager(s.page)}` : emptyView(s, mine)}`;
+}
+
+// trống: nói rõ lý do (mặc định chỉ hiện lớp còn đặt được) và chỉ đường tiếp theo
+function emptyView(s, mine) {
+  if (s.keyword?.trim()) return emptyState('Không có lớp khớp từ khóa trong tuần này', 'calendar-x');
+  const text = s.showAll ? 'Tuần này không có lớp nào, thử tuần sau hoặc đổi bộ môn' : 'Tuần này không còn lớp nào nhận đăng ký. Bật "Hiện cả lớp đã qua / hết chỗ" để xem toàn bộ, hoặc thử tuần sau.';
+  return html`
+    ${emptyState(text, 'calendar-x')}
+    ${mine.size ? html`<div class="-mt-6 mb-6 text-center"><a href="#/member/schedule" class="btn-secondary btn-sm" data-testid="empty-to-schedule">${icon('calendar-days', 'w-4 h-4')} Xem lớp bạn đã đăng ký</a></div>` : ''}`;
 }
 
 export default function MemberClasses(el, { query } = {}) {
