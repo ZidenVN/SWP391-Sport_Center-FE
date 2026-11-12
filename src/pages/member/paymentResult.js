@@ -1,4 +1,5 @@
 import { html, render, icon, bindActions } from '../../core/dom.js';
+import { BUY_FOR_CLASS_KEY } from './checkout.js';
 import { loading } from '../../core/ui.js';
 import { vnpayApi, memberApi } from '../../api/endpoints.js';
 import { money, date, dateTime, paymentMethodLabel } from '../../core/format.js';
@@ -49,7 +50,7 @@ function receipt(r, { loggedIn }) {
             <div class="grid sm:grid-cols-2 gap-3">
               ${ok ? html`
                 ${r.canInvoice ? html`<button type="button" class="btn-secondary !py-3" data-action="invoice" data-id="${r.paymentId}">${icon('file-text', 'w-4 h-4')} Xem hóa đơn</button>` : html`<a href="#/member/payments" class="btn-secondary !py-3">${icon('history', 'w-4 h-4')} Lịch sử thanh toán</a>`}
-                <a href="#/member/classes" class="btn-primary !py-3">${icon('calendar-plus', 'w-4 h-4')} Đặt lớp ngay</a>` : html`
+                <a href="${classesHref()}" class="btn-primary !py-3" data-testid="book-now">${icon('calendar-plus', 'w-4 h-4')} Đặt lớp ngay</a>` : html`
                 <a href="#/member/payments" class="btn-secondary !py-3">${icon('history', 'w-4 h-4')} Lịch sử thanh toán</a>
                 <a href="#/member/packages" class="btn-primary !py-3">${icon('refresh-cw', 'w-4 h-4')} Thử lại</a>`}
             </div>` : html`
@@ -83,6 +84,13 @@ async function fromInvoice(paymentId, base) {
   } catch {
     return base;
   }
+}
+
+// thanh toán xong gói mua từ popup lớp -> mở lại popup lớp đó (nút "Đặt lớp này" đã sẵn)
+function classesHref() {
+  let id = null;
+  try { id = sessionStorage.getItem(BUY_FOR_CLASS_KEY); } catch { /* bỏ qua */ }
+  return id ? `#/member/classes?open=${encodeURIComponent(id)}` : '#/member/classes';
 }
 
 export default async function PaymentResult(el, { search, query, loggedIn }) {

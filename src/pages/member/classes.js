@@ -7,7 +7,7 @@ import { isBookable } from '../../components/classCard.js';
 import { classPhotoCard, openClassDetail } from '../../components/classPhotoCard.js';
 import { date, timeRange } from '../../core/format.js';
 import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
-import { withDurations, waitingClassPackages, matchingPackages, neededPackageText, pickPackage } from '../../components/classPackages.js';
+import { withDurations, waitingClassPackages, matchingPackages, neededPackageText, pickPackage, buyablePackages, hasMembership } from '../../components/classPackages.js';
 import { classSearchQuery, classFilterBar, classPager, filterByKeyword, classSearchActions } from '../../components/classSearch.js';
 
 // Tìm & đặt lớp qua GET /classes/search (lọc + phân trang ở BE, FE-TODO #7): xem theo tuần, lọc bộ môn, chỉ lớp còn chỗ.
@@ -27,13 +27,19 @@ function register(classId, subscriptionId) {
   });
 }
 
+// đúng 1 gói khớp và đã có membership -> mua thẳng; còn lại (nhiều gói / chưa membership) về trang gói để tự chọn
+function buyHref(s, c) {
+  const list = buyablePackages(s.packages, c);
+  return list.length === 1 && hasMembership(s.subscriptions) ? `#/member/checkout/${list[0].packageId}?class=${c.classId}` : '#/member/packages';
+}
+
 function footerFor(s, c, reg) {
   if (reg) {
     return html`
       <span class="mr-auto text-xs font-bold text-emerald-600 flex items-center gap-1">${icon('check-circle-2', 'w-4 h-4')} Đã đăng ký</span>
       <button type="button" class="btn-secondary btn-sm" data-action="cancel-booking" data-id="${reg.registrationId}">Hủy</button>`;
   }
-  if (isBookable(c) && !matchingPackages(s.subscriptions, c).length) return html`<span class="mr-auto text-xs text-amber-700" data-testid="need-package-text">${neededPackageText(c)}</span><a href="#/member/packages" class="btn-secondary btn-sm" data-testid="need-package">${icon('package', 'w-3.5 h-3.5')} Mua gói</a>`;
+  if (isBookable(c) && !matchingPackages(s.subscriptions, c).length) return html`<span class="mr-auto text-xs text-amber-700" data-testid="need-package-text">${neededPackageText(c)}</span><a href="${buyHref(s, c)}" class="btn-secondary btn-sm" data-testid="need-package">${icon('package', 'w-3.5 h-3.5')} Mua gói</a>`;
   if (isBookable(c) && quizPending(s)) return html`<span class="mr-auto text-xs text-amber-700">Cần làm khảo sát trước khi đặt lớp</span><a href="#/member/onboarding" class="btn-primary btn-sm" data-testid="need-quiz">${icon('clipboard-list', 'w-3.5 h-3.5')} Làm khảo sát</a>`;
   if (isBookable(c)) return html`<button type="button" class="btn-primary w-full sm:w-auto justify-center" data-action="book" data-id="${c.classId}" data-testid="detail-book">${icon('plus', 'w-4 h-4')} Đặt lớp này</button>`;
   return html`<span class="text-xs text-slate-400">Không nhận đăng ký</span>`;
@@ -78,10 +84,33 @@ function emptyView(s, mine) {
     ${mine.size ? html`<div class="-mt-6 mb-6 text-center"><a href="#/member/schedule" class="btn-secondary btn-sm" data-testid="empty-to-schedule">${icon('calendar-days', 'w-4 h-4')} Xem lớp bạn đã đăng ký</a></div>` : ''}`;
 }
 
+// popup thông tin lớp + HLV; đặt / hủy ngay trong popup (bấm thẻ hoặc vào trang với ?open=<classId>)
+function showDetail(c, ctx) {
+  const s = ctx.state;
+  const reg = s.registrations.find(r => r.status === 'REGISTERED' && r.classId === c.classId);
+  openClassDetail(c, {
+    footer: footerFor(s, c, reg),
+    actions: {
+      book: async (b, modal) => {
+        const sub = await pickPackage(matchingPackages(s.subscriptions, c), c);
+        if (!sub) return;
+        const res = await withBusy(b, () => register(c.classId, sub.subscriptionId));
+        if (res) { modal.close(); toast(`Đã đặt lớp ${c.subjectName} — xem trong Lịch tập của tôi`); ctx.reload(); }
+      },
+      'cancel-booking': async (b, modal) => {
+        const ok = await confirmDialog('Bạn chắc chắn muốn hủy đăng ký lớp này?', { title: 'Hủy đăng ký', confirmText: 'Hủy đăng ký', danger: true });
+        if (!ok) return;
+        const res = await withBusy(b, () => memberApi.cancel(b.dataset.id));
+        if (res) { modal.close(); toast('Đã hủy đăng ký lớp'); ctx.reload(); }
+      }
+    }
+  });
+}
+
 export default function MemberClasses(el, { query } = {}) {
   return mountPage(el, {
     // ?subject=<tên môn> từ trang giới thiệu -> lọc sẵn bộ môn (đổi tên ra id sau khi tải danh sách môn)
-    state: { keyword: '', subjectId: '', subjectName: query?.subject || '', showAll: false, week: 0, pageNo: 0, subjects: [] },
+    state: { openId: query?.open || null, keyword: '', subjectId: '', subjectName: query?.subject || '', showAll: false, week: 0, pageNo: 0, subjects: [] },
     load: async ctx => {
       const s = ctx.state;
       if (!s.subjects.length) {
@@ -100,32 +129,19 @@ export default function MemberClasses(el, { query } = {}) {
       return res;
     },
     view,
+    // ?open=<classId> (từ trang thanh toán xong): mở lại đúng lớp member bấm "Mua gói", lớp có thể không nằm trong tuần đang xem
+    afterRender: async (s, ctx) => {
+      if (!s.openId || !s.__loaded) return;
+      const id = s.openId;
+      s.openId = null;
+      const c = s.page?.content.find(x => String(x.classId) === String(id)) || await classApi.get(id).catch(() => null);
+      if (c) showDetail(c, ctx);
+    },
     actions: {
       ...classSearchActions,
       'coach-info': btn => openCoachInfo(coachFromButton(btn)),
       // bấm thẻ: popup thông tin lớp + HLV; đặt / hủy ngay trong popup
-      detail: (btn, e, ctx) => {
-        const s = ctx.state;
-        const c = s.page.content.find(x => String(x.classId) === btn.dataset.id);
-        const reg = s.registrations.find(r => r.status === 'REGISTERED' && r.classId === c.classId);
-        openClassDetail(c, {
-          footer: footerFor(s, c, reg),
-          actions: {
-            book: async (b, modal) => {
-              const sub = await pickPackage(matchingPackages(s.subscriptions, c), c);
-              if (!sub) return;
-              const res = await withBusy(b, () => register(c.classId, sub.subscriptionId));
-              if (res) { modal.close(); toast(`Đã đặt lớp ${c.subjectName} — xem trong Lịch tập của tôi`); ctx.reload(); }
-            },
-            'cancel-booking': async (b, modal) => {
-              const ok = await confirmDialog('Bạn chắc chắn muốn hủy đăng ký lớp này?', { title: 'Hủy đăng ký', confirmText: 'Hủy đăng ký', danger: true });
-              if (!ok) return;
-              const res = await withBusy(b, () => memberApi.cancel(b.dataset.id));
-              if (res) { modal.close(); toast('Đã hủy đăng ký lớp'); ctx.reload(); }
-            }
-          }
-        });
-      },
+      detail: (btn, e, ctx) => showDetail(ctx.state.page.content.find(x => String(x.classId) === btn.dataset.id), ctx),
       book: async (btn, e, ctx) => {
         const c = ctx.state.page.content.find(x => String(x.classId) === btn.dataset.id);
         const options = matchingPackages(ctx.state.subscriptions, c);
