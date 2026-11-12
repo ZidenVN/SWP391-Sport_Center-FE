@@ -6,45 +6,57 @@ import { money, date, daysUntil, toDate } from '../../core/format.js';
 import { expiryBanner } from '../../components/memberAlerts.js';
 import { latestActive, bestValueId, vnpayMark, packageKind, subjectNameOf } from '../../components/billing.js';
 import { defaultClassImage } from '../../components/classCard.js';
+import { hasMembership as hasMembershipOf } from '../../components/classPackages.js';
 import { session } from '../../core/session.js';
 import { quizStore, recommendPackage } from '../../core/quiz.js';
 
+// Ảnh nền hero + lớp phủ xanh rừng đậm bên trái để chữ trắng luôn đọc được
+const heroShell = (inner, side = '') => html`
+  <div class="relative rounded-3xl overflow-hidden bg-brand-dark text-white min-h-[300px]" data-testid="membership-status">
+    <img src="/landing/hero.jpg" alt="" class="absolute inset-0 w-full h-full object-cover object-[center_60%]" />
+    <span class="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/85 to-brand-dark/10"></span>
+    <div class="relative p-6 sm:p-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 min-h-[300px]">
+      <div class="max-w-xl flex flex-col justify-between gap-6">${inner}</div>
+      ${side}
+    </div>
+  </div>`;
+
 function membershipHero(current, latest, waiting = []) {
   if (!latest) {
-    return html`
-      <div class="rounded-3xl p-6 sm:p-8 bg-brand-dark text-white relative overflow-hidden" data-testid="membership-status">
-        <div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-brand/30"></div>
-        <div class="relative">
-          <div class="text-xs font-bold uppercase tracking-widest text-brand-lime">${waiting.length ? 'Chờ kích hoạt' : 'Hội viên'}</div>
-          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none mt-2">${waiting.length ? waiting.map(x => x.packageName).join(', ') : 'Bắt đầu hành trình tập luyện'}</h1>
-          <p class="text-white/70 mt-2 max-w-xl text-sm">${waiting.length
-            ? 'Gói đã thanh toán, sẽ tự kích hoạt khi bạn check-in tại quầy hoặc đăng ký lớp lần đầu (chậm nhất 14 ngày sau khi thanh toán).'
-            : 'Chọn một gói phù hợp bên dưới. Gói tự kích hoạt khi bạn check-in hoặc đăng ký lớp lần đầu (chậm nhất 14 ngày sau khi thanh toán).'}</p>
-        </div>
-      </div>`;
+    return heroShell(html`
+      <div>
+        <span class="inline-flex px-3 py-1 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold uppercase tracking-wide">${waiting.length ? 'Chờ kích hoạt' : 'Hội viên mới'}</span>
+        <h1 class="font-display text-5xl sm:text-6xl font-extrabold leading-[.9] mt-4">${waiting.length
+          ? html`<span class="text-brand-lime">${waiting.map(x => x.packageName).join(', ')}</span>`
+          : html`SẴN SÀNG<br /><span class="text-brand-lime">XUẤT PHÁT.</span>`}</h1>
+        <p class="text-white/80 mt-4 text-sm">${waiting.length
+          ? 'Gói đã thanh toán, sẽ tự kích hoạt khi bạn check-in tại quầy hoặc đăng ký lớp lần đầu (chậm nhất 14 ngày sau khi thanh toán).'
+          : 'Chọn một gói phù hợp bên dưới. Gói tự kích hoạt khi bạn check-in hoặc đăng ký lớp lần đầu (chậm nhất 14 ngày sau khi thanh toán).'}</p>
+      </div>`);
   }
   const start = toDate((current?.startDate ? current : latest).startDate);
   const end = toDate(latest.endDate);
-  const pct = Math.max(2, Math.min(100, Math.round(((Date.now() - start) / (end - start)) * 100)));
+  const total = Math.max(1, Math.round((end - start) / 86400000));
   const left = daysUntil(latest.endDate);
-  return html`
-    <div class="rounded-3xl p-6 sm:p-8 bg-brand-dark text-white relative overflow-hidden" data-testid="membership-status">
-      <div class="absolute -right-12 -bottom-16 w-56 h-56 rounded-full bg-brand/30"></div>
-      <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-        <div>
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold">
-            <span class="w-2 h-2 rounded-full bg-brand-dark"></span> Đang hoạt động
-          </div>
-          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none text-brand-lime mt-3">${(current || latest).packageName}</h1>
-          <p class="text-white/70 text-sm mt-2">Bạn được tập đến <b class="text-white">${date(latest.endDate)}</b> · còn ${left} ngày</p>
-        </div>
-        <div class="md:w-80">
-          <div class="flex justify-between text-xs text-white/60 mb-1.5"><span>${date(start)}</span><span>${date(end)}</span></div>
-          <div class="h-2 rounded-full bg-white/20 overflow-hidden"><div class="h-full rounded-full bg-brand-lime" style="width:${pct}%"></div></div>
-          <div class="text-xs text-white/60 mt-2">Mua thêm gói sẽ được cộng nối tiếp sau ${date(latest.endDate)}, không mất ngày còn lại.</div>
-        </div>
+  const pct = Math.max(2, Math.min(100, Math.round((left / total) * 100)));
+  return heroShell(html`
+      <div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold uppercase tracking-wide">
+          <span class="w-2 h-2 rounded-full bg-brand-dark"></span> Đang hoạt động</span>
+        <h1 class="font-display text-5xl sm:text-6xl font-extrabold leading-[.9] mt-4">SẴN SÀNG<br /><span class="text-brand-lime">BỨT TỐC.</span></h1>
+        <p class="text-white/80 mt-4 text-sm">${(current || latest).packageName} của bạn còn <b class="text-white">${left} ngày</b>. Mua thêm gói sẽ được cộng nối tiếp sau ${date(latest.endDate)}, không mất ngày còn lại.</p>
       </div>
-    </div>`;
+      <div class="flex flex-wrap gap-3">
+        <button type="button" class="btn-lime !py-3" data-action="tab" data-tab="MEMBERSHIP">Gia hạn ngay ${icon('arrow-right', 'w-4 h-4')}</button>
+        <a href="#/member/payments" class="btn !py-3 border border-white/40 text-white hover:bg-white/10">Lịch sử thanh toán</a>
+      </div>`,
+    html`
+      <div class="lg:w-64 shrink-0 rounded-2xl bg-white text-brand-dark p-5" data-testid="membership-progress">
+        <div class="text-[11px] font-bold uppercase tracking-widest text-slate-500">Membership</div>
+        <div class="font-display text-2xl font-extrabold leading-tight mt-0.5">${(current || latest).packageName}</div>
+        <div class="h-2 rounded-full bg-brand-sand overflow-hidden mt-3"><div class="h-full rounded-full bg-brand" style="width:${pct}%"></div></div>
+        <div class="flex justify-between text-xs text-slate-500 mt-1.5"><span>Còn ${left}/${total} ngày</span><b class="text-brand-dark">${date(end)}</b></div>
+      </div>`);
 }
 
 const isClass = p => p.packageType === 'CLASS';
@@ -66,34 +78,40 @@ function perksOf(p) {
     ];
 }
 
-function planCard(p, { best, isRenewal, suggested }) {
+// ảnh membership xoay vòng theo thứ tự gói; gói lớp dùng ảnh bộ môn (chưa có thì ảnh mặc định theo tên môn)
+const MEMBERSHIP_PHOTOS = ['gym', 'gym-floor', 'swim', 'fitness', 'tennis'].map(x => `/landing/${x}.jpg`);
+const photoOf = (p, i) => isClass(p) ? p.subject?.imageUrl || defaultClassImage(subjectNameOf(p)) : MEMBERSHIP_PHOTOS[i % MEMBERSHIP_PHOTOS.length];
+
+function planCard(p, { best, isRenewal, suggested, index }) {
   const perDay = p.durationDays ? Math.round(p.price / p.durationDays) : null;
   const perks = perksOf(p);
-  // cùng kiểu bảng giá trang giới thiệu: gói tiết kiệm nhất nền xanh rừng + điểm nhấn vàng chanh
+  // thẻ phủ ảnh; gói tiết kiệm nhất viền vàng chanh + giá vàng chanh
   return html`
-    <div class="relative rounded-3xl ${best ? 'bg-brand-dark text-white shadow-2xl shadow-brand-dark/20' : 'bg-white border border-brand-line shadow-sm'} p-6 sm:p-7 flex flex-col hover-lift"
+    <div class="relative rounded-3xl overflow-hidden bg-brand-dark text-white min-h-[540px] flex flex-col justify-end group hover-lift ${best ? 'ring-4 ring-inset ring-brand-lime' : ''}"
       data-testid="package-card" data-package-id="${p.packageId}">
-      <div class="absolute -top-3 left-6 flex gap-2">
-        ${suggested ? html`<span class="px-3 py-1 rounded-full bg-amber-400 text-brand-dark text-[11px] font-extrabold uppercase tracking-wide shadow flex items-center gap-1" data-testid="suggested-badge">${icon('sparkles', 'w-3 h-3')} Phù hợp với bạn</span>` : ''}
-        ${best ? html`<span class="px-3 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase tracking-wide shadow">Tiết kiệm nhất</span>` : ''}
+      <img src="${photoOf(p, index)}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+      <span class="absolute inset-0 bg-gradient-to-b from-transparent via-brand-dark/75 to-brand-dark from-10% via-45% to-70%"></span>
+      <div class="absolute top-4 left-4 right-4 flex flex-wrap gap-2">
+        ${best ? html`<span class="px-3 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase tracking-wide">Tiết kiệm nhất</span>` : ''}
+        ${suggested ? html`<span class="px-3 py-1 rounded-full bg-orange-500 text-white text-[11px] font-extrabold uppercase tracking-wide flex items-center gap-1" data-testid="suggested-badge">${icon('sparkles', 'w-3 h-3')} Phù hợp với bạn</span>` : ''}
       </div>
-      <div class="flex items-center justify-between">
-        <div class="text-sm font-bold ${best ? 'text-white' : 'text-slate-900'}">${p.packageName}</div>
-        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${best ? 'bg-white/15' : 'bg-brand-sand text-slate-700'}" data-testid="package-kind">${packageKind(p)}</span>
+      <div class="relative p-6">
+        <div class="text-[11px] font-extrabold uppercase tracking-widest text-brand-lime" data-testid="package-kind">${packageKind(p)}</div>
+        <div class="font-display text-3xl font-extrabold leading-none mt-1">${p.packageName}</div>
+        <div class="mt-4 flex items-end gap-1">
+          <span class="font-display text-5xl font-extrabold leading-none ${best ? 'text-brand-lime' : ''}">${money(p.price).replace(' ₫', '')}</span>
+          <span class="text-lg font-bold text-white/60">₫</span>
+        </div>
+        ${perDay ? html`<div class="text-xs mt-1 text-white/70">≈ ${money(perDay)} / ngày · ${p.durationDays} ngày</div>` : ''}
+        ${p.description ? html`<p class="text-sm mt-3 text-white/80 line-clamp-2" title="${p.description}">${p.description}</p>` : ''}
+        <ul class="mt-3 space-y-1.5 text-xs text-white/80">
+          ${perks.map(t => html`<li class="flex gap-2">${icon('check-circle-2', 'w-3.5 h-3.5 shrink-0 mt-px text-brand-lime')}<span>${t}</span></li>`)}
+        </ul>
+        <a href="#/member/checkout/${p.packageId}" data-testid="choose-package"
+          class="mt-5 w-full !py-3 ${best ? 'btn-lime' : 'btn border border-white/45 text-white hover:bg-white/10'}">
+          ${isClass(p) ? 'Mua gói lớp này' : isRenewal ? 'Gia hạn với gói này' : 'Chọn gói này'} ${icon('arrow-right', 'w-4 h-4')}
+        </a>
       </div>
-      <div class="mt-5 flex items-end gap-1">
-        <span class="font-display text-5xl font-extrabold tracking-tight ${best ? 'text-brand-lime' : 'text-brand-dark'}">${money(p.price).replace(' ₫', '')}</span>
-        <span class="text-lg font-bold mb-1 ${best ? 'text-white/60' : 'text-slate-500'}">₫</span>
-      </div>
-      ${perDay ? html`<div class="text-xs mt-1 ${best ? 'text-white/60' : 'text-slate-500'}">chỉ ${money(perDay)} / ngày</div>` : ''}
-      ${p.description ? html`<p class="text-sm mt-4 ${best ? 'text-white/75' : 'text-slate-600'}">${p.description}</p>` : ''}
-      <ul class="mt-5 space-y-2.5 text-sm flex-1 ${best ? 'text-white/85' : 'text-slate-700'}">
-        ${perks.map(t => html`<li class="flex gap-2.5">${icon('check-circle-2', `w-4 h-4 shrink-0 mt-0.5 ${best ? 'text-brand-lime' : 'text-brand'}`)}<span>${t}</span></li>`)}
-      </ul>
-      <a href="#/member/checkout/${p.packageId}" data-testid="choose-package"
-        class="mt-7 w-full !py-3 ${best ? 'btn-lime' : 'btn-primary'}">
-        ${isClass(p) ? 'Mua gói lớp này' : isRenewal ? 'Gia hạn với gói này' : 'Chọn gói này'} ${icon('arrow-right', 'w-4 h-4')}
-      </a>
     </div>`;
 }
 
@@ -105,7 +123,7 @@ const TRUST = [
 
 const grid = (list, opts) => html`
   <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-3">
-    ${list.map(p => planCard(p, { best: p.packageId === opts.best, isRenewal: opts.isRenewal, suggested: p.packageId === opts.suggestedId }))}
+    ${list.map((p, index) => planCard(p, { best: [].concat(opts.best).includes(p.packageId), isRenewal: opts.isRenewal, suggested: p.packageId === opts.suggestedId, index }))}
   </div>`;
 
 const sectionNote = (ic, text) => html`
@@ -121,7 +139,7 @@ function membershipSection(list, hasMembership, suggestedId) {
     ${grid(list, { best: bestValueId(list), isRenewal: hasMembership, suggestedId })}`;
 }
 
-// gói lớp chia theo môn, mỗi môn so "tiết kiệm nhất" riêng
+// gói lớp chung 1 lưới (thẻ đã ghi môn), mỗi môn so "tiết kiệm nhất" riêng
 function classSection(list, hasMembership, suggestedId) {
   if (!list.length) return emptyState('Hiện chưa có gói lớp nào mở bán', 'calendar-x');
   const bySubject = new Map();
@@ -139,18 +157,7 @@ function classSection(list, hasMembership, suggestedId) {
           <span class="flex-1">Bạn cần có <b>Membership</b> trước khi mua gói lớp.</span>
           <button type="button" class="btn-primary btn-sm" data-action="tab" data-tab="MEMBERSHIP">Xem gói Membership</button>
         </div>`}
-    <div class="space-y-10">
-      ${[...bySubject.entries()].map(([name, items]) => html`
-        <section data-testid="class-subject-group">
-          <div class="relative h-28 sm:h-32 rounded-3xl overflow-hidden mb-4" data-testid="class-subject-banner">
-            <img src="${defaultClassImage(name)}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover" />
-            <span class="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/50 to-transparent"></span>
-            <h3 class="absolute left-6 bottom-5 font-display text-3xl font-extrabold text-white leading-none flex items-baseline gap-3">${name}
-              <span class="text-sm font-sans font-semibold text-white/75">${items.length} gói</span></h3>
-          </div>
-          ${grid(items, { best: bestValueId(items), isRenewal: false, suggestedId })}
-        </section>`)}
-    </div>`;
+    ${grid(list, { best: [...bySubject.values()].map(bestValueId), isRenewal: false, suggestedId })}`;
 }
 
 function view(s) {
@@ -160,7 +167,7 @@ function view(s) {
   const classPlans = plans.filter(p => isClass(p) && subjectNameOf(p)).sort((a, b) => subjectNameOf(a).localeCompare(subjectNameOf(b), 'vi') || a.durationDays - b.durationDays);
   const latest = latestActive(s.subscriptions);
   // đã có Membership (đang dùng hoặc chờ kích hoạt) thì mới mua được gói lớp
-  const hasMembership = (s.subscriptions || []).some(x => !isClass(x) && ['ACTIVE', 'WAITING_ACTIVATION'].includes(x.status));
+  const hasMembership = hasMembershipOf(s.subscriptions);
   const answers = quizStore.answers(session.get()?.email);
   const suggestedId = recommendPackage(answers, plans)?.best.packageId;
   const tab = s.tab || (hasMembership && classPlans.length ? 'CLASS' : 'MEMBERSHIP');
@@ -210,7 +217,11 @@ export default function MemberPackages(el) {
     },
     view,
     actions: {
-      tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab })
+      tab: (t, e, ctx) => {
+        ctx.set({ tab: t.dataset.tab });
+        // nút "Gia hạn ngay" ở hero: kéo xuống bảng gói
+        if (t.getAttribute('role') !== 'tab') setTimeout(() => document.querySelector('[data-testid=package-tabs]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
     }
   });
 }

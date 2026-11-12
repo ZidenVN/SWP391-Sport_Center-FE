@@ -198,7 +198,14 @@ function view(s) {
     </div>`;
 }
 
-export default function Checkout(el, { params, navigate }) {
+// mua gói từ popup lớp (?class=): nhớ lớp để trang kết quả thanh toán đưa member quay lại đặt đúng lớp đó.
+// sessionStorage còn nguyên sau khi VNPay chuyển hướng về cùng tab
+export const BUY_FOR_CLASS_KEY = 'sc_buy_for_class';
+export default function Checkout(el, { params, query, navigate }) {
+  try {
+    if (query?.class) sessionStorage.setItem(BUY_FOR_CLASS_KEY, query.class);
+    else sessionStorage.removeItem(BUY_FOR_CLASS_KEY);
+  } catch { /* chặn storage: vẫn mua được, chỉ mất bước quay lại lớp */ }
   async function createPayment(ctx) {
     const { pkg } = ctx.state;
     ctx.set({ busy: true, payError: null });

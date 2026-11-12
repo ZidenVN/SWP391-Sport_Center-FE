@@ -22,7 +22,16 @@ export function matchingPackages(subs, cls) {
     && (cls.durationDays == null || s.durationDays == null || s.durationDays === cls.durationDays));
 }
 
-export const neededPackageText = cls => `Cần gói ${cls.subjectName}${cls.durationDays ? ` ${cls.durationDays} ngày` : ''}`;
+// gói lớp đang bán khớp môn + thời hạn của lớp (package trả về subject lồng, không có subjectId phẳng)
+export const buyablePackages = (packages, cls) => (packages || []).filter(p =>
+  p.packageType === 'CLASS' && p.status === 'ACTIVE'
+  && String(p.subject?.subjectId) === String(cls.subjectId)
+  && (cls.durationDays == null || p.durationDays === cls.durationDays));
+
+// có membership (đang dùng hoặc chờ kích hoạt) mới được mua gói lớp
+export const hasMembership = subs => (subs || []).some(x => x.packageType !== 'CLASS' && ['ACTIVE', 'WAITING_ACTIVATION'].includes(x.status));
+
+export const neededPackageText =cls => `Cần gói ${cls.subjectName}${cls.durationDays ? ` ${cls.durationDays} ngày` : ''}`;
 
 // 1 gói khớp: dùng luôn; nhiều gói: cho chọn. Trả về subscription hoặc null nếu bỏ qua.
 export function pickPackage(list, cls) {

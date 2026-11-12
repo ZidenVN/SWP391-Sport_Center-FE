@@ -63,11 +63,14 @@ export function openModal({ title, body, actions = {}, size = 'max-w-lg', onClos
     closed = true;
     unbind();
     document.removeEventListener('keydown', onKey);
+    window.removeEventListener('hashchange', close);
     wrapper.remove();
     if (onClose) onClose();
   };
   const onKey = e => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', onKey);
+  // popup nằm ngoài vùng trang (#modal-root): đổi trang thì phải tự đóng, không sẽ đè lên trang mới
+  window.addEventListener('hashchange', close);
   const unbind = bindActions(wrapper, { ...actions, __close: close, cancel: close });
 
   const setBody = content => {
