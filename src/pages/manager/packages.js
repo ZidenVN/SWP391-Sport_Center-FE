@@ -84,14 +84,6 @@ function mountTypeSwitch(modal) {
 
 const isClass = p => p.packageType === 'CLASS';
 const subjectName = p => p.subject?.subjectName || p.subjectName || '';
-// thời hạn dễ đọc: 30 -> 1 tháng, 90 -> 3 tháng, 365 -> 1 năm
-function durationText(days) {
-  if (days % 365 === 0) return `${days / 365} năm`;
-  if (days % 30 === 0) return `${days / 30} tháng`;
-  return `${days} ngày`;
-}
-
-const STATUS_TABS = [['ACTIVE', 'Đang bán'], ['INACTIVE', 'Ngừng bán'], ['', 'Tất cả']];
 
 const MEMBERSHIP_PHOTOS = ['gym', 'gym-floor', 'swim', 'fitness', 'tennis'].map(x => `/landing/${x}.jpg`);
 // ảnh gói: gói lớp theo môn; membership xoay vòng theo thứ tự thời hạn
@@ -116,16 +108,20 @@ function banner(s) {
   const growth = Number(s.overview?.revenueGrowthRate);
   const now = new Date();
   const month = `${String(now.getMonth() + 1).padStart(2, '0')} / ${now.getFullYear()}`;
-  const kpi = (label, value, note, cls = 'bg-white/95 text-brand-dark') => html`
+  const totalMembers = s.members?.totalMembers ?? s.overview?.totalMembers;
+  const expiringOrExpired = s.members?.expiredOrNoSubMembers;
+
+  const kpi = (label, value, note, cls = 'bg-white text-brand-dark', valCls = 'text-brand-dark') => html`
     <div class="rounded-2xl p-4 sm:p-5 min-w-0 ${cls}">
-      <div class="text-xs font-bold opacity-70">${label}</div>
-      <div class="font-display text-4xl font-extrabold leading-none mt-1.5 truncate">${value}</div>
+      <div class="text-xs font-bold opacity-75">${label}</div>
+      <div class="font-display text-4xl font-extrabold leading-none mt-1.5 truncate ${valCls}">${value}</div>
       <div class="text-xs font-bold mt-1.5 truncate">${note}</div>
     </div>`;
+
   return html`
     <div class="relative rounded-3xl overflow-hidden bg-brand-dark text-white mb-6" data-testid="packages-banner">
       <img src="/landing/gym.jpg" alt="" class="absolute inset-0 w-full h-full object-cover object-[center_40%]" />
-      <span class="absolute inset-0 bg-gradient-to-b from-brand-dark/60 to-brand-dark/95"></span>
+      <span class="absolute inset-0 bg-gradient-to-b from-brand-dark/65 to-brand-dark/95"></span>
       <div class="relative p-6 sm:p-8">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -133,14 +129,42 @@ function banner(s) {
             <h1 class="font-display text-5xl font-extrabold leading-none mt-1">GÓI TẬP</h1>
             <p class="text-sm text-white/75 mt-1">${active.filter(p => !isClass(p)).length} membership · ${active.filter(isClass).length} gói lớp đang mở bán</p>
           </div>
-          <button type="button" class="btn-lime !py-3" data-action="create" data-testid="create">${icon('plus', 'w-4 h-4')} Thêm gói</button>
+          <button type="button" class="btn-lime !py-3" data-action="create" data-testid="create">${icon('plus', 'w-4 h-4')} Tạo gói mới</button>
         </div>
-        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8" data-testid="package-kpis">
-          ${kpi('Doanh thu gói tháng này', s.revenue ? shortMoney(s.revenue.totalRevenue) : '—',
-            Number.isFinite(growth) ? `${growth >= 0 ? '▲' : '▼'} ${Math.abs(growth).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}% so với tháng trước` : 'Chưa có số liệu so sánh', 'bg-brand-lime text-brand-dark')}
-          ${kpi('Gói đã bán tháng này', s.revenue ? s.revenue.totalTransactions : '—', 'Giao dịch thanh toán thành công')}
-          ${kpi('Hội viên đang hoạt động', s.overview?.totalActiveMembers ?? '—', s.overview ? `+${s.overview.newMembersThisMonth ?? 0} mới tháng này` : '')}
-          ${kpi('Đang bán', `${active.length} gói`, `${all.length - active.length} gói ngừng bán`, 'bg-white text-brand-dark border-l-4 border-orange-500')}
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-7" data-testid="package-kpis">
+          ${kpi(
+            'Doanh thu gói tháng này',
+            s.revenue ? shortMoney(s.revenue.totalRevenue) : '—',
+            Number.isFinite(growth)
+              ? html`<span class="text-brand-dark">${growth >= 0 ? '▲' : '▼'} ${Math.abs(growth).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}% so với tháng trước</span>`
+              : 'Chưa có số liệu so sánh',
+            'bg-brand-lime text-brand-dark'
+          )}
+          ${kpi(
+            'Gói đã bán',
+            s.revenue ? s.revenue.totalTransactions : '—',
+            s.revenue ? html`<span class="text-[#156B45]">▲ ${s.revenue.totalTransactions} gói</span> trong tháng` : 'Giao dịch thành công'
+          )}
+          ${kpi(
+            'Hội viên đang hoạt động',
+            s.overview?.totalActiveMembers ?? '—',
+            totalMembers ? html`<span class="text-slate-500">trên ${totalMembers} tài khoản</span>` : html`<span class="text-slate-500">+${s.overview?.newMembersThisMonth ?? 0} mới tháng này</span>`
+          )}
+          ${expiringOrExpired != null
+            ? kpi(
+                'Sắp hết hạn / chưa gia hạn',
+                expiringOrExpired,
+                html`<a href="#/reception/notifications" class="text-orange-600 hover:underline">Gửi nhắc gia hạn →</a>`,
+                'bg-white text-brand-dark border-l-4 border-orange-500',
+                'text-orange-600'
+              )
+            : kpi(
+                'Đang mở bán',
+                `${active.length} gói`,
+                html`<span class="text-orange-600">${all.length - active.length} gói ngừng bán</span>`,
+                'bg-white text-brand-dark border-l-4 border-orange-500',
+                'text-orange-600'
+              )}
         </div>
       </div>
     </div>`;
@@ -160,14 +184,19 @@ function topSellers(s) {
         ${rows.map((r, i) => {
           const p = s.packages.find(x => x.packageName === r.categoryName);
           return html`
-            <div class="relative h-48 rounded-3xl overflow-hidden bg-brand-dark text-white">
+            <div class="relative h-48 rounded-3xl overflow-hidden bg-brand-dark text-white shadow-sm">
               <img src="${p ? photoOf(p, s.packages) : '/landing/gym-floor.jpg'}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover" />
               <span class="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/70 to-brand-dark/20"></span>
               <span class="absolute right-4 top-1 font-display text-8xl font-extrabold leading-none ${i === 0 ? 'text-brand-lime' : 'text-white/85'}">#${i + 1}</span>
               <div class="absolute left-5 right-5 bottom-5">
                 <div class="font-bold truncate">${r.categoryName}</div>
-                <div class="flex items-baseline gap-3 mt-1"><span class="font-display text-4xl font-extrabold leading-none text-brand-lime">${shortMoney(r.totalAmount)}</span><span class="text-sm text-white/70">${r.transactionCnt} gói</span></div>
-                <div class="h-1.5 rounded-full bg-white/20 mt-3 overflow-hidden"><div class="h-full rounded-full bg-brand-lime" style="width:${Math.round(Number(r.totalAmount) / max * 100)}%"></div></div>
+                <div class="flex items-baseline gap-3 mt-1">
+                  <span class="font-display text-4xl font-extrabold leading-none text-brand-lime">${shortMoney(r.totalAmount)}</span>
+                  <span class="text-sm text-white/75">${r.transactionCnt} gói</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-white/20 mt-3 overflow-hidden">
+                  <div class="h-full rounded-full bg-brand-lime" style="width:${Math.round(Number(r.totalAmount) / max * 100)}%"></div>
+                </div>
               </div>
             </div>`;
         })}
@@ -177,30 +206,34 @@ function topSellers(s) {
 
 function row(s, p, maxSold) {
   const off = p.status === 'INACTIVE';
-  const perDay = p.durationDays ? Math.round(p.price / p.durationDays) : 0;
   const sold = soldOf(s, p)?.transactionCnt || 0;
+  const subText = p.description || (isClass(p) ? `Gói lớp${subjectName(p) ? ` · ${subjectName(p)}` : ''}` : 'Vào cửa tự do');
   return html`
     <tr class="${off ? 'opacity-60' : ''}" data-testid="plan-card">
-      <td class="px-5 py-3">
-        <div class="flex items-center gap-4 min-w-[260px]">
-          <img src="${photoOf(p, s.packages)}" alt="" loading="lazy" class="w-20 h-14 rounded-xl object-cover shrink-0" />
+      <td class="px-5 py-3.5">
+        <div class="flex items-center gap-3.5 min-w-[250px]">
+          <img src="${photoOf(p, s.packages)}" alt="" loading="lazy" class="w-14 h-11 rounded-xl object-cover shrink-0 border border-brand-line/60" />
           <div class="min-w-0">
             <div class="font-bold text-brand-dark break-words">${p.packageName}</div>
-            <div class="text-xs ${isClass(p) ? 'text-emerald-700' : 'text-sky-700'} font-semibold">${isClass(p) ? `Gói lớp${subjectName(p) ? ` · ${subjectName(p)}` : ''}` : 'Membership'}</div>
+            <div class="text-xs text-slate-500 truncate max-w-xs" title="${subText}">${subText}</div>
             ${isClass(p) && !p.subject && !p.subjectName ? html`<div class="text-[11px] font-bold text-rose-600" data-testid="pkg-warning">Chưa gắn môn, hội viên không đặt lớp được</div>` : ''}
           </div>
         </div>
       </td>
-      <td class="px-5 py-3 whitespace-nowrap"><div class="font-display text-2xl font-extrabold text-brand-dark leading-none">${money(p.price)}</div><div class="text-xs text-slate-500 mt-1">≈ ${money(perDay)}/ngày</div></td>
-      <td class="px-5 py-3 whitespace-nowrap">${durationText(p.durationDays)}<div class="text-xs text-slate-500">${p.durationDays} ngày</div></td>
-      <td class="px-5 py-3">
+      <td class="px-5 py-3.5 whitespace-nowrap">
+        <div class="font-display text-2xl font-extrabold text-brand-dark leading-none">${money(p.price)}</div>
+      </td>
+      <td class="px-5 py-3.5 whitespace-nowrap text-slate-700 font-medium">${p.durationDays} ngày</td>
+      <td class="px-5 py-3.5">
         <div class="flex items-center gap-3 min-w-[140px]">
-          <div class="flex-1 h-2 rounded-full bg-brand-sand overflow-hidden"><div class="h-full rounded-full bg-brand" style="width:${maxSold ? Math.round(sold / maxSold * 100) : 0}%"></div></div>
-          <b class="w-8 text-right">${sold}</b>
+          <div class="flex-1 h-2 rounded-full bg-brand-sand overflow-hidden">
+            <div class="h-full rounded-full bg-brand" style="width:${maxSold ? Math.round((sold / maxSold) * 100) : 0}%"></div>
+          </div>
+          <b class="w-8 text-right text-brand-dark">${sold}</b>
         </div>
       </td>
-      <td class="px-5 py-3">${off ? badge('INACTIVE', 'Ngừng bán') : badge('ACTIVE', 'Đang bán')}</td>
-      <td class="px-5 py-3">
+      <td class="px-5 py-3.5">${off ? badge('INACTIVE', 'Ngừng bán') : badge('ACTIVE', 'Đang bán')}</td>
+      <td class="px-5 py-3.5">
         <div class="flex gap-2 justify-end">
           <button type="button" class="btn-sm btn-secondary" data-action="edit" data-id="${p.packageId}" data-testid="row-edit">${icon('pencil', 'w-3.5 h-3.5')} Sửa</button>
           ${off
@@ -213,29 +246,47 @@ function row(s, p, maxSold) {
 
 function view(s) {
   const all = s.packages;
+  const activeList = all.filter(p => p.status !== 'INACTIVE');
+  const inactiveList = all.filter(p => p.status === 'INACTIVE');
+  const filter = s.filter || 'ALL';
+
   const list = all
-    .filter(p => !s.status || (s.status === 'INACTIVE' ? p.status === 'INACTIVE' : p.status !== 'INACTIVE'))
-    .filter(p => s.type === 'ALL' || (s.type === 'CLASS') === isClass(p))
+    .filter(p => {
+      if (filter === 'INACTIVE') return p.status === 'INACTIVE';
+      if (filter === 'MEMBERSHIP') return !isClass(p) && p.status !== 'INACTIVE';
+      if (filter === 'CLASS') return isClass(p) && p.status !== 'INACTIVE';
+      return true;
+    })
     .filter(p => matches(s.keyword, [p.packageName, p.description, subjectName(p)]))
-    // membership trước, gói lớp gom theo môn; trong nhóm xếp theo thời hạn rồi giá
-    .sort((a, b) => isClass(a) - isClass(b) || subjectName(a).localeCompare(subjectName(b), 'vi') || a.durationDays - b.durationDays || a.price - b.price);
+    // gói đang bán lên trước, gói ngừng bán xuống cuối; membership trước, gói lớp sau
+    .sort((a, b) => (a.status === 'INACTIVE') - (b.status === 'INACTIVE') || isClass(a) - isClass(b) || subjectName(a).localeCompare(subjectName(b), 'vi') || a.durationDays - b.durationDays || a.price - b.price);
+
   const maxSold = Math.max(0, ...list.map(p => soldOf(s, p)?.transactionCnt || 0));
-  const cols = ['Gói', 'Giá', 'Thời hạn', 'Đã bán tháng này', 'Trạng thái', ''];
+  const cols = ['Gói', 'Giá', 'Thời hạn', 'Đã bán tháng này', 'Trạng thái', 'Thao tác'];
+
+  const filterTabs = [
+    { id: 'ALL', label: 'Tất cả', count: all.length },
+    { id: 'MEMBERSHIP', label: 'Membership', count: activeList.filter(p => !isClass(p)).length },
+    { id: 'CLASS', label: 'Gói lớp', count: activeList.filter(isClass).length },
+    { id: 'INACTIVE', label: 'Ngừng bán', count: inactiveList.length }
+  ];
+
   return html`
     ${banner(s)}
     ${topSellers(s)}
-    <div class="card overflow-hidden">
+    <div class="card overflow-hidden rounded-3xl">
       <div class="p-4 flex flex-col lg:flex-row lg:items-center gap-3 border-b border-brand-line [&_[role=tablist]]:mb-0">
-        ${tabs([['ALL', 'Tất cả loại'], ['MEMBERSHIP', 'Membership'], ['CLASS', 'Gói lớp']].map(([id, label]) => ({ id, label })), s.type, 'type')}
-        ${tabs(STATUS_TABS.map(([id, label]) => ({ id, label })), s.status, 'status')}
-        <div class="lg:ml-auto lg:w-72">${searchBox(s.keyword, 'Tìm gói tập, môn...')}</div>
+        ${tabs(filterTabs, filter, 'filter')}
+        <div class="lg:ml-auto lg:w-72">${searchBox(s.keyword, 'Tìm gói theo tên...')}</div>
       </div>
       ${list.length ? html`
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead><tr class="text-left text-xs uppercase tracking-wide text-slate-500 bg-brand-cream">
-              ${cols.map((c, i) => html`<th class="px-5 py-3 font-bold ${i === cols.length - 1 ? 'text-right' : ''}">${c}</th>`)}
-            </tr></thead>
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wide text-slate-500 bg-brand-cream">
+                ${cols.map((c, i) => html`<th class="px-5 py-3 font-bold ${i === cols.length - 1 ? 'text-right' : ''}">${c}</th>`)}
+              </tr>
+            </thead>
             <tbody class="divide-y divide-brand-line/60">${list.map(p => row(s, p, maxSold))}</tbody>
           </table>
         </div>`
@@ -245,15 +296,18 @@ function view(s) {
 
 export default function ManagerPackages(el) {
   return mountPage(el, {
-    state: { keyword: '', subjects: [], type: 'ALL', status: 'ACTIVE' },
+    state: { keyword: '', subjects: [], filter: 'ALL' },
     load: async () => {
       const now = new Date();
+      const firstOfMonth = isoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+      const today = isoDate(now);
       const res = await settle({
         packages: [packageApi.list, null],
         subjects: [subjectApi.list, []],
         // số liệu báo cáo lỗi thì trang vẫn chạy, KPI hiện "—"
         overview: [reportApi.overview, null],
-        revenue: [() => reportApi.revenue(isoDate(new Date(now.getFullYear(), now.getMonth(), 1)), isoDate(now)), null]
+        members: [() => reportApi.members(firstOfMonth, today), null],
+        revenue: [() => reportApi.revenue(firstOfMonth, today), null]
       });
       if (res.packagesError) throw res.packagesError;
       return { ...res, subjects: (res.subjects || []).filter(x => x.status !== 'INACTIVE') };
@@ -261,8 +315,7 @@ export default function ManagerPackages(el) {
     view,
     actions: {
       search: (t, e, ctx) => ctx.set({ keyword: t.value }),
-      type: (t, e, ctx) => ctx.set({ type: t.dataset.tab }),
-      status: (t, e, ctx) => ctx.set({ status: t.dataset.tab }),
+      filter: (t, e, ctx) => ctx.set({ filter: t.dataset.tab }),
       restore: async (t, e, ctx) => {
         const p = ctx.state.packages.find(x => String(x.packageId) === t.dataset.id);
         const d = { ...p, packageType: p.packageType, subjectId: subjectIdOf(p) };

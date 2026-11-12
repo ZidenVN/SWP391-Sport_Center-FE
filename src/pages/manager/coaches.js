@@ -1,9 +1,9 @@
 import { html, icon } from '../../core/dom.js';
-import { pageHeader, emptyState, field, input, select, tabs, GENDER_OPTIONS } from '../../core/ui.js';
+import { emptyState, field, input, select, tabs, GENDER_OPTIONS } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { coachAdminApi, classApi, userApi, subjectApi } from '../../api/endpoints.js';
-import { badge, fullName, genderLabel, toDate } from '../../core/format.js';
-import { memberAvatar } from '../../components/memberPicker.js';
+import { fullName, genderLabel, toDate } from '../../core/format.js';
+import { subjectColor } from '../../components/classCard.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
 import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
 
@@ -58,11 +58,81 @@ const payload = (subjects, d, edit) => ({
 const LOAD_OPTIONS = [['', 'Mọi lịch dạy'], ['BUSY', 'Có lớp sắp tới'], ['FREE', 'Chưa có lớp sắp tới'], ['NONE', 'Chưa từng dạy lớp']];
 const SORT_OPTIONS = [['name', 'Tên A → Z'], ['upcoming', 'Nhiều lớp sắp tới nhất'], ['total', 'Nhiều lớp nhất']];
 
-const statTile = (n, label, ic, tone) => html`
-  <div class="coach-stat ${tone} ${n ? '' : 'is-zero'}">
-    <span class="coach-stat-ic">${icon(ic, 'w-4 h-4')}</span>
-    <div><div class="coach-stat-num">${n}</div><div class="coach-stat-label">${label}</div></div>
+const initials = c => `${(c.firstName || '?').charAt(0)}${(c.lastName || '').charAt(0)}`.toUpperCase();
+
+// ô số liệu trên banner
+const kpi = (label, value, note, cls = 'bg-white/95 text-brand-dark') => html`
+  <div class="rounded-2xl p-4 min-w-0 ${cls}">
+    <div class="text-xs font-bold opacity-70">${label}</div>
+    <div class="font-display text-4xl font-extrabold leading-none mt-1.5">${value}${note ? html`<span class="text-lg opacity-60"> ${note}</span>` : ''}</div>
   </div>`;
+
+function banner(rows) {
+  const active = rows.filter(r => r.status === 'ACTIVE');
+  return html`
+    <div class="relative rounded-3xl overflow-hidden bg-brand-dark text-white mb-6" data-testid="coach-banner">
+      <img src="/landing/gym-floor.jpg" alt="" class="absolute inset-0 w-full h-full object-cover object-[center_55%]" />
+      <span class="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/85 to-brand-dark/35"></span>
+      <div class="relative p-6 sm:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div class="text-xs font-extrabold uppercase tracking-[.25em] text-brand-lime">Nhân sự</div>
+            <h1 class="font-display text-5xl sm:text-6xl font-extrabold leading-none mt-1">ĐỘI NGŨ HLV</h1>
+            <p class="text-sm text-white/75 mt-1">Tạo tài khoản, gắn môn dạy và khóa / mở huấn luyện viên</p>
+          </div>
+          <button type="button" class="btn-lime !py-3" data-action="create" data-testid="create">${icon('user-plus', 'w-4 h-4')} Thêm HLV</button>
+        </div>
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-7" data-testid="coach-kpis">
+          ${kpi('Đang hoạt động', active.length, `/ ${rows.length} HLV`, 'bg-brand-lime text-brand-dark')}
+          ${kpi('Có lớp sắp tới', active.filter(r => r.upcoming > 0).length)}
+          ${kpi('Lớp sắp tới cần dạy', active.reduce((n, r) => n + r.upcoming, 0))}
+          ${kpi('Chưa gắn môn', rows.filter(r => !subjectsOf(r.c).length).length, '', 'bg-white text-brand-dark border-l-4 border-orange-500')}
+        </div>
+      </div>
+    </div>`;
+}
+
+const statTile = (n, label, hot) => html`
+  <div class="rounded-2xl px-3.5 py-3 ${hot ? 'bg-brand-dark text-white' : 'bg-brand-sand/70 text-brand-dark'}">
+    <div class="font-display text-4xl font-extrabold leading-none ${hot ? 'text-brand-lime' : n ? '' : 'text-slate-400'}">${n}</div>
+    <div class="text-[10px] font-extrabold uppercase tracking-wider mt-1 ${hot ? 'text-white/80' : 'text-slate-500'}">${label}</div>
+  </div>`;
+
+function coachCard({ c, status, upcoming, total }) {
+  const subjects = subjectsOf(c);
+  const locked = status === 'INACTIVE';
+  const main = subjects[0]?.subjectName;
+  return html`
+    <div class="card overflow-hidden ${locked ? 'opacity-60' : ''}" data-testid="coach-card">
+      <div class="relative h-28 p-4 overflow-hidden ${main ? `bg-gradient-to-br ${subjectColor(main)}` : 'bg-slate-400'}">
+        ${main ? html`<span class="absolute -right-1 top-6 font-display text-7xl font-extrabold uppercase leading-none text-white/15 whitespace-nowrap select-none" aria-hidden="true">${main}</span>` : ''}
+        <div class="relative flex items-start justify-between gap-2">
+          <div class="flex flex-wrap gap-1.5">
+            ${subjects.length
+              ? subjects.map(x => html`<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white">${x.subjectName}</span>`)
+              : html`<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-orange-600 text-white">Chưa gắn môn, chưa xếp lớp được</span>`}
+          </div>
+          <span class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${locked ? 'bg-white text-slate-600' : 'bg-[#D7F25B] text-[#0E2A20]'}">${locked ? 'Đã khóa' : '● Hoạt động'}</span>
+        </div>
+      </div>
+      <div class="px-5 pb-5">
+        <div class="relative -mt-9 w-[72px] h-[72px] rounded-[22px] bg-[#173F31] text-[#D7F25B] border-4 border-white flex items-center justify-center font-display text-3xl font-extrabold">${initials(c)}</div>
+        <div class="font-display text-[28px] font-extrabold uppercase leading-none text-brand-dark mt-2.5 break-words">${fullName(c)}</div>
+        <div class="text-xs text-slate-500 mt-1">${genderLabel(c.gender)} · ${c.phone || '—'}</div>
+        <div class="text-xs text-slate-500 mt-2 truncate" title="${c.email}">${c.email}</div>
+        <div class="grid grid-cols-2 gap-2.5 mt-4">
+          ${statTile(upcoming, 'Lớp sắp tới', upcoming > 0)}
+          ${statTile(total, 'Tổng lớp', false)}
+        </div>
+        <div class="flex gap-2 mt-4 pt-3 border-t border-slate-100">
+          <button type="button" class="btn-sm btn-secondary flex-1" data-action="edit" data-id="${c.coachId}" data-testid="row-edit">${icon('pencil', 'w-3.5 h-3.5')} Sửa hồ sơ</button>
+          ${locked
+            ? html`<button type="button" class="btn-sm btn-primary flex-1" data-action="toggle" data-id="${c.coachId}" data-testid="row-toggle">${icon('unlock', 'w-3.5 h-3.5')} Mở khóa</button>`
+            : html`<button type="button" class="btn-sm btn-ghost flex-1 text-orange-700 border border-orange-200 hover:bg-orange-50" data-action="toggle" data-id="${c.coachId}" data-testid="row-toggle">${icon('lock', 'w-3.5 h-3.5')} Khóa tài khoản</button>`}
+        </div>
+      </div>
+    </div>`;
+}
 
 function view(s) {
   const now = new Date();
@@ -85,8 +155,7 @@ function view(s) {
   const page = paginate(list, s.pageNo, s.pageSize);
   const filtered = s.tab || s.specialty || s.load || s.keyword.trim();
   return html`
-    ${pageHeader('Huấn luyện viên', 'Tạo tài khoản, cập nhật hồ sơ và khóa / mở HLV',
-      html`<button type="button" class="btn-primary" data-action="create" data-testid="create">${icon('user-plus', 'w-4 h-4')} Thêm HLV</button>`)}
+    ${banner(rows)}
     <div>
       ${tabs([
         { id: '', label: 'Tất cả', count: count('') },
@@ -109,35 +178,8 @@ function view(s) {
       </div>
     </div>
     ${list.length ? html`
-      <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="coach-list">
-        ${page.content.map(({ c, status, upcoming, total }) => {
-          return html`
-            <div class="card p-5 ${status === 'INACTIVE' ? 'opacity-70' : ''}" data-testid="coach-card">
-              <div class="flex items-start gap-3">
-                ${memberAvatar(c, 'w-12 h-12 text-lg')}
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2"><span class="font-bold truncate">${fullName(c)}</span>${badge(status, status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa')}</div>
-                  ${subjectsOf(c).length ? html`
-                    <div class="flex flex-wrap gap-1 mt-1">${subjectsOf(c).map(x => html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#1E9E64]/10 text-[#156B45]">${x.subjectName}</span>`)}</div>`
-                    : html`<div class="text-xs font-semibold text-rose-600 mt-0.5">Chưa gắn môn, chưa xếp lớp được</div>`}
-                </div>
-              </div>
-              <div class="mt-4 space-y-1.5 text-sm text-slate-600">
-                <div class="flex items-center gap-2">${icon('mail', 'w-3.5 h-3.5 text-slate-400')} <span class="truncate">${c.email}</span></div>
-                <div class="flex items-center gap-2">${icon('phone', 'w-3.5 h-3.5 text-slate-400')} ${c.phone || '—'} · ${genderLabel(c.gender)}</div>
-              </div>
-              <div class="grid grid-cols-2 gap-2 mt-4">
-                ${statTile(upcoming, 'Lớp sắp tới', 'calendar-clock', 'is-hot')}
-                ${statTile(total, 'Tổng lớp', 'layers', 'is-soft')}
-              </div>
-              <div class="flex justify-end gap-1 mt-4 pt-3 border-t border-slate-100">
-                <button type="button" class="btn-ghost btn-sm" data-action="edit" data-id="${c.coachId}" data-testid="row-edit">${icon('pencil', 'w-3.5 h-3.5')} Sửa</button>
-                <button type="button" class="btn-ghost btn-sm ${status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-700 hover:bg-emerald-50'}" data-action="toggle" data-id="${c.coachId}" data-testid="row-toggle">
-                  ${icon(status === 'ACTIVE' ? 'lock' : 'unlock', 'w-3.5 h-3.5')} ${status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
-                </button>
-              </div>
-            </div>`;
-        })}
+      <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5" data-testid="coach-list">
+        ${page.content.map(coachCard)}
       </div>${pagination(page, { unit: 'HLV', standalone: true })}` : emptyState(filtered && s.coaches.length ? 'Không có HLV phù hợp bộ lọc' : 'Chưa có huấn luyện viên', 'medal')}`;
 }
 
