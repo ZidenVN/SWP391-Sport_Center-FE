@@ -1,5 +1,5 @@
 import { html, icon, raw } from '../../core/dom.js';
-import { pageHeader, toast } from '../../core/ui.js';
+import { pageHeader, toast, runnerIcon } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { aiApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
@@ -79,12 +79,12 @@ function view(s) {
       <div class="card flex-1 min-w-0 flex flex-col h-[calc(100vh-17rem)] min-h-[26rem] lg:h-auto" data-testid="chat">
         <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" data-chat-scroll>
           ${bubble({ role: 'model', content: `Chào **${name}**! Mình là trợ lý AI của Sport Center. Mình có thể tra lớp còn chỗ, gói tập và lịch của bạn, hoặc tư vấn tập luyện, dinh dưỡng. Bạn muốn hỏi gì?` })}
-          ${s.loadingMessages ? html`<div class="text-sm text-slate-400 flex items-center gap-2" data-testid="chat-loading"><span class="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></span> Đang tải cuộc trò chuyện...</div>` : s.messages.map(bubble)}
+          ${s.loadingMessages ? html`<div class="text-sm text-slate-400 flex items-center gap-2" data-testid="chat-loading">${runnerIcon(32)} Đang tải cuộc trò chuyện...</div>` : s.messages.map(bubble)}
           ${s.busy ? html`
             <div class="flex gap-3" data-testid="chat-typing">
               <span class="w-9 h-9 rounded-full bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('sparkles', 'w-4 h-4')}</span>
               <div class="rounded-2xl rounded-tl-md px-4 py-3 bg-white border border-brand-line text-sm text-slate-500 flex items-center gap-2">
-                <span class="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span> AI đang trả lời...
+                ${runnerIcon(32)} AI đang trả lời...
               </div>
             </div>` : ''}
         </div>

@@ -3,7 +3,7 @@ import { pageHeader, statCard, emptyState } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { memberApi, quizApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
-import { date, dateTime, time, daysUntil, weekday, timeRange, badge, isPlaceholderPhone, toDate } from '../../core/format.js';
+import { date, dateTime, time, daysUntil, weekday, timeRange, badge, isPlaceholderPhone, toDate, classCode } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
 import { memberSmartCard, openCheckinCodeModal } from '../../components/membershipCard.js';
@@ -90,7 +90,7 @@ function view(s) {
   // nhắc gia hạn theo Membership hết hạn muộn nhất
   const latestMembership = memberships.filter(x => x.status === 'ACTIVE').sort(byEnd).at(-1) || null;
   return html`
-    ${pageHeader(`Xin chào, ${name}!`, upcoming.length ? `Buổi tiếp theo: ${upcoming[0].subjectName} lúc ${time(upcoming[0].startTime)}, ${weekday(upcoming[0].startTime)} ${date(upcoming[0].startTime)}` : 'Chưa có buổi tập nào sắp tới, chọn một lớp để bắt đầu')}
+    ${pageHeader(`Xin chào, ${name}!`, upcoming.length ? `Buổi tiếp theo: ${upcoming[0].subjectName} ${classCode(upcoming[0])} lúc ${time(upcoming[0].startTime)}, ${weekday(upcoming[0].startTime)} ${date(upcoming[0].startTime)}` : 'Chưa có buổi tập nào sắp tới, chọn một lớp để bắt đầu')}
     ${s.me && isPlaceholderPhone(s.me.phone) ? html`
       <a href="#/member/profile" class="mb-5 flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sky-900 hover:bg-sky-100" data-testid="complete-profile">
         <span class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0">${icon('user-pen', 'w-5 h-5')}</span>
@@ -124,7 +124,7 @@ function view(s) {
                   <div class="text-lg font-extrabold">${date(r.startTime).slice(0, 5)}</div>
                 </div>
                 <div class="min-w-0 flex-1">
-                  <div class="font-semibold truncate">${r.subjectName}</div>
+                  <div class="font-semibold truncate">${r.subjectName} <span class="text-xs font-normal text-slate-400">${classCode(r)}</span></div>
                   <div class="text-xs text-slate-500">${timeRange(r.startTime, r.endTime)} · ${r.roomName} · ${coachLink(r)}</div>
                 </div>
               </li>`)}

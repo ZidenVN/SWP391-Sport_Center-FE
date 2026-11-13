@@ -1,5 +1,5 @@
 import { html, icon } from '../../core/dom.js';
-import { pageHeader, emptyState, toast, confirmDialog } from '../../core/ui.js';
+import { pageHeader, emptyState, toast, confirmDialog, runnerIcon } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
 import { fullName, phoneText, dateTime } from '../../core/format.js';
@@ -107,7 +107,7 @@ function view(s) {
         <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
           <span class="text-sm text-slate-500">Sẽ gửi tới <b class="text-brand-dark" data-testid="recipient-count">${count}</b> hội viên</span>
           <button type="submit" class="btn-primary" data-testid="notify-send" ${s.sending ? 'disabled' : ''}>
-            ${icon(s.sending ? 'loader-2' : 'send', `w-4 h-4 ${s.sending ? 'animate-spin' : ''}`)} ${s.sending ? 'Đang gửi...' : 'Gửi thông báo'}
+            ${s.sending ? runnerIcon(28, '') : icon('send', 'w-4 h-4')} ${s.sending ? 'Đang gửi...' : 'Gửi thông báo'}
           </button>
         </div>
       </form>

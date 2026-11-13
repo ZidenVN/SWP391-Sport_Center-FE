@@ -2,7 +2,7 @@ import { html, icon } from '../../core/dom.js';
 import { pageHeader, tabs } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
-import { date, dateTime, time, toDate } from '../../core/format.js';
+import { date, dateTime, time, toDate, classCode } from '../../core/format.js';
 import { FEATURES } from '../../core/features.js';
 
 // Tập luyện của hội viên: Tiến độ (mục tiêu, buổi tới, chuyên cần 8 tuần, nhận xét HLV) · Giáo án · Kết quả tập.
@@ -127,7 +127,7 @@ function nextCard(n) {
       <div class="relative">
         ${eyebrow('Buổi tập tiếp theo', 'text-brand-lime')}
         ${n ? html`
-          <h3 class="text-xl font-bold mt-2 mb-3">${n.subjectName}${n.type === 'MAKEUP' ? html` <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white/15 align-middle">Buổi bù</span>` : ''}</h3>
+          <h3 class="text-xl font-bold mt-2 mb-3">${n.subjectName} <span class="text-sm font-semibold opacity-70 align-middle">${classCode(n)}</span>${n.type === 'MAKEUP' ? html` <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white/15 align-middle">Buổi bù</span>` : ''}</h3>
           ${row('clock', `${WEEKDAYS[start.getDay()]}, ${date(n.startTime).slice(0, 5)} · ${time(n.startTime)} – ${time(n.endTime)}`)}
           ${row('map-pin', n.roomName || 'Chưa xếp phòng')}
           ${row('user', `HLV ${n.coachName || '—'}${n.substitute ? ' (dạy thay)' : ''}`)}` : html`

@@ -12,8 +12,7 @@ import {
   genderLabel,
   toDate,
   phoneText,
-  date,
-} from "../../core/format.js";
+  date, classCode } from "../../core/format.js";
 import { memberAvatar } from "../../components/memberPicker.js";
 import { loadMyStudents } from "../../components/coachForms.js";
 
@@ -65,7 +64,7 @@ function view(s) {
             { value: "", label: "Tất cả lớp" },
             ...s.classes.map((c) => ({
               value: String(c.classId),
-              label: `${c.subjectName} #${c.classId}`,
+              label: `${c.subjectName} ${classCode(c)}`,
             })),
           ],
           s.classId,
@@ -122,7 +121,7 @@ function view(s) {
                       class="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${over
                         ? "bg-slate-100 text-slate-500"
                         : "bg-brand-sand text-brand-deep"}"
-                      >${c.subjectName} #${c.classId}</span
+                      >${c.subjectName} ${classCode(c)}</span
                     >
                     <span class="text-xs text-slate-500 whitespace-nowrap"
                       >${date(c.startTime)} →

@@ -2,12 +2,12 @@ import { html, icon } from '../../core/dom.js';
 import { tabs, table, emptyState, withBusy, toast } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { coachApi, classApi } from '../../api/endpoints.js';
-import { badge, date, dateTime, weekday, timeRange, fullName, genderLabel, toDate, phoneText, isoDate } from '../../core/format.js';
+import { badge, date, dateTime, weekday, timeRange, fullName, genderLabel, toDate, phoneText, isoDate, classCode } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { planList } from '../../components/training.js';
 import { openPlanForm, openNotifyForm } from '../../components/coachForms.js';
 import { subjectColor, classImage } from '../../components/classCard.js';
-import { courseOf, courseBlock } from '../../components/courseSchedule.js';
+import { courseOf, courseInline } from '../../components/courseSchedule.js';
 
 const ATTENDANCE = [
   { id: 'PRESENT', label: 'Có mặt', on: 'peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600' },
@@ -32,30 +32,33 @@ function attendanceWindow(c, now = new Date()) {
   return { open: true, closesAt };
 }
 
-function hero(c) {
+// Đầu trang: ảnh nhỏ (không đè chữ lên ảnh), tên + mã lớp, 1 dòng lịch cả khóa + phòng, bên phải là sĩ số và nút
+function hero(c, s) {
   const pct = c.maxCapacity ? Math.round((c.currentEnrolled / c.maxCapacity) * 100) : 0;
+  const course = courseOf(s.info, s.sessions.map(x => x.startTime));
   return html`
     <a href="#/coach/schedule" class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800 mb-3">${icon('arrow-left', 'w-4 h-4')} Lịch dạy</a>
-    <div class="rounded-3xl p-6 pt-24 sm:pt-28 bg-gradient-to-br ${subjectColor(c.subjectName)} text-white mb-6 relative overflow-hidden" data-testid="class-hero">
+    <div class="card p-5 mb-5 flex flex-col lg:flex-row lg:items-center gap-5" data-testid="class-hero">
       <!-- ảnh lớp (imageUrl từ GET /coaches/me/schedules, null -> ảnh mặc định theo môn) -->
-      <div class="absolute inset-0">${classImage(c)}</div>
-      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10"></div>
-      <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <div class="text-xs font-bold uppercase tracking-widest opacity-80">${weekday(c.startTime)} · ${date(c.startTime)}</div>
-          <h1 class="text-2xl font-extrabold mt-1">${c.subjectName}</h1>
-          <div class="text-sm opacity-90 mt-1 flex flex-wrap gap-x-4">
-            <span class="flex items-center gap-1">${icon('clock', 'w-4 h-4')} ${timeRange(c.startTime, c.endTime)}</span>
-            <span class="flex items-center gap-1">${icon('map-pin', 'w-4 h-4')} ${c.roomName}</span>
-          </div>
+      <div class="w-20 h-20 shrink-0 rounded-2xl overflow-hidden bg-gradient-to-br ${subjectColor(c.subjectName)}">${classImage(c)}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <h1 class="font-display text-3xl font-extrabold text-brand-dark leading-none">${c.subjectName}</h1>
+          <span class="px-2.5 py-1 rounded-full bg-brand-sand text-brand-deep text-xs font-bold" data-testid="class-code">${classCode(c)}</span>
+          ${s.info?.status ? badge(s.info.status) : ''}
         </div>
-        <div class="md:w-80">
-          <div class="flex justify-between text-xs opacity-90 mb-1"><span>Sĩ số</span><b>${c.currentEnrolled}/${c.maxCapacity}</b></div>
-          <div class="h-2 rounded-full bg-white/25 overflow-hidden"><div class="h-full bg-white" style="width:${pct}%"></div></div>
-          <div class="flex gap-2 mt-4">
-            <button type="button" class="btn btn-sm whitespace-nowrap bg-white text-slate-900 hover:bg-white/90" data-action="new-plan">${icon('clipboard-plus', 'w-3.5 h-3.5')} Giao giáo án</button>
-            <button type="button" class="btn btn-sm whitespace-nowrap bg-white/20 text-white hover:bg-white/30" data-action="notify-class">${icon('send', 'w-3.5 h-3.5')} Thông báo</button>
-          </div>
+        <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+          ${courseInline(s.info || c, { course })}
+          ${s.sessions.length ? html`<span>${s.sessions.length} buổi</span>` : ''}
+          <span class="flex items-center gap-1">${icon('map-pin', 'w-4 h-4')} ${c.roomName}</span>
+        </div>
+      </div>
+      <div class="lg:w-72 shrink-0">
+        <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Sĩ số</span><b class="text-slate-900">${c.currentEnrolled}/${c.maxCapacity}</b></div>
+        <div class="h-2 rounded-full bg-brand-sand overflow-hidden"><div class="h-full bg-[#1E9E64]" style="width:${pct}%"></div></div>
+        <div class="flex gap-2 mt-3">
+          <button type="button" class="btn-secondary btn-sm whitespace-nowrap" data-action="new-plan">${icon('clipboard-plus', 'w-3.5 h-3.5')} Giao giáo án</button>
+          <button type="button" class="btn-primary btn-sm whitespace-nowrap" data-action="notify-class">${icon('send', 'w-3.5 h-3.5')} Thông báo</button>
         </div>
       </div>
     </div>`;
@@ -78,78 +81,107 @@ function rosterTab(s) {
     </div>`;
 }
 
-// dải chọn buổi: mỗi buổi 1 nút, buổi đang chọn tô đậm, buổi hoãn / bù có nhãn
+// nhãn trạng thái của 1 buổi trong cột chọn buổi
+function sessionTag(x) {
+  if (x.status === 'POSTPONED') return ['Hoãn', 'bg-amber-100 text-amber-700'];
+  if (x.type === 'MAKEUP') return ['Buổi bù', 'bg-sky-100 text-sky-700'];
+  const start = toDate(x.startTime), end = toDate(x.endTime), now = new Date();
+  if (start.toDateString() === now.toDateString()) return ['Hôm nay', 'bg-brand-lime text-brand-dark'];
+  return end < now ? ['Đã qua', 'bg-brand-sand text-slate-500'] : ['Sắp tới', 'bg-brand-sand text-slate-600'];
+}
+
+// cột chọn buổi: số buổi to, ngày + giờ, nhãn trạng thái; buổi đang chọn có viền xanh
 function sessionPicker(s) {
   return html`
-    <div class="mb-4" data-testid="session-picker">
-      <div class="text-xs font-bold text-slate-500 mb-2">Chọn buổi (${s.sessions.length} buổi)</div>
-      <div class="flex gap-2 overflow-x-auto pb-1">
+    <div data-testid="session-picker">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Buổi học (${s.sessions.length})</div>
+      <div class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible lg:max-h-[640px] lg:overflow-y-auto pb-1 lg:pr-1">
         ${s.sessions.map((x, i) => {
           const on = x.sessionId === s.session?.sessionId;
-          const past = toDate(x.endTime) < new Date();
+          const [tag, tagCls] = sessionTag(x);
           return html`
-            <button type="button" data-action="pick-session" data-id="${x.sessionId}"
-              class="shrink-0 rounded-2xl border px-3 py-2 text-left text-xs transition ${on ? 'border-brand-dark bg-brand-dark text-white' : 'border-brand-line bg-white/70 hover:border-[#1E9E64]'} ${x.status === 'POSTPONED' ? 'opacity-70' : ''}">
-              <span class="block font-bold">Buổi ${i + 1} · ${weekday(x.startTime)} ${date(x.startTime).slice(0, 5)}</span>
-              <span class="block ${on ? 'text-white/80' : 'text-slate-500'}">${timeRange(x.startTime, x.endTime)}${x.status === 'POSTPONED' ? ' · Hoãn' : x.type === 'MAKEUP' ? ' · Bù' : past ? ' · Đã qua' : ''}</span>
+            <button type="button" data-action="pick-session" data-id="${x.sessionId}" aria-pressed="${on}"
+              class="shrink-0 lg:w-full flex items-center gap-3 rounded-2xl border bg-white px-3 py-2.5 text-left transition ${on ? 'border-[#1E9E64] ring-1 ring-[#1E9E64]' : 'border-brand-line hover:border-[#1E9E64]/60'} ${x.status === 'POSTPONED' ? 'opacity-70' : ''}">
+              <span class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center font-display text-xl font-extrabold ${on ? 'bg-brand-dark text-brand-lime' : 'bg-brand-sand text-brand-dark'}">${i + 1}</span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-bold whitespace-nowrap">${weekday(x.startTime)} · ${date(x.startTime).slice(0, 5)}</span>
+                <span class="block text-xs text-slate-500 whitespace-nowrap">${timeRange(x.startTime, x.endTime)}</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${tagCls}">${tag}</span>
             </button>`;
         })}
       </div>
     </div>`;
 }
 
-function attendanceTab(s) {
-  if (!s.sessions.length) return emptyState('Lớp chưa có buổi nào bạn dạy', 'calendar-x');
-  if (!s.sessionRoster.length) return html`${sessionPicker(s)}${emptyState('Buổi này chưa có học viên để điểm danh', 'clipboard-check')}`;
+// Khung điểm danh của buổi đang chọn: thông báo giờ mở/đóng, đếm nhanh, bảng học viên thẳng cột, nút lưu ở cuối
+function attendancePanel(s) {
+  if (!s.sessionRoster.length) return emptyState('Buổi này chưa có học viên để điểm danh', 'clipboard-check');
   const marked = Object.fromEntries(s.attendances.map(a => [a.memberId, a]));
   const win = attendanceWindow(s.session);
+  const idx = s.sessions.findIndex(x => x.sessionId === s.session.sessionId) + 1;
+  const present = s.attendances.filter(a => attendanceChoice(a.status) === 'PRESENT').length;
+  const absent = s.attendances.length - present;
+  const lastMarked = s.attendances.map(a => a.markedAt).filter(Boolean).sort().at(-1);
   return html`
-    ${sessionPicker(s)}
-    ${!win.open ? html`
-      <div class="mb-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 flex gap-2" data-testid="attendance-closed">
-        ${icon('clock', 'w-4 h-4 shrink-0 mt-0.5')} ${win.reason}
-      </div>` : win.closesAt ? html`
-      <div class="mb-4 text-xs text-slate-500 flex items-center gap-1.5">${icon('clock', 'w-3.5 h-3.5')} Điểm danh được tới ${dateTime(win.closesAt)}</div>` : ''}
-    <form class="card" data-action="save-attendance" data-testid="attendance-form" novalidate>
-      <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
-        <div class="text-sm text-slate-600">
-          ${s.attendances.length ? html`Đã điểm danh <b>${s.attendances.length}</b>/${s.sessionRoster.length} học viên` : 'Chưa điểm danh buổi này'}
-          <div class="text-xs text-slate-400">${weekday(s.session.startTime)} ${date(s.session.startTime)} · ${timeRange(s.session.startTime, s.session.endTime)}${s.session.substitute ? ` · bạn dạy thay ${s.session.mainCoachName || ''}` : ''}</div>
+    <form class="card overflow-hidden" data-action="save-attendance" data-testid="attendance-form" novalidate>
+      <div class="flex flex-wrap items-start justify-between gap-3 px-5 pt-5 pb-4">
+        <div>
+          <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">Điểm danh · Buổi ${idx}</div>
+          <div class="text-sm text-slate-500">${weekday(s.session.startTime)}, ${date(s.session.startTime)} · ${timeRange(s.session.startTime, s.session.endTime)} · ${s.session.roomName}${s.session.substitute ? ` · bạn dạy thay ${s.session.mainCoachName || ''}` : ''}</div>
         </div>
-        <button type="button" class="btn-secondary btn-sm" data-action="all-present">${icon('check-check', 'w-3.5 h-3.5')} Tất cả có mặt</button>
+        <button type="button" class="btn-secondary btn-sm" data-action="all-present" ${win.open ? '' : 'disabled'}>${icon('check-check', 'w-3.5 h-3.5')} Tất cả có mặt</button>
+      </div>
+      <div class="px-5 pb-4 space-y-3">
+        ${win.open
+          ? html`<div class="rounded-xl bg-emerald-50 text-emerald-800 text-sm px-3 py-2 flex items-center gap-2" data-testid="attendance-open">${icon('circle-check', 'w-4 h-4 shrink-0')} Đang mở điểm danh · sửa được tới ${dateTime(win.closesAt)}</div>`
+          : html`<div class="rounded-xl bg-amber-50 text-amber-800 text-sm px-3 py-2 flex items-center gap-2" data-testid="attendance-closed">${icon('clock', 'w-4 h-4 shrink-0')} ${win.reason}</div>`}
+        <div class="flex flex-wrap gap-2 text-xs font-bold" data-testid="attendance-summary">
+          <span class="px-2.5 py-1 rounded-full bg-emerald-600 text-white">Có mặt ${present}</span>
+          <span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700">Vắng ${absent}</span>
+          <span class="px-2.5 py-1 rounded-full bg-brand-sand text-slate-600">Chưa điểm danh ${s.sessionRoster.length - s.attendances.length}</span>
+        </div>
+      </div>
+      <div class="hidden lg:flex items-center gap-4 px-5 py-2 bg-brand-cream text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        <span class="flex-1">Học viên</span><span class="w-[168px]">Trạng thái</span><span class="w-56">Ghi chú</span>
       </div>
       <div class="divide-y divide-slate-100">
         ${s.sessionRoster.map(m => {
           const cur = attendanceChoice(marked[m.memberId]?.status);
           return html`
-            <div class="px-5 py-4 flex flex-col lg:flex-row lg:items-center gap-3" data-testid="attendance-row">
-              <div class="flex items-center gap-3 lg:w-64 shrink-0">
-                ${memberAvatar(m, 'w-9 h-9 text-sm')}
-                <div class="min-w-0"><div class="font-semibold truncate">${fullName(m)}</div><div class="text-xs text-slate-500">${phoneText(m.phone)}</div></div>
+            <div class="px-5 py-3.5 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4" data-testid="attendance-row">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                ${memberAvatar(m, 'w-10 h-10 text-sm')}
+                <div class="min-w-0">
+                  <div class="font-semibold truncate">${fullName(m)}</div>
+                  <div class="text-xs text-slate-500 truncate">${phoneText(m.phone)}${m.trainingGoal && m.trainingGoal !== 'Chưa cập nhật' ? ` · Mục tiêu: ${m.trainingGoal}` : ''}</div>
+                </div>
               </div>
-              <div class="flex flex-wrap gap-2" role="radiogroup">
+              <div class="inline-flex w-fit lg:w-[168px] gap-1 p-1 rounded-full bg-brand-sand" role="radiogroup">
                 ${ATTENDANCE.map(a => html`
-                  <label class="cursor-pointer">
-                    <input type="radio" class="peer sr-only" name="status-${m.memberId}" value="${a.id}" ${cur === a.id ? 'checked' : ''} />
-                    <span class="inline-block px-3 py-1.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600 hover:border-slate-300 ${a.on}">${a.label}</span>
+                  <label class="cursor-pointer flex-1">
+                    <input type="radio" class="peer sr-only" name="status-${m.memberId}" value="${a.id}" ${cur === a.id ? 'checked' : ''} ${win.open ? '' : 'disabled'} />
+                    <span class="block text-center px-3 py-1.5 rounded-full border border-transparent text-xs font-bold text-slate-500 ${a.on}">${a.label}</span>
                   </label>`)}
               </div>
-              <input class="input lg:flex-1" name="note-${m.memberId}" placeholder="Ghi chú (tùy chọn)" value="${marked[m.memberId]?.note || ''}" />
+              <input class="input lg:w-56 !py-1.5" name="note-${m.memberId}" placeholder="Ghi chú (tùy chọn)" value="${marked[m.memberId]?.note || ''}" ${win.open ? '' : 'disabled'} />
             </div>`;
         })}
       </div>
-      <div class="flex justify-end px-5 py-4 border-t border-slate-100">
+      <div class="flex flex-wrap items-center justify-end gap-3 px-5 py-4 bg-brand-cream">
+        <span class="text-xs text-slate-500">${lastMarked ? `Đã lưu lúc ${dateTime(lastMarked)}` : 'Chưa lưu điểm danh buổi này'}</span>
         <button type="submit" class="btn-primary" data-testid="attendance-submit" ${win.open ? '' : 'disabled'}>${icon('save', 'w-4 h-4')} Lưu điểm danh</button>
       </div>
-    </form>
-    ${s.attendances.length ? html`
-      <div class="card mt-5" data-testid="attendance-result">
-        <div class="px-5 py-4 font-bold border-b border-slate-100">Kết quả đã lưu</div>
-        ${table({
-          columns: [{ label: 'Học viên' }, { label: 'Trạng thái' }, { label: 'Ghi chú' }, { label: 'Lúc ghi nhận' }],
-          rows: s.attendances.map(a => [a.memberName, badge(a.status), a.note || '—', dateTime(a.markedAt)])
-        })}
-      </div>` : ''}`;
+    </form>`;
+}
+
+function attendanceTab(s) {
+  if (!s.sessions.length) return emptyState('Lớp chưa có buổi nào bạn dạy', 'calendar-x');
+  return html`
+    <div class="grid lg:grid-cols-[280px_1fr] gap-5 items-start">
+      ${sessionPicker(s)}
+      <div>${attendancePanel(s)}</div>
+    </div>`;
 }
 
 function notificationsTab(s) {
@@ -177,11 +209,10 @@ function view(s) {
     notifications: () => notificationsTab(s)
   }[s.tab]();
   return html`
-    ${hero(s.session || s.cls)}
-    <div class="mb-6">${courseBlock(courseOf(s.info, s.sessions.map(x => x.startTime)))}</div>
+    ${hero(s.session || s.cls, s)}
     ${tabs([
-      { id: 'roster', label: 'Học viên', count: s.roster.length },
       { id: 'attendance', label: 'Điểm danh' },
+      { id: 'roster', label: 'Học viên', count: s.roster.length },
       { id: 'plans', label: 'Giáo án lớp', count: s.plans.length },
       { id: 'notifications', label: 'Thông báo', count: s.notifications.length }
     ], s.tab)}
@@ -207,7 +238,8 @@ async function loadSession(sessionId, fallbackAttendances = []) {
 export default function CoachClassDetail(el, { params, query }) {
   const classId = Number(params.id);
   return mountPage(el, {
-    state: { tab: query?.tab || (query?.session ? 'attendance' : 'roster'), sessionId: query?.session || null },
+    // điểm danh là việc coach làm mỗi buổi nên mở tab này trước
+    state: { tab: query?.tab || 'attendance', sessionId: query?.session || null },
     load: async ctx => {
       const data = await settle({
         info: [() => classApi.get(classId), null],
@@ -253,11 +285,11 @@ export default function CoachClassDetail(el, { params, query }) {
         }
       },
       'new-plan': (t, e, ctx) => openPlanForm({
-        preset: { targetType: 'CLASS', targetId: classId, label: `lớp ${ctx.state.cls.subjectName}` },
+        preset: { targetType: 'CLASS', targetId: classId, label: `lớp ${ctx.state.cls.subjectName} ${classCode(ctx.state.cls)}` },
         onDone: () => { ctx.state.tab = 'plans'; ctx.reload(); }
       }),
       'notify-class': (t, e, ctx) => openNotifyForm({
-        title: `Gửi thông báo cho lớp ${ctx.state.cls.subjectName}`,
+        title: `Gửi thông báo cho lớp ${ctx.state.cls.subjectName} ${classCode(ctx.state.cls)}`,
         send: payload => coachApi.notifyClass(classId, payload),
         onDone: () => { ctx.state.tab = 'notifications'; ctx.reload(); }
       })

@@ -1,5 +1,5 @@
 import { html, icon } from '../core/dom.js';
-import { badge, date, weekday, timeRange, isFuture } from '../core/format.js';
+import { badge, date, weekday, timeRange, isFuture, classCode } from '../core/format.js';
 import { coachLink } from './coachInfo.js';
 import { courseOf, courseBlock } from './courseSchedule.js';
 
@@ -59,7 +59,7 @@ export function classCard(c, footer = '') {
       <div class="p-5 flex-1 flex flex-col">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="font-display text-2xl leading-none font-extrabold text-brand-dark">${c.subjectName}</div>
+            <div class="font-display text-2xl leading-none font-extrabold text-brand-dark">${c.subjectName} <span class="font-sans text-xs font-semibold text-slate-400 align-middle" data-testid="class-code">${classCode(c)}</span></div>
             <div class="text-xs text-slate-500 mt-0.5">${weekday(c.startTime)}, ${date(c.startTime)}</div>
           </div>
           ${badge(c.status)}

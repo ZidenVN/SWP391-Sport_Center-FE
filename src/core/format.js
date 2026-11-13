@@ -176,3 +176,6 @@ export function badge(value, labelOverride) {
 // Tài khoản tạo qua Google chưa có SĐT: BE lưu tạm "GG_<số>" vì cột phone bắt buộc
 export const isPlaceholderPhone = phone => /^GG_/.test(phone || '');
 export const phoneText = phone => (!phone || isPlaceholderPhone(phone) ? 'Chưa có SĐT' : phone);
+
+// Mã lớp hiển thị (BE sinh, vd YOG-0012); lớp chưa có mã thì tạm dùng #id
+export const classCode = c => c?.classCode || (c?.classId != null ? `#${c.classId}` : '');
