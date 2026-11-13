@@ -227,9 +227,8 @@ const ROLE_TEXT = {
   mind: 'giãn cơ, phục hồi và giảm chấn thương',
   other: 'đổi gió, tạo hứng thú tập luyện'
 };
-// lịch xen kẽ mẫu 4 buổi / tuần
-const PLAN_DAYS = ['Thứ 2', 'Thứ 4', 'Thứ 6', 'Chủ nhật'];
-const DAY_INDEX = { 'Chủ nhật': 0, 'Thứ 2': 1, 'Thứ 3': 2, 'Thứ 4': 3, 'Thứ 5': 4, 'Thứ 6': 5, 'Thứ 7': 6 };
+// mã thứ BE dùng trong daysOfWeek ("MON,WED,FRI"), theo thứ tự T2 -> CN
+export const DAY_CODES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 export function subjectCategory(subject) {
   const name = (subject?.subjectName || '').toLowerCase();
@@ -244,13 +243,47 @@ export function classPackageFor(subject, packages) {
   return list.sort((a, b) => Math.abs(a.durationDays - 30) - Math.abs(b.durationDays - 30) || a.price - b.price)[0] || null;
 }
 
-// Lịch tuần xen kẽ các môn; gắn lớp thật (nếu có) cùng môn, cùng thứ
-function weeklyPlan(subjects, classes) {
-  return PLAN_DAYS.map((day, i) => {
-    const subject = subjects[i % subjects.length];
-    const cls = (classes || []).find(c => c.subjectId === subject.subjectId && new Date(c.startTime).getDay() === DAY_INDEX[day]
-      && new Date(c.startTime) > new Date());
-    return { day, subject, cls };
+// ===== Lớp thật cho từng môn trong combo =====
+// Lớp có lịch cố định (daysOfWeek + giờ + ngày bắt đầu/kết thúc). BE chỉ cho đăng ký lớp cùng môn
+// và cùng thời hạn với gói lớp (durationDays), lớp chưa bắt đầu và còn chỗ.
+export const classDays = c => (c.daysOfWeek
+  ? String(c.daysOfWeek).split(',').map(d => d.trim().slice(0, 3).toUpperCase())
+  : [DAY_CODES[(new Date(c.startTime).getDay() + 6) % 7]]);
+const minutes = t => { const [h, m] = String(t).slice(0, 5).split(':').map(Number); return h * 60 + m; };
+const clockOf = d => { const x = new Date(d); return `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`; };
+const classSpan = c => ({
+  from: minutes(c.startClock || clockOf(c.startTime)),
+  to: minutes(c.endClock || clockOf(c.endTime)),
+  start: new Date(c.startDate || c.startTime),
+  end: new Date(c.endDate ? `${c.endDate}T23:59:59` : c.endTime)
+});
+
+// 2 lớp trùng lịch: có chung thứ học, giờ giao nhau và khoảng ngày giao nhau
+export function classesClash(a, b) {
+  const da = classDays(a);
+  if (!classDays(b).some(d => da.includes(d))) return false;
+  const x = classSpan(a);
+  const y = classSpan(b);
+  return x.from < y.to && y.from < x.to && x.start <= y.end && y.start <= x.end;
+}
+
+export function joinableClasses(pkg, classes) {
+  const now = new Date();
+  return (classes || [])
+    .filter(c => c.subjectId === (pkg.subject?.subjectId ?? pkg.subjectId) && c.status === 'OPENING'
+      && (c.availableSeats ?? 1) > 0 && new Date(c.firstSessionAt || c.startTime) > now
+      && (c.durationDays == null || c.durationDays === pkg.durationDays))
+    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+}
+
+// mỗi môn chọn lớp sớm nhất không trùng lịch với lớp đã chọn của môn trước
+function pickClasses(items) {
+  const picked = [];
+  return items.map(it => {
+    const free = it.classes.find(c => picked.every(p => !classesClash(p, c)));
+    const cls = free || it.classes[0] || null;
+    if (cls) picked.push(cls);
+    return { ...it, cls, clash: Boolean(cls && !free) };
   });
 }
 
@@ -268,26 +301,38 @@ export function buildCombos(answers, subjects, classes, packages) {
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) groups.push([list[i], list[j]]);
   }
+  const classesOf = new Map(list.map(s => [s.subjectId, joinableClasses(pkgOf.get(s.subjectId), classes)]));
   const scored = groups.map(g => {
     const cats = new Set(g.map(subjectCategory));
-    // ưu tiên môn hợp mục tiêu + các môn khác nhóm để tập xen kẽ (vd sức mạnh + dẻo dai)
-    const score = g.reduce((t, s) => t + w(s), 0) / g.length + (cats.size - 1) * 0.9 + (g.length === 3 ? 0.3 : 0);
+    // ưu tiên môn hợp mục tiêu + các môn khác nhóm (vd sức mạnh + dẻo dai) + môn đang có lớp mở để đăng ký ngay
+    const withClass = g.filter(s => classesOf.get(s.subjectId).length).length;
+    const score = g.reduce((t, s) => t + w(s), 0) / g.length + (cats.size - 1) * 0.9 + withClass * 0.6;
     return { g, score };
   }).sort((a, b) => b.score - a.score);
   return scored.slice(0, 3).map(({ g }, idx) => {
     const ordered = [...g].sort((a, b) => w(b) - w(a));
-    const items = ordered.map(s => ({ subject: s, pkg: pkgOf.get(s.subjectId) }));
-    const plan = weeklyPlan(ordered, classes);
+    const items = pickClasses(ordered.map(s => ({ subject: s, pkg: pkgOf.get(s.subjectId), classes: classesOf.get(s.subjectId) })));
+    const withCls = items.filter(x => x.cls);
+    // lịch tuần ghép từ các lớp đã chọn: mỗi thứ học môn nào
+    const week = DAY_CODES
+      .map(code => ({ code, subjects: withCls.filter(x => classDays(x.cls).includes(code)).map(x => x.subject.subjectName) }))
+      .filter(d => d.subjects.length);
+    const sessionsPerWeek = withCls.reduce((n, x) => n + classDays(x.cls).length, 0);
     const reasons = ordered.map(s => `${s.subjectName}: ${ROLE_TEXT[subjectCategory(s)]}.`);
-    reasons.push(`Tập xen kẽ ${plan.length} buổi/tuần để cơ thể kịp phục hồi giữa các buổi.`);
+    if (withCls.length === items.length) {
+      reasons.push(items.some(x => x.clash)
+        ? 'Các lớp đang mở của 2 môn trùng giờ nhau, nên chọn lớp khác khi đăng ký.'
+        : `Lịch theo lớp đang mở: ${sessionsPerWeek} buổi/tuần, các lớp không trùng giờ.`);
+    }
+    items.filter(x => !x.cls).forEach(x => reasons.push(`${x.subject.subjectName} chưa có lớp ${x.pkg.durationDays} ngày đang mở, mua gói rồi đăng ký khi có lớp mới.`));
     return {
       id: ordered.map(s => s.subjectId).join('-'),
       name: ordered.map(s => s.subjectName).join(' + '),
       subjects: ordered,
-      items, // [{ subject, pkg }] gói lớp thật của từng môn
+      items, // [{ subject, pkg, classes, cls, clash }] gói lớp thật + lớp gợi ý của từng môn
       price: items.reduce((sum, x) => sum + x.pkg.price, 0), // tổng nếu mua đủ các gói lớp
-      sessionsPerWeek: plan.length,
-      plan,
+      sessionsPerWeek, // 0 khi chưa môn nào có lớp mở
+      week,
       reasons,
       best: idx === 0
     };

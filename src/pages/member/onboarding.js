@@ -3,12 +3,12 @@ import { toast, withBusy, emptyState } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { packageApi, subjectApi, classApi, memberApi, quizApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
-import { money, isoDate, timeRange } from '../../core/format.js';
+import { money, isoDate, timeRange, date } from '../../core/format.js';
 import { classCard } from '../../components/classCard.js';
 import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import {
   quizStore, GOALS, find, bmiInfo, bmiAdvice,
-  recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, SUBJECT_CATEGORIES,
+  recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, SUBJECT_CATEGORIES, classDays,
   quizSteps, validateStep, quizPayload, byCode, QUIZ_CODES, goalIdOf,
   OTHER_GOAL, GOAL_TEXT_MAX, goalLabel, goalFromProfile
 } from '../../core/quiz.js';
@@ -154,9 +154,19 @@ function quizView(s) {
     </div>`;
 }
 
-const kPrice = v => `${Math.round(v / 1000)}k`;
+// giá combo = tổng giá thật các gói lớp -> hiện đủ số, không làm tròn (899.999 không thành 900k)
+const comboPrice = v => money(v);
 
-// Thẻ combo đang chọn: gói lớp thật của từng môn (mua riêng từng gói), lịch xen kẽ trong tuần, lý do
+const DAY_LABEL = { MON: 'Thứ 2', TUE: 'Thứ 3', WED: 'Thứ 4', THU: 'Thứ 5', FRI: 'Thứ 6', SAT: 'Thứ 7', SUN: 'Chủ nhật' };
+const DAY_SHORT = { MON: 'T2', TUE: 'T3', WED: 'T4', THU: 'T5', FRI: 'T6', SAT: 'T7', SUN: 'CN' };
+// "T2, T4, T6 · 18:00–19:00 · 17/11 → 16/12/2026"
+const classWhenText = c => {
+  const hours = c.startClock ? `${String(c.startClock).slice(0, 5)}–${String(c.endClock).slice(0, 5)}` : timeRange(c.startTime, c.endTime);
+  const range = c.startDate && c.endDate ? ` · ${date(c.startDate).slice(0, 5)} → ${date(c.endDate)}` : ` · từ ${date(c.startTime)}`;
+  return `${classDays(c).map(d => DAY_SHORT[d]).join(', ')} · ${hours}${range}`;
+};
+
+// Thẻ combo đang chọn: gói lớp thật của từng môn (mua riêng từng gói), lớp đang mở của từng môn, lịch tuần ghép từ các lớp đó
 // membership: gói Membership gợi ý khi hội viên chưa có (điều kiện để mua gói lớp)
 function comboDetail(c, { hasMembership, membership }) {
   return html`
@@ -166,10 +176,10 @@ function comboDetail(c, { hasMembership, membership }) {
         ${c.best ? html`<span class="inline-flex px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-[11px] font-extrabold uppercase items-center gap-1">${icon('sparkles', 'w-3.5 h-3.5')} Phù hợp nhất</span>` : ''}
         <div class="font-display text-3xl sm:text-4xl font-extrabold leading-tight mt-3" data-testid="combo-name">${c.name}</div>
         <div class="flex items-end gap-3 mt-3">
-          <span class="font-display text-5xl font-extrabold text-brand-lime" data-testid="combo-price">${kPrice(c.price)}</span>
+          <span class="font-display text-4xl sm:text-5xl font-extrabold text-brand-lime tabular-nums" data-testid="combo-price">${comboPrice(c.price)}</span>
           <span class="mb-1.5 text-white/60 text-sm">tổng ${c.items.length} gói lớp</span>
         </div>
-        <div class="text-sm text-white/75 mt-1">Mỗi môn là 1 gói lớp riêng, mua từng gói bên dưới · ${c.sessionsPerWeek} buổi/tuần</div>
+        <div class="text-sm text-white/75 mt-1">Mỗi môn là 1 gói lớp riêng, mua từng gói bên dưới${c.sessionsPerWeek ? ` · ${c.sessionsPerWeek} buổi/tuần theo lớp đang mở` : ''}</div>
 
         <div class="mt-5 space-y-2" data-testid="combo-items">
           ${!hasMembership ? html`
@@ -192,15 +202,31 @@ function comboDetail(c, { hasMembership, membership }) {
             </div>`)}
         </div>
 
-        <div class="mt-6 text-xs font-bold uppercase tracking-widest text-white/50">Lịch tập xen kẽ gợi ý</div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2" data-testid="combo-plan">
-          ${c.plan.map(d => html`
+        <div class="mt-6 text-xs font-bold uppercase tracking-widest text-white/50">Lớp đang mở để đăng ký</div>
+        <div class="space-y-2 mt-2" data-testid="combo-classes">
+          ${c.items.map(it => html`
             <div class="rounded-xl bg-white/10 p-3">
-              <div class="text-[11px] text-white/60">${d.day}</div>
-              <div class="text-sm font-bold leading-snug">${d.subject.subjectName}</div>
-              ${d.cls ? html`<div class="text-[11px] text-brand-lime mt-0.5">Có lớp ${timeRange(d.cls.startTime, d.cls.endTime)}</div>` : ''}
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-sm font-bold">${it.subject.subjectName}</span>
+                ${it.cls ? html`<span class="text-[11px] text-white/60">${it.classes.length > 1 ? `${it.classes.length} lớp phù hợp` : '1 lớp phù hợp'}</span>` : ''}
+              </div>
+              ${it.cls ? html`
+                <div class="mt-1.5 text-sm">${classWhenText(it.cls)}</div>
+                <div class="text-[11px] text-white/60 mt-0.5">HLV ${it.cls.coachName || '—'} · ${it.cls.roomName || ''} · còn ${it.cls.availableSeats ?? '?'} chỗ</div>
+                ${it.clash ? html`<div class="text-[11px] text-amber-300 mt-1">Trùng giờ với lớp môn kia, nên chọn lớp khác khi đăng ký</div>` : ''}`
+              : html`<div class="mt-1 text-xs text-white/60">Chưa có lớp ${it.pkg.durationDays} ngày đang mở cho gói này</div>`}
             </div>`)}
         </div>
+
+        ${c.week.length ? html`
+          <div class="mt-5 text-xs font-bold uppercase tracking-widest text-white/50">Lịch tuần nếu học các lớp trên</div>
+          <div class="flex flex-wrap gap-2 mt-2" data-testid="combo-week">
+            ${c.week.map(d => html`
+              <div class="rounded-xl bg-white/10 px-3 py-2">
+                <div class="text-[11px] text-brand-lime font-bold">${DAY_LABEL[d.code]}</div>
+                <div class="text-xs font-semibold">${d.subjects.join(' · ')}</div>
+              </div>`)}
+          </div>` : ''}
 
         <ul class="mt-5 space-y-1.5 text-sm text-white/85">
           ${c.reasons.map(t => html`<li class="flex gap-2">${icon('check', 'w-4 h-4 shrink-0 mt-0.5 text-brand-lime')}<span>${t}</span></li>`)}
@@ -216,10 +242,10 @@ function comboOption(c, i, active) {
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
           <div class="font-bold text-sm">${c.name}</div>
-          <div class="text-xs text-slate-500 mt-0.5">${c.subjects.map(x => subjectCategoryLabel(x)).join(' · ')} · ${c.sessionsPerWeek} buổi/tuần</div>
+          <div class="text-xs text-slate-500 mt-0.5">${c.subjects.map(x => subjectCategoryLabel(x)).join(' · ')} · ${c.sessionsPerWeek ? `${c.sessionsPerWeek} buổi/tuần` : 'chờ lớp mở'}</div>
         </div>
         <div class="text-right shrink-0">
-          <div class="font-extrabold text-brand-dark">${kPrice(c.price)}</div>
+          <div class="font-extrabold text-brand-dark whitespace-nowrap tabular-nums">${comboPrice(c.price)}</div>
           <div class="text-[11px] text-slate-400">${c.items.length} gói lớp</div>
         </div>
       </div>
