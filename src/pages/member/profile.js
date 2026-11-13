@@ -4,7 +4,8 @@ import { mountPage, settle } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
 import { genderLabel, isPlaceholderPhone, phoneText, daysUntil } from '../../core/format.js';
-import { quizStore, bmiInfo, GOALS } from '../../core/quiz.js';
+import { quizStore, bmiInfo, goalFromProfile } from '../../core/quiz.js';
+import { goalPicker, readGoal } from '../../components/goalPicker.js';
 
 const PHONE_RE = /^(0|\+84)[0-9]{9}$/;
 
@@ -31,12 +32,6 @@ const BMI_BANDS = [
   { to: BMI_MAX, label: 'Thừa cân', short: 'Thừa cân', range: 'từ 25', color: 'bg-rose-500' }
 ];
 const bmiPct = v => Math.max(0, Math.min(100, ((v - BMI_MIN) / (BMI_MAX - BMI_MIN)) * 100));
-
-// mục tiêu = đáp án câu TRAINING_GOAL của quiz; mục tiêu cũ nhập tay không khớp thì vẫn giữ trong danh sách
-const goalOptions = goal => [
-  ...GOALS.map(g => ({ value: g.label, hint: g.hint })),
-  ...(goal && !GOALS.some(g => g.label === goal) ? [{ value: goal, hint: 'Mục tiêu đã lưu trước đây' }] : [])
-];
 
 // Chiều cao / cân nặng: BE lưu trong hồ sơ (quiz hoặc tự sửa ở đây); BE cũ chưa trả thì lấy bản sao quiz trên máy này
 function bodyOf(m) {
@@ -125,20 +120,6 @@ const unitInput = (name, value, unit, [min, max], ro) => html`
     <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 pointer-events-none">${unit}</span>
   </div>`;
 
-function goalPicker(goal, canEdit) {
-  return html`
-    <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-2.5" role="radiogroup" data-field-wrap data-testid="goal-options">
-      ${goalOptions(goal).map(g => html`
-        <label class="${canEdit ? 'cursor-pointer' : 'cursor-default'}">
-          <input type="radio" name="trainingGoal" value="${g.value}" class="peer sr-only" ${goal === g.value ? 'checked' : ''} ${canEdit ? '' : 'disabled'} />
-          <span class="block h-full rounded-2xl border border-brand-line bg-white px-4 py-3 transition-colors peer-checked:bg-brand-dark peer-checked:border-brand-dark peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand">
-            <span class="block text-sm font-extrabold">${g.value}</span>
-            <span class="block text-[11px] opacity-70 mt-0.5">${g.hint}</span>
-          </span>
-        </label>`)}
-    </div>`;
-}
-
 function view(s) {
   const m = s.me;
   if (!m) {
@@ -179,7 +160,7 @@ function view(s) {
           ${field('Chiều cao', unitInput('heightCm', body.height, 'cm', BODY.height, ro))}
           ${field('Cân nặng', unitInput('weightKg', body.weight, 'kg', BODY.weight, ro))}
         </div>
-        ${field('Mục tiêu tập luyện', goalPicker(goal, canEdit), 'Cùng các lựa chọn với bài khảo sát — dùng để gợi ý gói tập và lớp học')}
+        ${goalPicker(goal, { disabled: !canEdit, hint: 'Cùng các lựa chọn với bài khảo sát — dùng để gợi ý gói tập và lớp học' })}
         ${canEdit ? html`<div class="flex justify-end"><button type="submit" class="btn-primary" data-testid="profile-save">${icon('save', 'w-4 h-4')} Lưu thay đổi</button></div>` : ''}
       </form>
     </div>`;
@@ -229,7 +210,8 @@ export default function MemberProfile(el) {
         const errors = {};
         ['firstName', 'lastName', 'gender', 'phone'].forEach(k => { if (!String(data[k] || '').trim()) errors[k] = 'Không được để trống'; });
         if (data.phone && !PHONE_RE.test(data.phone.trim())) errors.phone = 'Số điện thoại gồm 10 số, bắt đầu bằng 0 (hoặc +84)';
-        if (!String(data.trainingGoal || '').trim()) errors.trainingGoal = 'Vui lòng chọn mục tiêu tập luyện';
+        const trainingGoal = readGoal(data);
+        Object.assign(errors, trainingGoal.errors);
         // để trống = giữ nguyên số đang có
         const measure = (key, [min, max], label, unit) => {
           const raw = String(data[key] ?? '').trim();
@@ -244,7 +226,7 @@ export default function MemberProfile(el) {
         if (Object.keys(errors).length) return;
         const payload = {
           firstName: data.firstName.trim(), lastName: data.lastName.trim(), gender: data.gender,
-          phone: data.phone.trim(), trainingGoal: data.trainingGoal.trim(),
+          phone: data.phone.trim(), trainingGoal: trainingGoal.value,
           heightCm: heightCm ?? undefined, weightKg: weightKg ?? undefined
         };
         const me = await withBusy(form, () => memberApi.updateMe(payload));
@@ -252,8 +234,8 @@ export default function MemberProfile(el) {
           // cập nhật bản sao quiz trên máy để phần gợi ý gói / lớp dùng số mới
           const quiz = quizStore.answers(me.email);
           if (quiz) {
-            const goalId = GOALS.find(g => g.label === me.trainingGoal)?.id;
-            quizStore.save(me.email, { ...quiz, height: me.heightCm ?? heightCm ?? quiz.height, weight: me.weightKg ?? weightKg ?? quiz.weight, ...(goalId ? { goal: goalId } : {}) });
+            const { goal, goalText } = goalFromProfile(me.trainingGoal);
+            quizStore.save(me.email, { ...quiz, height: me.heightCm ?? heightCm ?? quiz.height, weight: me.weightKg ?? weightKg ?? quiz.weight, ...(goal ? { goal, goalText } : {}) });
           }
           const fullName = `${me.firstName} ${me.lastName}`;
           session.update({ firstName: me.firstName, lastName: me.lastName, fullName });
