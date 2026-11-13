@@ -1,10 +1,11 @@
 import { html, icon, readForm } from '../../core/dom.js';
-import { pageHeader, field, input, select, GENDER_OPTIONS, withBusy, toast, showFormErrors } from '../../core/ui.js';
-import { mountPage } from '../../core/page.js';
+import { pageHeader, field, input, select, GENDER_OPTIONS, withBusy, toast, showFormErrors, openModal } from '../../core/ui.js';
+import { mountPage, settle } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
 import { session } from '../../core/session.js';
-import { genderLabel, isPlaceholderPhone, phoneText } from '../../core/format.js';
-import { quizStore, bmiInfo, GOALS } from '../../core/quiz.js';
+import { genderLabel, isPlaceholderPhone, phoneText, daysUntil } from '../../core/format.js';
+import { quizStore, bmiInfo, goalFromProfile } from '../../core/quiz.js';
+import { goalPicker, readGoal } from '../../components/goalPicker.js';
 
 const PHONE_RE = /^(0|\+84)[0-9]{9}$/;
 
@@ -13,16 +14,24 @@ const notice = text => html`
     ${icon('info', 'w-4 h-4 shrink-0 mt-0.5')}<span>${text}</span>
   </div>`;
 
-const TONE = { sky: 'bg-sky-100 text-sky-700', emerald: 'bg-emerald-100 text-emerald-700', amber: 'bg-amber-100 text-amber-700', rose: 'bg-rose-100 text-rose-700' };
-
 // giới hạn giống BE (MemberProfileUpdateDTO)
 const BODY = { height: [50, 250], weight: [20, 300] };
 
-// mục tiêu = đáp án câu TRAINING_GOAL của quiz; mục tiêu cũ nhập tay không khớp thì vẫn giữ trong danh sách
-const goalOptions = goal => [
-  ...GOALS.map(g => ({ value: g.label, label: g.label })),
-  ...(goal && !GOALS.some(g => g.label === goal) ? [{ value: goal, label: goal }] : [])
+// Ảnh bìa: hội viên chọn 1 ảnh có sẵn ở /landing, BE chỉ lưu tên (danh sách phải khớp @Pattern của MemberCoverImageDTO)
+const COVERS = ['fitness', 'hero', 'gym', 'gym-floor', 'boxing', 'yoga', 'swim', 'tennis', 'football', 'basketball'];
+const DEFAULT_COVER = 'fitness';
+const coverUrl = key => `/landing/${COVERS.includes(key) ? key : DEFAULT_COVER}.jpg`;
+
+// Thang BMI 15 -> 32, chia theo đúng các ngưỡng của bmiInfo(); short = nhãn ngắn dưới thang (đoạn 23–25 rất hẹp)
+const BMI_MIN = 15;
+const BMI_MAX = 32;
+const BMI_BANDS = [
+  { to: 18.5, label: 'Thiếu cân', short: 'Thiếu cân', range: 'dưới 18.5', color: 'bg-sky-300' },
+  { to: 23, label: 'Cân đối', short: 'Cân đối', range: '18.5 – 22.9', color: 'bg-emerald-500' },
+  { to: 25, label: 'Thừa cân nhẹ', short: 'Hơi thừa', range: '23 – 24.9', color: 'bg-amber-400' },
+  { to: BMI_MAX, label: 'Thừa cân', short: 'Thừa cân', range: 'từ 25', color: 'bg-rose-500' }
 ];
+const bmiPct = v => Math.max(0, Math.min(100, ((v - BMI_MIN) / (BMI_MAX - BMI_MIN)) * 100));
 
 // Chiều cao / cân nặng: BE lưu trong hồ sơ (quiz hoặc tự sửa ở đây); BE cũ chưa trả thì lấy bản sao quiz trên máy này
 function bodyOf(m) {
@@ -31,36 +40,85 @@ function bodyOf(m) {
   return { height: num(m.heightCm ?? quiz.height), weight: num(m.weightKg ?? quiz.weight) };
 }
 
-function bodyCard(m, goal) {
-  const { height, weight } = bodyOf(m);
-  const bmi = bmiInfo(height, weight);
-  const done = session.get()?.quizCompleted ?? Boolean(quizStore.answers(m.email));
-  const stat = (label, value, unit) => html`
-    <div class="rounded-2xl bg-brand-sand/70 p-3 text-center">
-      <div class="text-[11px] text-slate-500">${label}</div>
-      <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">${value ?? '—'}${value != null ? html`<span class="text-xs font-sans font-semibold text-slate-500 ml-0.5">${unit}</span>` : ''}</div>
-    </div>`;
+const initials = m => `${(m.firstName || '?').charAt(0)}${(m.lastName || '').charAt(0)}`.toUpperCase();
+
+function hero(m, sub, canEdit) {
+  const left = sub?.endDate ? daysUntil(sub.endDate) : null;
   return html`
-    <div class="mt-4 border-t border-brand-line/60 pt-4 text-left" data-testid="profile-body">
-      <div class="flex items-center justify-between gap-2 mb-3">
-        <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Chỉ số cơ thể</span>
-        <a href="#/member/onboarding${done ? '?redo=1' : ''}" class="text-xs font-bold text-brand-deep hover:underline">${done ? 'Làm lại' : 'Làm khảo sát'}</a>
+    <div class="relative rounded-3xl overflow-hidden bg-brand-dark text-white mb-6 min-h-[230px]" data-testid="profile-hero">
+      <img src="${coverUrl(m.coverImage)}" alt="" class="absolute inset-0 w-full h-full object-cover object-[center_35%]" data-testid="profile-cover" />
+      <span class="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/80 to-brand-dark/20"></span>
+      ${canEdit ? html`
+        <button type="button" class="absolute top-4 right-4 z-10 btn btn-sm bg-black/40 text-white border border-white/30 hover:bg-black/60" data-action="cover" data-testid="change-cover">
+          ${icon('image', 'w-4 h-4')} Đổi ảnh bìa</button>` : ''}
+      <div class="relative p-6 sm:p-9 flex flex-col sm:flex-row sm:items-center gap-6 min-h-[230px]">
+        <div class="w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-[2rem] bg-[#D7F25B] text-[#0E2A20] border-4 border-white/15 flex items-center justify-center font-display text-5xl font-extrabold">${initials(m)}</div>
+        <div class="min-w-0">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide ${sub ? 'bg-[#D7F25B] text-[#0E2A20]' : 'bg-white/15 text-white'}">
+            ${sub ? html`<span class="w-2 h-2 rounded-full bg-[#0E2A20]"></span> Hội viên · ${sub.packageName}${left != null ? ` · còn ${left} ngày` : ''}` : 'Chưa có gói đang dùng'}
+          </span>
+          <h1 class="font-display text-5xl sm:text-6xl font-extrabold leading-[.95] uppercase mt-3 break-words">${m.firstName} ${m.lastName}</h1>
+          <div class="flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/75 mt-2">
+            <span>${m.email}</span><span>${phoneText(m.phone)}</span><span>${genderLabel(m.gender)}</span>
+          </div>
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-2">
-        ${stat('Chiều cao', height, 'cm')}
-        ${stat('Cân nặng', weight, 'kg')}
-      </div>
-      ${bmi ? html`
-        <div class="flex items-center justify-between mt-3 text-sm">
-          <span class="text-slate-500">Chỉ số BMI</span>
-          <span class="flex items-center gap-2"><b>${bmi.value}</b><span class="px-2 py-0.5 rounded-full text-xs font-bold ${TONE[bmi.tone]}">${bmi.label}</span></span>
-        </div>` : ''}
-      <div class="flex items-start justify-between gap-3 mt-2 text-sm">
-        <span class="text-slate-500 shrink-0">Mục tiêu</span><b class="text-right">${goal || '—'}</b>
-      </div>
-      <p class="text-[11px] text-slate-400 mt-2">Sửa trực tiếp ở form bên cạnh, không cần làm lại khảo sát.</p>
     </div>`;
 }
+
+function bodyCard(m, body) {
+  const bmi = bmiInfo(body.height, body.weight);
+  const band = bmi && BMI_BANDS.find(b => bmi.value < b.to) || BMI_BANDS[BMI_BANDS.length - 1];
+  const done = session.get()?.quizCompleted ?? Boolean(quizStore.answers(m.email));
+  const stat = (label, value, unit, dark) => html`
+    <div class="rounded-2xl p-3.5 ${dark ? 'bg-brand-dark text-white' : 'bg-brand-sand/70'}">
+      <div class="text-[11px] font-extrabold tracking-wider uppercase ${dark ? 'text-white/60' : 'text-slate-500'}">${label}</div>
+      <div class="font-display text-4xl font-extrabold leading-none mt-1 ${dark ? 'text-brand-lime' : 'text-brand-dark'}">${value ?? '—'}${value != null && unit ? html`<span class="text-sm font-sans font-semibold text-slate-500 ml-1">${unit}</span>` : ''}</div>
+    </div>`;
+  return html`
+    <div class="card p-6" data-testid="profile-body">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="font-display text-2xl font-extrabold text-brand-dark uppercase">Chỉ số cơ thể</h2>
+        <a href="#/member/onboarding${done ? '?redo=1' : ''}" class="text-xs font-bold text-brand-deep hover:underline">${done ? 'Làm lại khảo sát' : 'Làm khảo sát'} →</a>
+      </div>
+      <div class="grid grid-cols-3 gap-2.5 mt-4">
+        ${stat('Chiều cao', body.height, 'cm')}
+        ${stat('Cân nặng', body.weight, 'kg')}
+        ${stat('BMI', bmi ? bmi.value.toFixed(1) : null, '', true)}
+      </div>
+      ${bmi ? html`
+        <div class="mt-5" data-testid="bmi-scale">
+          <div class="relative">
+            <div class="flex h-2.5 rounded-full overflow-hidden">
+              ${BMI_BANDS.map((b, i) => html`<span class="${b.color}" style="width:${bmiPct(b.to) - bmiPct(i ? BMI_BANDS[i - 1].to : BMI_MIN)}%"></span>`)}
+            </div>
+            <span class="absolute -top-1.5 w-1.5 h-[22px] rounded-full bg-brand-dark ring-[3px] ring-white" style="left:calc(${bmiPct(bmi.value)}% - 3px)" aria-hidden="true"></span>
+          </div>
+          <div class="flex text-[10px] font-bold text-slate-500 mt-2">
+            ${BMI_BANDS.map((b, i) => html`<span class="whitespace-nowrap ${b === band ? 'text-brand-deep' : ''}" style="width:${bmiPct(b.to) - bmiPct(i ? BMI_BANDS[i - 1].to : BMI_MIN)}%">${b.short}</span>`)}
+          </div>
+        </div>
+        <div class="mt-4 rounded-xl bg-brand-sand/70 px-4 py-3 text-sm font-bold text-brand-dark" data-testid="bmi-note">
+          BMI ${bmi.value.toFixed(1)} – ${band.label} (${band.range})
+        </div>` : html`<p class="text-sm text-slate-500 mt-4">Nhập chiều cao và cân nặng ở form bên cạnh để xem chỉ số BMI.</p>`}
+    </div>`;
+}
+
+const goalCard = goal => html`
+  <div class="card p-5 flex items-center gap-4" data-testid="profile-goal">
+    <span class="w-12 h-12 rounded-2xl bg-orange-600 text-white flex items-center justify-center shrink-0">${icon('target', 'w-6 h-6')}</span>
+    <div class="min-w-0">
+      <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Mục tiêu hiện tại</div>
+      <div class="font-display text-2xl font-extrabold text-brand-dark uppercase leading-tight">${goal || 'Chưa chọn'}</div>
+    </div>
+  </div>`;
+
+// ô nhập có đơn vị nằm bên phải
+const unitInput = (name, value, unit, [min, max], ro) => html`
+  <div class="relative">
+    ${input(name, { type: 'number', value: value ?? '', attrs: `inputmode="decimal" step="0.1" min="${min}" max="${max}" style="padding-right:3rem" ${ro}` })}
+    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 pointer-events-none">${unit}</span>
+  </div>`;
 
 function view(s) {
   const m = s.me;
@@ -75,22 +133,18 @@ function view(s) {
   const goal = m.trainingGoal === 'Chưa cập nhật' ? '' : m.trainingGoal || '';
   const body = bodyOf(m);
   return html`
-    ${pageHeader('Hồ sơ cá nhân', canEdit ? 'Cập nhật thông tin để HLV hiểu rõ hơn về bạn' : 'Thông tin tài khoản của bạn')}
-    <div class="grid lg:grid-cols-3 gap-6">
-      <div class="card p-6 text-center h-fit">
-        <div class="w-20 h-20 mx-auto rounded-full bg-brand-dark text-brand-lime flex items-center justify-center text-3xl font-black">
-          ${(m.firstName || '?').charAt(0).toUpperCase()}
-        </div>
-        <div class="font-display text-3xl leading-none font-extrabold text-brand-dark mt-3">${m.firstName} ${m.lastName}</div>
-        <div class="text-sm text-slate-500 mt-1">${m.email}</div>
-        <div class="mt-4 text-sm text-left space-y-2 border-t border-brand-line/60 pt-4">
-          <div class="flex justify-between"><span class="text-slate-500">Giới tính</span><b>${genderLabel(m.gender)}</b></div>
-          <div class="flex justify-between"><span class="text-slate-500">Điện thoại</span><b>${phoneText(m.phone)}</b></div>
-        </div>
-        ${bodyCard(m, goal)}
+    ${hero(m, s.sub, canEdit)}
+    <div class="grid lg:grid-cols-[1fr_1.45fr] gap-6 items-start">
+      <div class="space-y-5">
+        ${bodyCard(m, body)}
+        ${goalCard(goal)}
       </div>
-      <form class="card p-6 lg:col-span-2 space-y-4" data-action="save" data-testid="profile-form" novalidate>
+      <form class="card p-6 sm:p-7 space-y-5" data-action="save" data-testid="profile-form" novalidate>
         ${canEdit ? '' : notice('Bạn chỉ được xem hồ sơ, chưa được cấp quyền tự cập nhật. Liên hệ lễ tân nếu cần sửa thông tin.')}
+        <div>
+          <h2 class="font-display text-2xl font-extrabold text-brand-dark uppercase">Thông tin cá nhân</h2>
+          <p class="text-sm text-slate-500">HLV dùng các thông tin này để hiểu rõ hơn về bạn</p>
+        </div>
         <div class="grid sm:grid-cols-2 gap-4">
           ${field('Họ', input('firstName', { value: m.firstName, required: true, attrs: `maxlength="50" ${ro}` }))}
           ${field('Tên', input('lastName', { value: m.lastName, required: true, attrs: `maxlength="50" ${ro}` }))}
@@ -100,32 +154,64 @@ function view(s) {
           ${field('Số điện thoại', input('phone', { type: 'tel', value: isPlaceholderPhone(m.phone) ? '' : m.phone, required: true, placeholder: '0912345678', attrs: `inputmode="tel" maxlength="12" ${ro}` }))}
         </div>
         ${field('Email', input('email', { value: m.email, attrs: 'disabled' }), 'Email dùng để đăng nhập, không thể thay đổi')}
+        <div class="h-px bg-brand-line"></div>
+        <h2 class="font-display text-2xl font-extrabold text-brand-dark uppercase">Chỉ số & mục tiêu</h2>
         <div class="grid sm:grid-cols-2 gap-4">
-          ${field('Chiều cao (cm)', input('heightCm', { type: 'number', value: body.height ?? '', placeholder: '165', attrs: `inputmode="decimal" step="0.1" min="${BODY.height[0]}" max="${BODY.height[1]}" ${ro}` }))}
-          ${field('Cân nặng (kg)', input('weightKg', { type: 'number', value: body.weight ?? '', placeholder: '60', attrs: `inputmode="decimal" step="0.1" min="${BODY.weight[0]}" max="${BODY.weight[1]}" ${ro}` }))}
+          ${field('Chiều cao', unitInput('heightCm', body.height, 'cm', BODY.height, ro))}
+          ${field('Cân nặng', unitInput('weightKg', body.weight, 'kg', BODY.weight, ro))}
         </div>
-        ${canEdit
-          ? field('Mục tiêu tập luyện', select('trainingGoal', goalOptions(goal), goal, { required: true, placeholder: 'Chọn mục tiêu' }), 'Cùng các lựa chọn với bài khảo sát — dùng để gợi ý gói tập và lớp học')
-          : field('Mục tiêu tập luyện', input('goalText', { value: goal, attrs: 'disabled' }))}
+        ${goalPicker(goal, { disabled: !canEdit, hint: 'Cùng các lựa chọn với bài khảo sát — dùng để gợi ý gói tập và lớp học' })}
         ${canEdit ? html`<div class="flex justify-end"><button type="submit" class="btn-primary" data-testid="profile-save">${icon('save', 'w-4 h-4')} Lưu thay đổi</button></div>` : ''}
       </form>
     </div>`;
+}
+
+function openCoverPicker(ctx) {
+  const current = ctx.state.me.coverImage || DEFAULT_COVER;
+  const modal = openModal({
+    title: 'Chọn ảnh bìa',
+    size: 'max-w-3xl',
+    body: html`
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" data-testid="cover-options">
+        ${COVERS.map(key => html`
+          <button type="button" data-action="pick" data-cover="${key}" aria-pressed="${key === current}"
+            class="relative aspect-[16/9] rounded-2xl overflow-hidden ring-offset-2 ${key === current ? 'ring-4 ring-brand' : 'hover:ring-2 hover:ring-brand/50'}">
+            <img src="${coverUrl(key)}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover" />
+            ${key === current ? html`<span class="absolute top-2 right-2 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center">${icon('check', 'w-4 h-4')}</span>` : ''}
+          </button>`)}
+      </div>`,
+    actions: {
+      pick: async t => {
+        if (t.dataset.cover === current) return modal.close();
+        const me = await withBusy(t, () => memberApi.updateCover(t.dataset.cover));
+        if (!me) return;
+        modal.close();
+        toast('Đã đổi ảnh bìa');
+        ctx.set({ me });
+      }
+    }
+  });
 }
 
 export default function MemberProfile(el) {
   return mountPage(el, {
     load: async () => {
       if (!session.can('VIEW_OWN_PROFILE')) return { me: null };
-      return { me: await memberApi.me() };
+      // gói đang dùng chỉ để hiện nhãn trên ảnh bìa, lỗi thì bỏ qua
+      const res = await settle({ me: [memberApi.me, null], sub: [memberApi.currentSubscription, null] });
+      if (res.meError) throw res.meError;
+      return res;
     },
     view,
     actions: {
+      cover: (t, e, ctx) => openCoverPicker(ctx),
       save: async (form, e, ctx) => {
         const data = readForm(form);
         const errors = {};
         ['firstName', 'lastName', 'gender', 'phone'].forEach(k => { if (!String(data[k] || '').trim()) errors[k] = 'Không được để trống'; });
         if (data.phone && !PHONE_RE.test(data.phone.trim())) errors.phone = 'Số điện thoại gồm 10 số, bắt đầu bằng 0 (hoặc +84)';
-        if (!String(data.trainingGoal || '').trim()) errors.trainingGoal = 'Vui lòng chọn mục tiêu tập luyện';
+        const trainingGoal = readGoal(data);
+        Object.assign(errors, trainingGoal.errors);
         // để trống = giữ nguyên số đang có
         const measure = (key, [min, max], label, unit) => {
           const raw = String(data[key] ?? '').trim();
@@ -140,7 +226,7 @@ export default function MemberProfile(el) {
         if (Object.keys(errors).length) return;
         const payload = {
           firstName: data.firstName.trim(), lastName: data.lastName.trim(), gender: data.gender,
-          phone: data.phone.trim(), trainingGoal: data.trainingGoal.trim(),
+          phone: data.phone.trim(), trainingGoal: trainingGoal.value,
           heightCm: heightCm ?? undefined, weightKg: weightKg ?? undefined
         };
         const me = await withBusy(form, () => memberApi.updateMe(payload));
@@ -148,8 +234,8 @@ export default function MemberProfile(el) {
           // cập nhật bản sao quiz trên máy để phần gợi ý gói / lớp dùng số mới
           const quiz = quizStore.answers(me.email);
           if (quiz) {
-            const goalId = GOALS.find(g => g.label === me.trainingGoal)?.id;
-            quizStore.save(me.email, { ...quiz, height: me.heightCm ?? heightCm ?? quiz.height, weight: me.weightKg ?? weightKg ?? quiz.weight, ...(goalId ? { goal: goalId } : {}) });
+            const { goal, goalText } = goalFromProfile(me.trainingGoal);
+            quizStore.save(me.email, { ...quiz, height: me.heightCm ?? heightCm ?? quiz.height, weight: me.weightKg ?? weightKg ?? quiz.weight, ...(goal ? { goal, goalText } : {}) });
           }
           const fullName = `${me.firstName} ${me.lastName}`;
           session.update({ firstName: me.firstName, lastName: me.lastName, fullName });

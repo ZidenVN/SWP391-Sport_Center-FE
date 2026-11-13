@@ -1,4 +1,4 @@
-import { html, readForm } from "../core/dom.js";
+import { html, icon, readForm } from "../core/dom.js";
 import {
   openModal,
   field,
@@ -179,6 +179,25 @@ export function openPlanForm({
     size: "max-w-xl",
     body: body(),
     actions: {
+      // AI chỉ điền nháp vào ô nội dung (thay nội dung cũ), HLV sửa rồi bấm Giao như bình thường
+      "ai-suggest": async (btn) => {
+        const form = btn.closest("form");
+        const memberId =
+          preset?.targetType === "INDIVIDUAL"
+            ? preset.targetId
+            : form.elements.targetId?.value;
+        if (!memberId) {
+          showFormErrors(form, {
+            fields: { targetId: "Chọn học viên để AI gợi ý" },
+          });
+          return;
+        }
+        const res = await withBusy(btn, () => coachApi.aiSuggest(memberId));
+        if (!res) return;
+        form.elements.exerciseDetails.value = res.suggestion;
+        form.elements.exerciseDetails.rows = 12;
+        toast("AI đã soạn nháp — hãy kiểm tra và sửa trước khi giao", "info");
+      },
       save: async (form) => {
         const data = required(
           form,

@@ -124,6 +124,8 @@ export const sessionApi = {
 export const memberApi = {
   me: () => http.get('/members/me'),
   updateMe: payload => http.put('/members/me', payload),
+  // chỉ đổi ảnh bìa (tên ảnh có sẵn ở /landing), không cần gửi cả hồ sơ
+  updateCover: coverImage => http.patch('/members/me/cover-image', { coverImage }),
   subscriptions: () => http.get('/members/me/subscriptions'),
   currentSubscription: () => http.get('/members/me/subscriptions/current').then(pickCurrent),
   // trước khi thanh toán: ngày bắt đầu / hết hạn dự kiến + cảnh báo gói trùng khu tập
@@ -228,6 +230,8 @@ export const receptionApi = {
 };
 
 export const coachApi = {
+  // AI soạn nháp giáo án cho 1 học viên của HLV; Gemini có thể thử lại + đổi model nên chờ lâu như chat AI
+  aiSuggest: memberId => http.post(`/coaches/me/members/${memberId}/ai-suggestion`, {}, { timeoutMs: 150000 }),
   // không truyền range: BE trả từ hôm qua tới 30 ngày tới; { from, to } (yyyy-MM-dd) để xem lớp cũ
   schedules: range => http.get('/coaches/me/schedules', range),
   roster: classId => http.get(`/coaches/me/classes/${classId}/roster`),

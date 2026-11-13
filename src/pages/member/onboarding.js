@@ -9,7 +9,8 @@ import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import {
   quizStore, GOALS, SLOTS, FREQUENCIES, COMMITMENTS, find, bmiInfo, bmiAdvice,
   recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, SUBJECT_CATEGORIES,
-  quizSteps, validateStep, quizPayload, byCode, QUIZ_CODES, goalIdOf
+  quizSteps, validateStep, quizPayload, byCode, QUIZ_CODES, goalIdOf,
+  OTHER_GOAL, GOAL_TEXT_MAX, goalLabel, goalFromProfile
 } from '../../core/quiz.js';
 
 // Quiz làm quen sau khi đăng ký: câu hỏi lấy từ BE (Quản lý soạn được), nộp lên BE (bắt buộc để tự đặt lớp)
@@ -102,10 +103,17 @@ function stepBody(s) {
       <p class="text-sm text-slate-500 mt-1">Chọn một mục tiêu quan trọng nhất với bạn lúc này.</p>
       <div class="grid sm:grid-cols-2 gap-3 mt-6">
         ${step.question.options.map(o => {
-          const g = find(GOALS, goalIdOf(o));
+          const g = find([...GOALS, OTHER_GOAL], goalIdOf(o));
           return g ? optionCard({ action: 'pick', key: 'goal', value: g.id, active: a.goal === g.id, title: o.content, hint: g.hint, iconName: g.icon, testid: `quiz-goal-${g.id}` }) : '';
         })}
       </div>
+      ${a.goal === OTHER_GOAL.id ? html`
+        <label class="block mt-4">
+          <span class="text-sm font-semibold text-slate-700">Mục tiêu của bạn</span>
+          <input class="input mt-1.5" name="goalText" data-action="field" data-live maxlength="${GOAL_TEXT_MAX}"
+            placeholder="VD: Chuẩn bị chạy marathon" value="${a.goalText ?? ''}" data-testid="quiz-goal-text" />
+          ${err(s, 'goalText')}
+        </label>` : ''}
       ${err(s, 'goal')}`;
   }
   if (step.kind === 'custom') return customBody(s, step.question);
@@ -247,7 +255,7 @@ const subjectCategoryLabel = s => SUBJECT_CATEGORIES[subjectCategory(s)].label;
 function resultView(s) {
   const a = s.answers;
   const bmi = bmiInfo(a.height, a.weight);
-  const goal = find(GOALS, a.goal);
+  const goal = find([...GOALS, OTHER_GOAL], a.goal);
   // phần "mua ngay" chỉ gợi ý Membership; gói lớp đã nằm trong combo theo từng môn
   const rec = recommendPackage(a, (s.packages || []).filter(p => p.packageType !== 'CLASS'));
   const subjects = matchSubjects(a, s.subjects);
@@ -261,7 +269,7 @@ function resultView(s) {
         <div class="absolute -right-12 -top-12 w-52 h-52 rounded-full bg-brand/30"></div>
         <div class="relative">
           <div class="text-xs font-bold uppercase tracking-widest text-brand-lime">Gợi ý dành riêng cho bạn</div>
-          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none mt-2">${goal?.label || 'Kế hoạch tập của bạn'}</h1>
+          <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-none mt-2">${goalLabel(a) || 'Kế hoạch tập của bạn'}</h1>
           <div class="flex flex-wrap gap-2 mt-4 text-xs font-semibold">
             ${a.height && a.weight ? html`<span class="px-3 py-1 rounded-full bg-white/10">${a.height} cm · ${a.weight} kg</span>` : ''}
             ${bmi ? html`<span class="px-3 py-1 rounded-full bg-brand-lime text-brand-dark">BMI ${bmi.value} · ${bmi.label}</span>` : ''}
@@ -380,7 +388,7 @@ export default function MemberOnboarding(el, { query } = {}) {
       const completed = Boolean(res.status?.completed);
       if (res.status) session.update({ quizCompleted: completed });
       // làm ở máy khác (không có bản sao câu trả lời): lấy mục tiêu đã lưu trong hồ sơ để vẫn gợi ý được
-      if (!s.answers.goal && res.me?.trainingGoal) s.answers.goal = GOALS.find(g => g.label === res.me.trainingGoal)?.id;
+      if (!s.answers.goal && res.me?.trainingGoal) Object.assign(s.answers, goalFromProfile(res.me.trainingGoal));
       return {
         questions: res.questions, steps: quizSteps(res.questions), completed, completedAt: res.status?.completedAt || null,
         done: s.done ?? (completed && !query?.redo),

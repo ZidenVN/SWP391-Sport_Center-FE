@@ -1,10 +1,11 @@
 import { html, icon, readForm } from '../../core/dom.js';
-import { pageHeader, table, openModal, field, input, select, textarea, GENDER_OPTIONS, showFormErrors, toast, emptyState } from '../../core/ui.js';
+import { pageHeader, table, openModal, field, input, select, GENDER_OPTIONS, showFormErrors, toast, emptyState } from '../../core/ui.js';
 import { mountPage } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
 import { fullName, genderLabel, badge, phoneText } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { openSellPackage } from '../../components/sellPackage.js';
+import { goalPicker, readGoal } from '../../components/goalPicker.js';
 
 function view(s) {
   const list = s.keyword.trim().length >= 2 ? s.results : s.all;
@@ -54,7 +55,7 @@ function walkInForm() {
         ${field('Số điện thoại', input('phone', { type: 'tel', required: true, placeholder: '0912345678' }))}
       </div>
       ${field('Email', input('email', { type: 'email', required: true, placeholder: 'khach@example.com' }), 'Dùng để hội viên đăng nhập')}
-      ${field('Mục tiêu tập luyện', textarea('trainingGoal', '', { rows: 2, placeholder: 'VD: Giảm cân, tăng cơ...' }))}
+      ${goalPicker('', { cols: 'grid-cols-2', hint: 'Không bắt buộc — hội viên có thể cập nhật sau' })}
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" data-action="cancel" class="btn-secondary">Hủy</button>
         <button type="submit" class="btn bg-brand-dark text-white hover:bg-emerald-800">Tạo hội viên</button>
@@ -130,7 +131,10 @@ export default function ReceptionMembers(el) {
           actions: {
             create: async form => {
               const data = readForm(form);
-              const errors = validateWalkIn(data);
+              const goal = readGoal(data, { required: false });
+              const errors = { ...validateWalkIn(data), ...goal.errors };
+              delete data.trainingGoalOther;
+              if (goal.value) data.trainingGoal = goal.value; else delete data.trainingGoal;
               showFormErrors(form, { fields: errors });
               if (Object.keys(errors).length) return;
               const submit = form.querySelector('[type=submit]');

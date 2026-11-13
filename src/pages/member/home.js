@@ -6,73 +6,13 @@ import { session } from '../../core/session.js';
 import { date, dateTime, time, daysUntil, weekday, timeRange, badge, isPlaceholderPhone, toDate } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { expiryBanner, isUnread } from '../../components/memberAlerts.js';
+import { memberSmartCard, openCheckinCodeModal } from '../../components/membershipCard.js';
 import { quizStore } from '../../core/quiz.js';
 
 // Gói còn dùng được: đang chạy và chưa hết hạn (BE: hết hạn = ACTIVE + endDate < now), hoặc đang chờ kích hoạt
 const usable = x => x.status === 'WAITING_ACTIVATION' || (x.status === 'ACTIVE' && (!x.endDate || toDate(x.endDate) >= new Date()));
 const isClass = x => x.packageType === 'CLASS';
 const byEnd = (p, q) => String(p.endDate || '9').localeCompare(String(q.endDate || '9'));
-
-// Thẻ Membership (nền xanh rừng): gói đang chạy + các gói nối tiếp / chờ kích hoạt
-function membershipCard(list) {
-  const active = list.filter(x => x.status === 'ACTIVE').sort(byEnd);
-  const waiting = list.filter(x => x.status === 'WAITING_ACTIVATION');
-  const head = active[0] || waiting[0];
-  if (!head) {
-    return html`
-      <div class="card p-6 bg-brand-sand border-0 h-full flex flex-col" data-testid="no-membership">
-        <div class="flex items-center gap-2 text-sm font-semibold text-slate-600">${icon('door-open', 'w-4 h-4')} Membership</div>
-        <div class="font-display text-3xl font-extrabold leading-tight text-brand-dark mt-1">Bạn chưa có Membership</div>
-        <p class="text-sm text-slate-600 mt-2 flex-1">Membership cho phép vào trung tâm, dùng cơ sở vật chất và là điều kiện để mua gói lớp.</p>
-        <a href="#/member/packages" class="btn-primary mt-5 self-start">${icon('package', 'w-4 h-4')} Mua Membership</a>
-      </div>`;
-  }
-  const extra = active.length + waiting.length - 1;
-  const last = active[active.length - 1];
-  if (head.status === 'WAITING_ACTIVATION') {
-    return html`
-      <div class="card p-6 bg-brand-dark text-white border-0 relative overflow-hidden h-full" data-testid="membership-card">
-        <div class="absolute -right-14 -bottom-16 w-36 h-36 rounded-full bg-brand/25"></div>
-        <div class="relative">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="flex items-center gap-1.5 text-sm text-white/60">${icon('door-open', 'w-4 h-4')} Membership</div>
-              <div class="font-display text-4xl font-extrabold leading-none text-brand-lime mt-1">${head.packageName}</div>
-            </div>
-            <span class="px-2.5 py-1 rounded-full bg-white/15 text-xs font-extrabold whitespace-nowrap">Chờ kích hoạt</span>
-          </div>
-          <p class="text-sm text-white/75 mt-4">Gói sẽ bắt đầu tính ngày ở <b class="text-white">lần check-in đầu tiên</b> tại quầy lễ tân${head.paidAt ? ` (đã thanh toán ${date(head.paidAt)})` : ''}.</p>
-          ${extra > 0 ? html`<div class="text-xs text-white/60 mt-2">+${extra} gói Membership khác đang chờ</div>` : ''}
-          <a href="#/member/packages" class="btn-lime mt-5">${icon('package', 'w-4 h-4')} Xem gói</a>
-        </div>
-      </div>`;
-  }
-  const left = daysUntil(head.endDate);
-  const start = toDate(head.startDate || head.activatedAt);
-  const end = toDate(head.endDate);
-  const pct = start && end && end > start ? Math.max(3, Math.min(100, Math.round(((Date.now() - start) / (end - start)) * 100))) : 0;
-  return html`
-    <div class="card p-6 bg-brand-dark text-white border-0 relative overflow-hidden h-full" data-testid="membership-card">
-      <div class="absolute -right-14 -bottom-16 w-36 h-36 rounded-full bg-brand/25"></div>
-      <div class="relative">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-1.5 text-sm text-white/60">${icon('door-open', 'w-4 h-4')} Membership</div>
-            <div class="font-display text-4xl font-extrabold leading-none text-brand-lime mt-1">${head.packageName}</div>
-          </div>
-          <span class="px-2.5 py-1 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold whitespace-nowrap">${left > 0 ? `Còn ${left} ngày` : 'Hết hạn hôm nay'}</span>
-        </div>
-        <div class="mt-5">
-          <div class="flex justify-between text-xs text-white/60 mb-1.5"><span>${date(start)}</span><span>${date(end)}</span></div>
-          <div class="h-2 rounded-full bg-white/20 overflow-hidden"><div class="h-full rounded-full bg-brand-lime" style="width:${pct}%"></div></div>
-        </div>
-        <div class="text-xs text-white/60 mt-3">${extra > 0
-          ? `+${extra} gói nối tiếp · tập được đến ${date((last || head).endDate)}${waiting.length ? ', gồm gói chờ kích hoạt' : ''}`
-          : 'Vào trung tâm, dùng cơ sở vật chất trong thời hạn gói'}</div>
-        <a href="#/member/packages" class="btn-lime mt-5">${icon('refresh-cw', 'w-4 h-4')} Gia hạn</a>
-      </div>
-    </div>`;
-}
 
 // Thẻ Gói lớp: mỗi gói 1 dòng — đang học lớp nào, hoặc chưa chọn lớp (chờ kích hoạt)
 function classPackageLine(x) {
@@ -159,8 +99,8 @@ function view(s) {
       </a>` : ''}
     ${expiryBanner(latestMembership)}
     ${quizBanner(subs.length > 0)}
-    <div class="grid lg:grid-cols-2 gap-6">
-      ${membershipCard(memberships)}
+    <div class="grid xl:grid-cols-[1.35fr_1fr] gap-6">
+      ${memberSmartCard(s.subscriptions || [], { me: s.me, progress: s.progress, checkIns: s.checkIns, inPackagesPage: false })}
       ${classPackagesCard(classPackages, memberships.length > 0)}
     </div>
     <div class="grid sm:grid-cols-3 gap-4 mt-6">
@@ -222,6 +162,7 @@ export default function MemberHome(el) {
         schedule: [memberApi.schedule, []],
         notifications: [memberApi.notifications, []],
         progress: [memberApi.progress, null],
+        checkIns: [memberApi.checkIns, []],
         me: [memberApi.me, null],
         quiz: [quizApi.status, null]
       });
@@ -230,6 +171,14 @@ export default function MemberHome(el) {
       return res;
     },
     view,
-    actions: { 'coach-info': btn => openCoachInfo(coachFromButton(btn)) }
+    actions: {
+      'coach-info': btn => openCoachInfo(coachFromButton(btn)),
+      'checkin-code': btn => openCheckinCodeModal({
+        memberCode: btn.dataset.memberCode,
+        memberName: btn.dataset.memberName,
+        packageName: btn.dataset.packageName,
+        validity: btn.dataset.validity
+      })
+    }
   });
 }

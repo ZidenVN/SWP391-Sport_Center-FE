@@ -55,7 +55,18 @@ export function quizSteps(questions) {
 // option của câu mục tiêu ứng với 1 mục trong GOALS (so mã, không có mã thì so nội dung)
 export const goalOption = (question, goalId) => (question?.options || []).find(o =>
   (o.code || '').toLowerCase() === goalId || o.content === find(GOALS, goalId)?.label) || null;
-export const goalIdOf = option => GOALS.find(g => g.id === (option?.code || '').toLowerCase() || g.label === option?.content)?.id || null;
+export const goalIdOf = option => [...GOALS, OTHER_GOAL].find(g => g.id === (option?.code || '').toLowerCase() || g.label === option?.content)?.id || null;
+
+// Tên mục tiêu để hiển thị: chọn "Khác" thì là chữ hội viên tự nhập
+export const goalLabel = a => (a?.goal === OTHER_GOAL.id ? String(a.goalText || '').trim() : find(GOALS, a?.goal)?.label) || '';
+
+// Mục tiêu đã lưu trong hồ sơ -> { goal, goalText }: khớp nhãn gợi ý thì lấy id, còn lại là "Khác" + chữ tự nhập
+export function goalFromProfile(text) {
+  const t = String(text || '').trim();
+  if (!t || t === 'Chưa cập nhật') return { goal: undefined, goalText: '' };
+  const g = GOALS.find(x => x.label === t);
+  return g ? { goal: g.id, goalText: '' } : { goal: OTHER_GOAL.id, goalText: t };
+}
 
 // câu trả lời câu tự thêm nằm ở answers.extra[questionId]: chuỗi số / chuỗi văn bản / mảng optionId
 export function validateStep(step, a, questions) {
@@ -94,7 +105,10 @@ export function quizPayload(questions, a) {
   return (questions || []).map(q => {
     if (q.code === QUIZ_CODES.height) return { questionId: q.questionId, numberValue: Number(a.height) };
     if (q.code === QUIZ_CODES.weight) return { questionId: q.questionId, numberValue: Number(a.weight) };
-    if (q.code === QUIZ_CODES.goal) return { questionId: q.questionId, optionIds: [goalOption(q, a.goal)?.optionId].filter(Boolean) };
+    if (q.code === QUIZ_CODES.goal) return {
+      questionId: q.questionId, optionIds: [goalOption(q, a.goal)?.optionId].filter(Boolean),
+      ...(a.goal === OTHER_GOAL.id ? { textValue: String(a.goalText || '').trim() } : {})
+    };
     const v = a.extra?.[q.questionId];
     if (q.type === 'NUMBER') return { questionId: q.questionId, numberValue: Number(v) };
     if (q.type === 'TEXT') return { questionId: q.questionId, textValue: String(v || '').trim() };
@@ -109,6 +123,17 @@ export const GOALS = [
   { id: 'relax', label: 'Giảm căng thẳng', icon: 'leaf', hint: 'Thư giãn, ngủ ngon hơn', keywords: ['yoga', 'thiền', 'pilates', 'bơi'] },
   { id: 'health', label: 'Duy trì sức khỏe', icon: 'heart-pulse', hint: 'Vận động đều đặn mỗi tuần', keywords: [] }
 ];
+// Nhãn GOALS phải khớp option câu TRAINING_GOAL ở BE (DataInitializer). "Khác" (mã OTHER) để hội viên tự nhập.
+export const OTHER_GOAL = { id: 'other', label: 'Khác', icon: 'pencil', hint: 'Tự nhập mục tiêu của bạn', keywords: [] };
+export const GOAL_TEXT_MAX = 100;
+
+// Lỗi của ô tự nhập khi chọn "Khác" (dùng chung cho quiz, hồ sơ, lễ tân)
+export function goalTextError(goal, text) {
+  if (goal !== OTHER_GOAL.id) return null;
+  const t = String(text || '').trim();
+  if (!t) return 'Nhập mục tiêu của bạn';
+  return t.length > GOAL_TEXT_MAX ? `Tối đa ${GOAL_TEXT_MAX} ký tự` : null;
+}
 
 export const SLOTS = [
   { id: 'early', label: 'Sáng sớm', range: '05:00 – 08:00', from: 5, to: 8, icon: 'sunrise' },
@@ -155,6 +180,7 @@ export function validateAnswers(a, step) {
     else if (!(w >= 30 && w <= 250)) errors.weight = 'Cân nặng từ 30 đến 250 kg';
   }
   if (step === 2 && !a.goal) errors.goal = 'Chọn một mục tiêu';
+  if (step === 2 && goalTextError(a.goal, a.goalText)) errors.goalText = goalTextError(a.goal, a.goalText);
   if (step === 3) {
     if (!a.slots?.length) errors.slots = 'Chọn ít nhất một khung giờ';
     if (!a.frequency) errors.frequency = 'Chọn số buổi mỗi tuần';
