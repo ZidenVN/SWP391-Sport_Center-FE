@@ -65,7 +65,7 @@ export function openPlanForm({ preset, classes = [], members = [], values = {}, 
         </div>` : ''}
       <div class="grid sm:grid-cols-2 gap-3">
         ${field('Thời lượng', input('duration', { value: values.duration || '', placeholder: 'VD: 4 tuần' }))}
-        ${field('Hạn hoàn thành', input('dueDate', { type: 'date', value: isoDate(due), attrs: `min="${isoDate(new Date())}"` }))}
+        ${field('Hạn hoàn thành', input('dueDate', { type: 'date', value: isoDate(due) }))}
       </div>
       ${submitRow('Giao giáo án')}
     </form>`;
