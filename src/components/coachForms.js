@@ -48,7 +48,8 @@ export function openPlanForm({
   values = {},
   onDone,
 }) {
-  const due = new Date();
+  // mặc định 4 tuần, giống BE khi không gửi hạn
+  const due = new Date(Date.now() + 28 * 86400000);
   const st = {
     targetType: preset?.targetType || (classes.length ? "CLASS" : "INDIVIDUAL"),
     classFilter: "",
@@ -152,6 +153,22 @@ export function openPlanForm({
           placeholder: "VD: Squat 4x12, Plank 3x60s...",
         }),
       )}
+      ${(preset?.targetType || st.targetType) === "INDIVIDUAL"
+        ? html` <div class="flex flex-wrap items-center gap-2 -mt-2">
+            <button
+              type="button"
+              class="btn-secondary btn-sm"
+              data-action="ai-suggest"
+              data-testid="plan-ai-suggest"
+            >
+              ${icon("sparkles", "w-3.5 h-3.5")} Gợi ý bằng AI
+            </button>
+            <span class="text-[11px] text-slate-400"
+              >Soạn nháp từ mục tiêu, BMI và các buổi tập gần nhất của học viên
+              — bạn sửa lại trước khi giao</span
+            >
+          </div>`
+        : ""}
       <div class="grid sm:grid-cols-2 gap-3">
         ${field(
           "Thời lượng",
@@ -165,7 +182,6 @@ export function openPlanForm({
           input("dueDate", {
             type: "date",
             value: isoDate(due),
-            attrs: `min="${isoDate(new Date())}"`,
           }),
         )}
       </div>
