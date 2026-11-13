@@ -1732,3 +1732,16 @@ html.theme-dark body:has(.app-shell) .pay-ticket dl > div + div { border-color: 
 html.theme-dark body:has(.app-shell) .pay-ticket dt { color: rgba(226,236,231,0.6) !important; }
 html.theme-dark body:has(.app-shell) .pay-ticket dd { color: #f1f5f2 !important; }
 html.theme-dark body:has(.app-shell) .pay-ticket .bg-slate-50 { background: rgba(255,255,255,0.05) !important; color: rgba(226,236,231,0.8) !important; }
+
+/* Loading người chạy trên máy chạy bộ (core/ui.js loading()): chân tay đánh ngược pha, thân nhún, vạch băng trôi về sau */
+.sc-run-belt { stroke: #D7F25B; stroke-dasharray: 5 9; animation: sc-run-belt .55s linear infinite; }
+html.theme-dark .sc-run-belt { stroke: #1E9E64; }
+.sc-run-leg, .sc-run-arm { transform-box: view-box; animation: sc-run-swing .55s ease-in-out infinite; }
+.sc-run-leg { transform-origin: 50px 44px; }
+.sc-run-arm { transform-origin: 55px 26px; animation-direction: reverse; }
+.sc-run-back { animation-delay: -.275s; }
+.sc-run-body { animation: sc-run-bob .275s ease-in-out infinite alternate; }
+@keyframes sc-run-belt { to { stroke-dashoffset: -14; } }
+@keyframes sc-run-swing { 0%, 100% { transform: rotate(32deg); } 50% { transform: rotate(-32deg); } }
+@keyframes sc-run-bob { to { transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .sc-run * { animation: none !important; } }

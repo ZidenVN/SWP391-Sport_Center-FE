@@ -3,7 +3,7 @@ import { pageHeader, table, emptyState, field, input, select, textarea, tabs, op
 import { mountPage } from '../../core/page.js';
 import { classApi, subjectApi, roomApi, coachAdminApi, packageApi } from '../../api/endpoints.js';
 import { openClassSessions } from '../../components/classSessions.js';
-import { badge, date, weekday, timeRange, toDate, isoDate, fullName } from '../../core/format.js';
+import { badge, date, weekday, timeRange, toDate, isoDate, fullName, classCode } from '../../core/format.js';
 import { subjectColor, classImage, classImageUrl } from '../../components/classCard.js';
 import { courseOf, courseBlock, courseInline } from '../../components/courseSchedule.js';
 import { openFormModal, requireFields, confirmAction, matches, searchBox } from '../../components/crud.js';
@@ -82,7 +82,9 @@ function classFields(s, c = {}) {
       ${field('Phòng', select('roomId', s.rooms.filter(r => r.status === 'AVAILABLE').map(r => ({ value: r.roomId, label: `${r.roomName} (tối đa ${r.capacity})` })), c.roomId, { required: true, placeholder: 'Chọn phòng' }))}
     </div>
     <div class="grid sm:grid-cols-2 gap-3">
-      ${field('Ngày bắt đầu', input('startDate', { type: 'date', value: c.startDate || isoDate(tomorrow), required: true }))}
+      ${field('Ngày bắt đầu', input('startDate', { type: 'date', value: c.startDate || isoDate(tomorrow), required: true,
+        // BE chỉ nhận ngày sau hôm nay; lớp đã bắt đầu thì giữ ngày cũ, không đặt min để vẫn hiện đúng
+        attrs: c.startDate && c.startDate < isoDate(tomorrow) ? '' : `min="${isoDate(tomorrow)}"` }))}
       ${field('Thời hạn khoá', select('durationDays', durations, c.durationDays, { required: true, placeholder: 'Chọn bộ môn trước' }), 'Chỉ có các thời hạn đang bán gói lớp của môn này')}
     </div>
     ${field('Học vào các thứ', html`
@@ -266,7 +268,7 @@ function listView(s) {
   const now = new Date();
   const count = id => s.counts?.[id];
   // từ khóa lọc trong trang đang xem (API tìm lớp chưa có tham số từ khóa)
-  const list = s.classes.filter(c => matches(s.keyword, [c.subjectName, c.coachName, c.roomName]));
+  const list = s.classes.filter(c => matches(s.keyword, [classCode(c), c.subjectName, c.coachName, c.roomName]));
   // tab Chờ chốt lấy hết rồi cắt ở FE, các tab khác BE đã phân trang
   const page = s.tab === 'PENDING' ? paginate(list, s.pageNo, s.pageSize) : s.page;
   const rowsOf = s.tab === 'PENDING' ? page.content : list;
@@ -275,7 +277,7 @@ function listView(s) {
       ${tabs(TABS.map(([id, label]) => ({ id, label, count: count(id) })), s.tab)}
       <div class="flex flex-col sm:flex-row gap-2 mb-5">
         ${subjectSelect(s, 'list-subject')}
-        ${searchBox(s.keyword, 'Lọc môn, HLV, phòng trong trang...')}
+        ${searchBox(s.keyword, 'Lọc mã lớp, môn, HLV, phòng...')}
       </div>
     </div>
     <div class="card" data-testid="class-table">
@@ -285,7 +287,7 @@ function listView(s) {
           const ph = phase(c, now);
           const pct = c.maxCapacity ? Math.round((c.currentEnrolled / c.maxCapacity) * 100) : 0;
           return [
-            html`<div class="flex items-center gap-3"><div class="w-14 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100">${classImage(c)}</div><div><div class="font-semibold">${c.subjectName}</div><div class="text-xs text-slate-500">#${c.classId}${c.imageUrl ? '' : ' · ảnh mặc định'}</div></div></div>`,
+            html`<div class="flex items-center gap-3"><div class="w-14 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100">${classImage(c)}</div><div><div class="font-semibold">${c.subjectName}</div><div class="text-xs text-slate-500">${classCode(c)}${c.imageUrl ? '' : ' · ảnh mặc định'}</div></div></div>`,
             classWhen(c)
               ? html`<div class="text-sm font-semibold">${classWhen(c).range}</div><div class="mt-1">${c.daysOfWeek ? courseInline(c, { dates: false }) : html`<span class="text-xs text-slate-500">${classWhen(c).clock} · ${classWhen(c).days} ngày</span>`}</div>`
               : html`<div class="text-sm font-semibold">${weekday(c.startTime)}, ${date(c.startTime)}</div><div class="text-xs text-slate-500">${timeRange(c.startTime, c.endTime)}</div>`,
@@ -340,7 +342,7 @@ function classDetail(c) {
         <div class="flex items-start gap-3 min-w-0">
           <span class="w-2 h-11 rounded-full shrink-0 bg-gradient-to-b ${subjectColor(c.subjectName)}"></span>
           <div class="min-w-0">
-            <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">${c.subjectName} <span class="text-sm font-semibold text-slate-400">#${c.classId}</span></div>
+            <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">${c.subjectName} <span class="text-sm font-semibold text-slate-400">${classCode(c)}</span></div>
             <div class="text-sm text-slate-500">${whenLine(c)}</div>
           </div>
         </div>
@@ -405,7 +407,7 @@ export default function ManagerClasses(el) {
     edit: (t, e, ctx) => {
       const c = findClass(ctx, t.dataset.id);
       openFormModal({
-        title: `Sửa lớp ${c.subjectName} #${c.classId}`, size: 'max-w-xl', fields: html`
+        title: `Sửa lớp ${c.subjectName} ${classCode(c)}`, size: 'max-w-xl', fields: html`
           ${c.currentEnrolled ? html`<div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3">Lớp đã có ${c.currentEnrolled} học viên — đổi giờ hoặc phòng sẽ tự gửi thông báo cho họ.</div>` : ''}
           ${classFields(ctx.state, c)}`,
         validate: classValidator(ctx.state, c), success: 'Đã cập nhật lớp', onMount: modal => { mountSchedule(modal, c); mountImagePicker(modal); },
@@ -429,7 +431,7 @@ export default function ManagerClasses(el) {
     cancel: (t, e, ctx) => {
       const c = findClass(ctx, t.dataset.id);
       openFormModal({
-        title: `Hủy lớp ${c.subjectName} #${c.classId}`,
+        title: `Hủy lớp ${c.subjectName} ${classCode(c)}`,
         fields: html`
           <div class="text-sm text-slate-600">${whenLine(c)} · ${c.roomName}</div>
           ${c.currentEnrolled ? html`<div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3">${c.currentEnrolled} học viên đã đăng ký sẽ bị hủy chỗ và nhận thông báo.</div>` : ''}
@@ -443,7 +445,7 @@ export default function ManagerClasses(el) {
     stop: (t, e, ctx) => {
       const c = findClass(ctx, t.dataset.id);
       openFormModal({
-        title: `Dừng lớp ${c.subjectName} #${c.classId}`,
+        title: `Dừng lớp ${c.subjectName} ${classCode(c)}`,
         fields: html`
           <div class="text-sm text-slate-600">${whenLine(c)} · ${c.roomName}</div>
           <div class="rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm p-3">Lớp đã bắt đầu nên không hủy được. Dừng lớp sẽ hủy các buổi còn lại, ${c.currentEnrolled ? `hoàn tiền cho ${c.currentEnrolled} học viên theo số buổi chưa học` : 'hoàn tiền theo số buổi chưa học'} và gửi thông báo cho họ.</div>

@@ -2,7 +2,7 @@ import { html, icon, readForm } from '../../core/dom.js';
 import { tabs, table, openModal, field, input, select, textarea, GENDER_OPTIONS, showFormErrors, toast, confirmDialog, withBusy } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { receptionApi } from '../../api/endpoints.js';
-import { fullName, genderLabel, badge, money, date, dateTime, timeRange, daysUntil, isFuture, paymentMethodLabel, toDate, phoneText, time, weekday, isToday } from '../../core/format.js';
+import { fullName, genderLabel, badge, money, date, dateTime, timeRange, daysUntil, isFuture, paymentMethodLabel, toDate, phoneText, time, weekday, isToday, classCode } from '../../core/format.js';
 import { memberAvatar } from '../../components/memberPicker.js';
 import { FEATURES } from '../../core/features.js';
 import { openSellPackage } from '../../components/sellPackage.js';
@@ -81,7 +81,7 @@ function classesTab(s) {
     ${table({
       columns: [{ label: 'Lớp' }, { label: 'Lịch học' }, { label: 'Gói' }, { label: 'Trạng thái' }, { label: '', cls: 'text-right' }],
       rows: regs.map(r => [
-        html`<div class="font-semibold">${r.subjectName} <span class="text-xs text-slate-400 font-normal">#${r.classId}</span></div><div class="text-xs text-slate-500">HLV ${r.coachName} · ${r.roomName}</div>`,
+        html`<div class="font-semibold">${r.subjectName} <span class="text-xs text-slate-400 font-normal">${classCode(r)}</span></div><div class="text-xs text-slate-500">HLV ${r.coachName} · ${r.roomName}</div>`,
         html`<div>${courseInline(r)}</div>${firstSessionOf(r) ? html`<div class="text-xs text-slate-500">Buổi đầu: ${dateTime(r.firstSessionAt || r.startTime)}</div>` : ''}`,
         html`<span class="text-sm">${r.packageName || '—'}</span>${r.receptionistSwitchCount ? html`<div class="text-[11px] text-amber-700">Đã dùng lượt đổi lớp</div>` : ''}`,
         badge(r.status, REG_LABEL[r.status]),

@@ -148,10 +148,34 @@ export function showFormErrors(formOrButton, err) {
 }
 
 // ---------- Khối hiển thị dùng chung ----------
+// Icon chờ: người chạy trên máy chạy bộ (chuyển động bằng CSS .sc-run-* trong css/styles.css).
+// width: px (cao = 3/4 rộng); tone: class màu, để trống thì lấy màu chữ của chỗ đặt (vd nút nền đậm -> trắng)
+export function runnerIcon(width = 56, tone = 'text-brand-dark') {
+  return html`
+      <svg class="sc-run shrink-0 ${tone}" viewBox="0 0 120 90" width="${width}" height="${Math.round(width * 0.75)}" aria-hidden="true"
+        fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="14" y1="77" x2="102" y2="68" stroke-width="8"/>
+        <line class="sc-run-belt" x1="20" y1="76.4" x2="96" y2="68.6" stroke-width="2"/>
+        <line x1="22" y1="82" x2="30" y2="82" stroke-width="4"/>
+        <line x1="88" y1="75" x2="96" y2="75" stroke-width="4"/>
+        <line x1="100" y1="68" x2="109" y2="33" stroke-width="6"/>
+        <line x1="109" y1="33" x2="116" y2="26" stroke-width="6"/>
+        <line x1="107" y1="40" x2="93" y2="40" stroke-width="5"/>
+        <g class="sc-run-body">
+          <polyline class="sc-run-arm sc-run-back" points="55,26 51,37 59,42" stroke-width="7"/>
+          <polyline class="sc-run-leg sc-run-back" points="50,44 55,57 50,70" stroke-width="8"/>
+          <line x1="56" y1="22" x2="50" y2="44" stroke-width="11"/>
+          <circle cx="59" cy="11" r="7" fill="currentColor" stroke="none"/>
+          <polyline class="sc-run-leg" points="50,44 55,57 50,70" stroke-width="8"/>
+          <polyline class="sc-run-arm" points="55,26 51,37 59,42" stroke-width="7"/>
+        </g>
+      </svg>`;
+}
+
 export function loading(text = 'Đang tải dữ liệu...') {
   return html`
-    <div class="flex items-center justify-center py-16 text-slate-500 text-sm gap-3" data-state="loading">
-      <span class="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>${text}
+    <div class="flex items-center justify-center py-16 text-slate-500 text-sm gap-3" data-state="loading" role="status" aria-live="polite">
+      ${runnerIcon()}${text}
     </div>`;
 }
 

@@ -1,7 +1,7 @@
 import { html, icon } from '../core/dom.js';
 import { openModal } from '../core/ui.js';
 import { classApi } from '../api/endpoints.js';
-import { date, weekday, timeRange, toDate, isFuture } from '../core/format.js';
+import { date, weekday, timeRange, toDate, isFuture, classCode } from '../core/format.js';
 import { classImage, isBookable } from './classCard.js';
 import { courseOf, courseBlock } from './courseSchedule.js';
 
@@ -24,7 +24,7 @@ export function classPhotoCard(c, { registered = false } = {}) {
         <span class="pc-date"><span class="text-[10px] font-bold uppercase opacity-80">${weekday(c.startTime)}</span><span class="font-display text-2xl font-extrabold leading-none">${date(c.startTime).slice(0, 5)}</span></span>
       </span>
       <span class="absolute left-0 right-0 bottom-0 p-5 text-left text-white">
-        <span class="block font-display text-3xl font-extrabold leading-none">${c.subjectName}</span>
+        <span class="block font-display text-3xl font-extrabold leading-none">${c.subjectName} <span class="font-sans text-xs font-semibold text-white/70 align-middle" data-testid="class-code">${classCode(c)}</span></span>
         <span class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/85">
           <span class="flex items-center gap-1.5">${icon('clock', 'w-4 h-4')} ${timeRange(c.startTime, c.endTime)}</span>
           <span class="flex items-center gap-1.5">${icon('map-pin', 'w-4 h-4')} ${c.roomName}</span>
@@ -67,7 +67,7 @@ export function openClassDetail(c, { footer, actions = {} }) {
         <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
         <div class="absolute left-6 bottom-4 text-white">
           <div class="text-xs font-bold uppercase tracking-widest text-brand-lime">${weekday(c.startTime)}, ${date(c.startTime)}</div>
-          <div class="font-display text-4xl font-extrabold leading-none mt-1">${c.subjectName}</div>
+          <div class="font-display text-4xl font-extrabold leading-none mt-1">${c.subjectName} <span class="font-sans text-sm font-semibold text-white/70 align-middle" data-testid="detail-class-code">${classCode(c)}</span></div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3 mt-5 text-sm">

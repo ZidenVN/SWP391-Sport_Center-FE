@@ -1,6 +1,6 @@
 import { html, icon } from '../core/dom.js';
 import { openModal, confirmDialog, withBusy, toast, emptyState } from '../core/ui.js';
-import { date, dateTime, toDate } from '../core/format.js';
+import { date, dateTime, toDate, classCode } from '../core/format.js';
 import { courseInline } from './courseSchedule.js';
 
 const DAY_SHORT = { MON: 'T2', TUE: 'T3', WED: 'T4', THU: 'T5', FRI: 'T6', SAT: 'T7', SUN: 'CN' };
@@ -34,7 +34,7 @@ export function openSwitchClass({ reg, loadEligible, doSwitch, note = '', onDone
         <div class="rounded-2xl border border-brand-line bg-white/70 p-3 flex items-center gap-3">
           <span class="w-10 h-10 rounded-xl bg-brand-sand text-brand-deep flex items-center justify-center shrink-0">${icon('calendar-range', 'w-5 h-5')}</span>
           <div class="flex-1 min-w-0">
-            <div class="font-bold text-sm">${c.subjectName} <span class="text-slate-400 font-semibold">#${c.classId}</span></div>
+            <div class="font-bold text-sm">${c.subjectName} <span class="text-slate-400 font-semibold">${classCode(c)}</span></div>
             <div class="mt-1">${courseInline(c)}</div>
             <div class="text-xs text-slate-500">HLV ${c.coachName} · ${c.roomName} · ${c.registeredCount ?? 0}/${c.maxCapacity} chỗ</div>
           </div>
@@ -51,12 +51,12 @@ export function openSwitchClass({ reg, loadEligible, doSwitch, note = '', onDone
       pick: async btn => {
         const c = classes.find(x => String(x.classId) === btn.dataset.id);
         if (!c) return;
-        const ok = await confirmDialog(`Chuyển từ lớp #${reg.classId} sang lớp #${c.classId}?\n${c.subjectName} · ${scheduleText(c)}`, { title: 'Xác nhận đổi lớp', confirmText: 'Đổi lớp' });
+        const ok = await confirmDialog(`Chuyển từ lớp ${classCode(reg)} sang lớp ${classCode(c)}?\n${c.subjectName} · ${scheduleText(c)}`, { title: 'Xác nhận đổi lớp', confirmText: 'Đổi lớp' });
         if (!ok) return;
         const res = await withBusy(btn, () => doSwitch(c.classId));
         if (res === undefined) return;
         modal.close();
-        toast(`Đã chuyển sang lớp ${c.subjectName} #${c.classId}`);
+        toast(`Đã chuyển sang lớp ${c.subjectName} ${classCode(c)}`);
         onDone?.();
       }
     }
@@ -66,7 +66,7 @@ export function openSwitchClass({ reg, loadEligible, doSwitch, note = '', onDone
       classes = list || [];
       modal.setBody(html`
         <div class="rounded-xl bg-brand-sand/60 p-3 text-sm mb-3">
-          Lớp hiện tại: <b>${reg.subjectName} #${reg.classId}</b> <div class="mt-1">${courseInline(reg)}</div>${reg.packageName ? html`<div class="text-xs text-slate-500 mt-0.5">Gói: ${reg.packageName}</div>` : ''}
+          Lớp hiện tại: <b>${reg.subjectName} ${classCode(reg)}</b> <div class="mt-1">${courseInline(reg)}</div>${reg.packageName ? html`<div class="text-xs text-slate-500 mt-0.5">Gói: ${reg.packageName}</div>` : ''}
         </div>
         ${note ? html`<div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 mb-3">${note}</div>` : ''}
         ${listBody(classes)}`);

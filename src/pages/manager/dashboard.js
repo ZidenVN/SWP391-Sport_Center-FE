@@ -2,7 +2,7 @@ import { html, icon } from '../../core/dom.js';
 import { pageHeader, tabs, table, emptyState, statCard, toast } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { reportApi, classApi } from '../../api/endpoints.js';
-import { money, isoDate, date, timeRange, toDate, isToday, badge, statusLabel } from '../../core/format.js';
+import { money, isoDate, date, timeRange, toDate, isToday, badge, statusLabel, classCode } from '../../core/format.js';
 import { drawChart, revenueLine, doughnut, bars, CHART_COLORS } from '../../components/charts.js';
 import { subjectColor } from '../../components/classCard.js';
 import { paginate, pagination, pagerActions, DEFAULT_PAGE_SIZE } from '../../components/pagination.js';
@@ -183,7 +183,7 @@ function classesTab(s) {
         ${table({
           columns: [{ label: 'Lớp' }, { label: 'HLV' }, { label: 'Phòng' }, { label: 'Đăng ký', cls: 'text-right' }, { label: 'Còn trống', cls: 'text-right' }, { label: 'Lấp đầy', cls: 'text-right' }, { label: 'Đánh giá' }],
           rows: page.content.map(d => [
-            html`<b>${d.subjectName}</b> <span class="text-slate-400">#${d.classId}</span>`,
+            html`<b>${d.subjectName}</b> <span class="text-slate-400">${classCode(d)}</span>`,
             d.coachName, d.roomName,
             `${d.registeredCnt}/${d.maxCapacity}`, d.availableSlots,
             `${Number(d.occupancyRate).toFixed(1)}%`,
@@ -234,7 +234,7 @@ function draw(s, ctx) {
   }
   if (s.tab === 'classes' && s.classReport?.classDetails?.length) {
     const d = s.classReport.classDetails;
-    drawChart(el, 'class-occ', bars(d.map(x => `${x.subjectName} #${x.classId}`), d.map(x => Number(x.occupancyRate)), 'Lấp đầy', { max: 100 }));
+    drawChart(el, 'class-occ', bars(d.map(x => `${x.subjectName} ${classCode(x)}`), d.map(x => Number(x.occupancyRate)), 'Lấp đầy', { max: 100 }));
   }
 }
 

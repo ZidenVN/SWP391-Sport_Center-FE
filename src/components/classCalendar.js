@@ -5,8 +5,7 @@ import {
   toDate,
   weekday,
   date,
-  timeRange,
-} from "../core/format.js";
+  timeRange, classCode } from "../core/format.js";
 import { classApi } from "../api/endpoints.js";
 
 // Lịch lớp học dạng tháng / tuần (như Google Calendar): mỗi ô ngày có các thẻ lớp, bấm thẻ để xem chi tiết.
@@ -218,13 +217,17 @@ export const MANAGER_LEGEND = [
 
 // thẻ lớp gọn (lịch tháng + danh sách theo ngày trên điện thoại)
 function chip(c, st, compact) {
+  // thẻ gọn không có dòng phụ ("Mã lớp …") nên luôn ghép mã vào tên; thẻ đủ chỗ thì theo nhãn trang truyền vào
+  const label = compact
+    ? `${c.subjectName} ${classCode(c)}`
+    : (c.calendarLabel ?? `${c.subjectName} ${classCode(c)}`);
   return html` <button
     type="button"
     data-action="cal-class"
     data-id="${c.classId}"
     data-session="${c.sessionId ?? ""}"
     data-testid="cal-chip"
-    title="${c.calendarLabel ?? c.subjectName} · ${time(c.startTime)}–${time(
+    title="${label} · ${time(c.startTime)}–${time(
       c.endTime,
     )} · ${c.roomName}"
     class="cal-chip ${TONES[st]} ${compact ? "is-compact" : ""}"
@@ -233,7 +236,7 @@ function chip(c, st, compact) {
       ><span class="cal-chip-time">${time(c.startTime)}</span
       ><span class="cal-chip-name"
         >${st === "registered" ? icon("check", "w-3 h-3 inline -mt-0.5") : ""}
-        ${c.calendarLabel ?? c.subjectName}</span
+        ${label}</span
       ></span
     >
     ${compact
@@ -426,7 +429,7 @@ function timeCard(x, st, fromHour, order) {
     class="cal-ev ${TONES[st]} ${narrow ? "is-narrow" : ""}"
     style="top:${top + 3}px;height:${height}px;left:calc(${x.lane *
     width}% + 5px);width:calc(${width}% - 10px);--o:${order}"
-    title="${c.calendarLabel ?? c.subjectName} · ${time(c.startTime)} – ${time(
+    title="${c.calendarLabel ?? `${c.subjectName} ${classCode(c)}`} · ${time(c.startTime)} – ${time(
       c.endTime,
     )} · ${c.calendarMeta ?? c.coachName} · ${c.roomName}"
   >
@@ -435,7 +438,7 @@ function timeCard(x, st, fromHour, order) {
         class="cal-ev-title ${narrow ? "line-clamp-2 break-words" : "truncate"}"
         >${st === "registered"
           ? html`${icon("check", "w-3 h-3 inline -mt-0.5")} `
-          : ""}${c.calendarLabel ?? c.subjectName}</span
+          : ""}${c.calendarLabel ?? `${c.subjectName} ${classCode(c)}`}</span
       >
       ${c.dayTotal && !narrow
         ? html`<span

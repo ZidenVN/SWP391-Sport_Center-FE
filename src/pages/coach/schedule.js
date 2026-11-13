@@ -15,8 +15,7 @@ import {
   timeRange,
   toDate,
   isToday,
-  isoDate,
-} from "../../core/format.js";
+  isoDate, classCode } from "../../core/format.js";
 import { subjectColor, classImage } from "../../components/classCard.js";
 import { courseOf, courseInline } from "../../components/courseSchedule.js";
 import {
@@ -101,7 +100,7 @@ function classRow(c, all = []) {
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2 flex-wrap">
         <span class="font-bold text-slate-900">
-          ${c.subjectName} #${c.classId}
+          ${c.subjectName} ${classCode(c)}
         </span>
         ${isToday(c.startTime)
           ? html`<span
@@ -181,8 +180,9 @@ function listView(s, { upcoming, past, sorted }) {
 function calendarView(s, active) {
   const classes = active.map((c) => ({
     ...c,
-    calendarLabel: `${c.subjectName} #${c.classId}`,
-    calendarMeta: `Mã lớp #${c.classId}`,
+    // mã lớp đã nằm ở dòng phụ "Mã lớp …" nên tiêu đề chỉ ghi tên môn (tránh lặp, đỡ bị cắt chữ)
+    calendarLabel: c.subjectName,
+    calendarMeta: `Mã lớp ${classCode(c)}`,
     calendarMetaIcon: "hash",
   }));
 

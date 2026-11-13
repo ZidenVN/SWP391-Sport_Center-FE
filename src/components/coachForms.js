@@ -17,8 +17,7 @@ import {
   fullName,
   date,
   isPlaceholderPhone,
-  toDate,
-} from "../core/format.js";
+  toDate, classCode } from "../core/format.js";
 
 const submitRow = (text) =>
   html` <div class="flex justify-end gap-2 pt-2">
@@ -55,7 +54,7 @@ export function openPlanForm({
     classFilter: "",
   };
   const classLabel = (c) =>
-    `${c.subjectName} #${c.classId} · ${date(c.startTime)} → ${date(c.endTime)}`;
+    `${c.subjectName} ${classCode(c)} · ${date(c.startTime)} → ${date(c.endTime)}`;
   // lớp của học viên (m.classes từ loadMyStudents), chỉ tính các lớp đang có trong danh sách chọn
   const classIds = new Set(classes.map((c) => String(c.classId)));
   const classesOf = (m) =>
@@ -97,7 +96,7 @@ export function openPlanForm({
       : members;
     const opts = inClass.map((m) => {
       const cls = classesOf(m)
-        .map((c) => `${c.subjectName} #${c.classId}`)
+        .map((c) => `${c.subjectName} ${classCode(c)}`)
         .join(", ");
       return {
         value: m.memberId,
@@ -182,6 +181,7 @@ export function openPlanForm({
           input("dueDate", {
             type: "date",
             value: isoDate(due),
+            attrs: `min="${isoDate(new Date())}"`,
           }),
         )}
       </div>

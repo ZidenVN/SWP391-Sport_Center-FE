@@ -1,7 +1,7 @@
 import { html, render, icon } from '../core/dom.js';
 import { openModal, loading, errorState, emptyState, toast, withBusy } from '../core/ui.js';
 import { receptionApi, packageApi } from '../api/endpoints.js';
-import { fullName } from '../core/format.js';
+import { fullName, classCode } from '../core/format.js';
 import { subjectColor } from './classCard.js';
 import { withDurations, waitingClassPackages } from './classPackages.js';
 import { courseInline } from './courseSchedule.js';
@@ -35,7 +35,7 @@ export function openBookClass({ member, onDone }) {
           <li class="flex items-center gap-3 rounded-2xl border border-slate-200 p-3">
             <span class="w-1.5 self-stretch rounded-full bg-gradient-to-b ${subjectColor(c.subjectName)}"></span>
             <div class="flex-1 min-w-0">
-              <div class="font-bold text-sm">${c.subjectName} <span class="text-slate-400 font-semibold">#${c.classId}</span></div>
+              <div class="font-bold text-sm">${c.subjectName} <span class="text-slate-400 font-semibold">${classCode(c)}</span></div>
               <div class="mt-1">${courseInline(c)}</div>
               <div class="text-xs text-slate-500">${c.roomName} · HLV ${c.coachName}</div>
               <div class="text-[11px] mt-0.5 font-semibold ${c.maxCapacity - (c.registeredCount || 0) > 3 ? 'text-emerald-600' : 'text-amber-600'}">Còn ${c.maxCapacity - (c.registeredCount || 0)}/${c.maxCapacity} chỗ</div>

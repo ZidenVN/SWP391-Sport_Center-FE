@@ -2,7 +2,7 @@ import { html, icon } from '../../core/dom.js';
 import { pageHeader, tabs, table, emptyState, confirmDialog, withBusy, toast, openModal } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { memberApi } from '../../api/endpoints.js';
-import { date, weekday, timeRange, dateTime, badge, isFuture, toDate, time, isoDate } from '../../core/format.js';
+import { date, weekday, timeRange, dateTime, badge, isFuture, toDate, time, isoDate, classCode } from '../../core/format.js';
 import { coachLink, openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import { FEATURES } from '../../core/features.js';
 import { classImage } from '../../components/classCard.js';
@@ -128,7 +128,7 @@ function historyView(list) {
       ${table({
         columns: [{ label: 'Lớp' }, { label: 'Lịch học' }, { label: 'Gói' }, { label: 'Trạng thái' }, { label: 'Đăng ký lúc' }, { label: '', cls: 'text-right' }],
         rows: list.map(r => [
-          html`<div class="flex items-center gap-3"><div class="w-14 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100">${classImage(r)}</div><div><div class="font-semibold">${r.subjectName} <span class="text-slate-400 font-normal text-xs">#${r.classId}</span></div><div class="text-xs text-slate-500">${coachLink(r)} · ${r.roomName}</div></div></div>`,
+          html`<div class="flex items-center gap-3"><div class="w-14 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100">${classImage(r)}</div><div><div class="font-semibold">${r.subjectName} <span class="text-slate-400 font-normal text-xs">${classCode(r)}</span></div><div class="text-xs text-slate-500">${coachLink(r)} · ${r.roomName}</div></div></div>`,
           html`<div class="text-sm">${scheduleText(r)}</div>${firstSessionOf(r) ? html`<div class="text-xs text-slate-500">Buổi đầu: ${dateTime(r.firstSessionAt || r.startTime)}</div>` : ''}`,
           html`<span class="text-sm">${r.packageName || '—'}</span>`,
           regBadge(r),
@@ -207,7 +207,7 @@ function sessionDetail(r, att, course) {
       <div class="p-4">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">${r.subjectName}</div>
+            <div class="font-display text-2xl font-extrabold text-brand-dark leading-tight">${r.subjectName} <span class="font-sans text-xs font-semibold text-slate-400 align-middle" data-testid="cal-detail-code">${classCode(r)}</span></div>
             <div class="text-sm text-slate-500">${whenLine(r)}</div>
           </div>
           <span class="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${st === 'registered' ? 'bg-brand-dark text-brand-lime' : st === 'postponed' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${st === 'registered' ? 'Sắp học' : st === 'postponed' ? 'Đã hoãn' : 'Đã học'}</span>

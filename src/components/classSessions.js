@@ -1,7 +1,7 @@
 import { html, icon } from '../core/dom.js';
 import { openModal, loading, errorState, emptyState, field, select, textarea, input, timeInput } from '../core/ui.js';
 import { sessionApi, coachAdminApi } from '../api/endpoints.js';
-import { badge, date, weekday, timeRange, toDate, fullName, isoDate } from '../core/format.js';
+import { badge, date, weekday, timeRange, toDate, fullName, isoDate, classCode } from '../core/format.js';
 import { openFormModal, requireFields } from './crud.js';
 
 // Quản lý buổi học của 1 lớp (Quản lý): GET /classes/{id}/sessions
@@ -79,7 +79,7 @@ export function openClassSessions({ cls: c, rooms = [], onChange }) {
   const find = id => sessions.find(x => String(x.sessionId) === id);
 
   const modal = openModal({
-    title: `Buổi học · ${c.subjectName} #${c.classId}`,
+    title: `Buổi học · ${c.subjectName} ${classCode(c)}`,
     size: 'max-w-3xl',
     body: loading(),
     onClose: () => { if (changed) onChange?.(); },

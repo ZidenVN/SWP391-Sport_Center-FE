@@ -1,5 +1,5 @@
 import { html, raw, icon, refreshIcons } from '../../core/dom.js';
-import { toast, toastError, confirmDialog } from '../../core/ui.js';
+import { toast, toastError, confirmDialog, runnerIcon } from '../../core/ui.js';
 import { mountPage, settle } from '../../core/page.js';
 import { packageApi, memberApi, vnpayApi } from '../../api/endpoints.js';
 import { money, date, dateTime, genderLabel, phoneText } from '../../core/format.js';
@@ -147,7 +147,7 @@ function summary(s) {
           </label>
           <button type="button" data-action="pay" data-testid="pay-button" ${s.agree && !s.busy && !s.pending ? '' : raw('disabled')}
             class="btn w-full mt-5 !py-3.5 !text-base bg-brand-dark text-white hover:bg-emerald-800 shadow-lg shadow-emerald-600/20">
-            ${s.busy ? html`<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Đang chuyển sang VNPay...`
+            ${s.busy ? html`${runnerIcon(28, '')} Đang chuyển sang VNPay...`
               : html`${icon('lock', 'w-4 h-4')} Thanh toán ${money(p.price)} qua VNPay`}
           </button>
           <p class="text-[11px] text-slate-400 text-center mt-3">Bạn sẽ được chuyển sang cổng VNPay để chọn phương thức và nhập thông tin.</p>
