@@ -46,7 +46,7 @@ function form(q = {}, nextOrder = 1) {
       </div>
     </div>
     <div data-option-config class="${hasOptions(type) ? '' : 'hidden'}">
-      <div class="text-sm font-semibold text-slate-700 mb-1.5">Đáp án <span class="font-normal text-slate-500">(ít nhất 2)</span></div>
+      <div class="text-sm font-semibold text-slate-700 mb-1.5"><span class="req-label">Đáp án</span> <span class="font-normal text-slate-500">(ít nhất 2)</span></div>
       <div class="space-y-2" data-option-list>${rows.map((o, i) => optionRow(i, o))}</div>
       <button type="button" class="btn-secondary btn-sm mt-2" data-add-option>${icon('plus', 'w-3.5 h-3.5')} Thêm đáp án</button>
       <p class="text-xs text-rose-600 mt-1.5 hidden" data-error="options"></p>

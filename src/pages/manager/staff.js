@@ -15,7 +15,7 @@ function form(r = {}) {
       ${field('Tên', input('lastName', { value: r.lastName, required: true, attrs: 'maxlength="50"' }))}
     </div>
     <div class="grid grid-cols-2 gap-3">
-      ${field('Giới tính', select('gender', GENDER_OPTIONS, (r.gender || 'FEMALE').toUpperCase()))}
+      ${field('Giới tính', select('gender', GENDER_OPTIONS, (r.gender || 'FEMALE').toUpperCase(), { required: true }))}
       ${field('Số điện thoại', input('phone', { type: 'tel', value: r.phone, required: true, attrs: 'inputmode="tel" maxlength="12"' }))}
     </div>
     ${field('Email đăng nhập', input('email', { type: 'email', value: r.email, required: true }))}

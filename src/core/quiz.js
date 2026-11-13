@@ -1,7 +1,6 @@
 // Quiz làm quen cho hội viên mới + gợi ý gói tập / lớp học.
 // Bộ câu hỏi và trạng thái "đã làm" lấy từ BE (quizApi); BE bắt buộc làm xong mới tự đặt lớp được.
-// Khung giờ rảnh, số buổi / tuần, thời gian gắn bó chỉ dùng để gợi ý ở FE (BE không có) nên vẫn lưu localStorage
-// cùng bản sao câu trả lời (BE không trả lại câu trả lời cũ).
+// Chỉ hỏi các câu BE trả về; lưu bản sao câu trả lời ở localStorage để hiện lại phần gợi ý (BE không trả lại câu trả lời cũ).
 
 const KEY = email => `sc_quiz_${(email || '').toLowerCase()}`;
 const PENDING = email => `sc_quiz_pending_${(email || '').toLowerCase()}`;
@@ -37,7 +36,7 @@ export function shouldAskQuiz(email, completed) {
 
 // ===== Bộ câu hỏi từ BE -> các bước của quiz =====
 // Câu hệ thống: HEIGHT + WEIGHT gộp 1 bước (kèm BMI), TRAINING_GOAL là câu chọn 1 có mã trùng id trong GOALS.
-// Câu Quản lý tự thêm: mỗi câu 1 bước. Cuối cùng là 2 bước sở thích chỉ dùng ở FE.
+// Câu Quản lý tự thêm: mỗi câu 1 bước.
 export const QUIZ_CODES = { height: 'HEIGHT', weight: 'WEIGHT', goal: 'TRAINING_GOAL' };
 const SYSTEM_CODES = Object.values(QUIZ_CODES);
 export const byCode = (questions, code) => (questions || []).find(q => q.code === code) || null;
@@ -48,7 +47,6 @@ export function quizSteps(questions) {
   if (byCode(list, QUIZ_CODES.height) || byCode(list, QUIZ_CODES.weight)) steps.push({ kind: 'body', label: 'Chỉ số cơ thể' });
   if (byCode(list, QUIZ_CODES.goal)) steps.push({ kind: 'goal', label: 'Mục tiêu', question: byCode(list, QUIZ_CODES.goal) });
   list.filter(q => !SYSTEM_CODES.includes(q.code)).forEach(q => steps.push({ kind: 'custom', label: 'Thêm về bạn', question: q }));
-  steps.push({ kind: 'slots', label: 'Khung giờ' }, { kind: 'commitment', label: 'Thời gian gắn bó' });
   return steps;
 }
 
@@ -84,8 +82,6 @@ export function validateStep(step, a, questions) {
     return errors;
   }
   if (step.kind === 'goal') return validateAnswers(a, 2);
-  if (step.kind === 'slots') return validateAnswers(a, 3);
-  if (step.kind === 'commitment') return validateAnswers(a, 4);
   const q = step.question;
   const v = a.extra?.[q.questionId];
   if (q.type === 'NUMBER') {
@@ -135,26 +131,6 @@ export function goalTextError(goal, text) {
   return t.length > GOAL_TEXT_MAX ? `Tối đa ${GOAL_TEXT_MAX} ký tự` : null;
 }
 
-export const SLOTS = [
-  { id: 'early', label: 'Sáng sớm', range: '05:00 – 08:00', from: 5, to: 8, icon: 'sunrise' },
-  { id: 'morning', label: 'Buổi sáng', range: '08:00 – 11:00', from: 8, to: 11, icon: 'sun' },
-  { id: 'noon', label: 'Buổi trưa', range: '11:00 – 14:00', from: 11, to: 14, icon: 'coffee' },
-  { id: 'afternoon', label: 'Buổi chiều', range: '14:00 – 17:00', from: 14, to: 17, icon: 'cloud-sun' },
-  { id: 'evening', label: 'Buổi tối', range: '17:00 – 22:00', from: 17, to: 22, icon: 'moon' }
-];
-
-export const FREQUENCIES = [
-  { id: 'low', label: '1 – 2 buổi / tuần' },
-  { id: 'mid', label: '3 – 4 buổi / tuần' },
-  { id: 'high', label: '5 buổi trở lên' }
-];
-
-export const COMMITMENTS = [
-  { id: 'try', label: 'Tập thử trước', hint: 'Muốn trải nghiệm vài ngày rồi mới quyết định', icon: 'sparkles' },
-  { id: 'month', label: 'Khoảng 1 tháng', hint: 'Tập một đợt ngắn để tạo thói quen', icon: 'calendar-days' },
-  { id: 'long', label: 'Lâu dài', hint: 'Tập đều đặn nhiều tháng, ưu tiên tiết kiệm', icon: 'trophy' }
-];
-
 export const find = (list, id) => list.find(x => x.id === id);
 
 // Ngưỡng BMI cho người châu Á (WHO khu vực Tây Thái Bình Dương)
@@ -181,44 +157,21 @@ export function validateAnswers(a, step) {
   }
   if (step === 2 && !a.goal) errors.goal = 'Chọn một mục tiêu';
   if (step === 2 && goalTextError(a.goal, a.goalText)) errors.goalText = goalTextError(a.goal, a.goalText);
-  if (step === 3) {
-    if (!a.slots?.length) errors.slots = 'Chọn ít nhất một khung giờ';
-    if (!a.frequency) errors.frequency = 'Chọn số buổi mỗi tuần';
-  }
-  if (step === 4 && !a.commitment) errors.commitment = 'Chọn thời gian bạn muốn gắn bó';
   return errors;
 }
 
-// Chấm điểm gói theo mức cam kết + tần suất tập; trả về gói gợi ý, các gói còn lại và lý do
+// Gợi ý gói Membership: chỉ dựa trên dữ liệu BE (giá, thời hạn) -> gói có chi phí mỗi ngày thấp nhất, rồi đến gói ngắn hơn
 export function recommendPackage(answers, packages) {
-  const plans = (packages || []).filter(p => p.status === 'ACTIVE' && p.durationDays > 0);
+  const plans = (packages || []).filter(p => p.status === 'ACTIVE' && p.durationDays > 0 && p.packageType !== 'CLASS');
   if (!answers || !plans.length) return null;
-  const durations = plans.map(p => p.durationDays);
-  const min = Math.min(...durations);
-  const max = Math.max(...durations);
-  const target = { try: min, month: 30, long: max }[answers.commitment] ?? 30;
   const perDay = p => p.price / p.durationDays;
-  const cheapest = Math.min(...plans.map(perDay));
-  const score = p => {
-    let s = -Math.abs(p.durationDays - target) / Math.max(1, max - min || target);
-    // tập nhiều buổi / lâu dài -> ưu tiên giá mỗi ngày rẻ
-    if (answers.frequency === 'high' || answers.commitment === 'long') s += (cheapest / perDay(p)) * 0.3;
-    return s;
-  };
-  const ranked = [...plans].sort((a, b) => score(b) - score(a) || perDay(a) - perDay(b));
+  const ranked = [...plans].sort((a, b) => perDay(a) - perDay(b) || a.durationDays - b.durationDays);
   const best = ranked[0];
-  const reasons = [];
-  const commit = find(COMMITMENTS, answers.commitment);
-  if (answers.commitment === 'try') reasons.push(`Bạn muốn tập thử trước: ${best.durationDays} ngày là đủ để làm quen lớp và huấn luyện viên.`);
-  else if (answers.commitment === 'long') reasons.push(`Bạn muốn tập lâu dài: gói ${best.durationDays} ngày có chi phí mỗi ngày tốt nhất trong các lựa chọn phù hợp.`);
-  else reasons.push(`Thời hạn ${best.durationDays} ngày khớp với mục tiêu "${commit?.label.toLowerCase()}" của bạn.`);
-  const freq = find(FREQUENCIES, answers.frequency);
-  if (freq) {
-    const sessions = { low: 1.5, mid: 3.5, high: 5 }[answers.frequency];
-    const total = Math.max(1, Math.round((best.durationDays / 7) * sessions));
-    reasons.push(`Với ${freq.label.toLowerCase()}, bạn tập khoảng ${total} buổi trong thời hạn gói — chỉ ${Math.round(best.price / total / 1000)}k mỗi buổi.`);
-  }
-  reasons.push('Đặt lớp không giới hạn trong thời hạn gói, gói kích hoạt ngay sau khi thanh toán.');
+  const reasons = [
+    `Chi phí thấp nhất trong các gói đang bán: khoảng ${Math.round(perDay(best) / 1000)}k mỗi ngày, dùng trong ${best.durationDays} ngày.`,
+    'Gói kích hoạt khi bạn check-in hoặc đăng ký lớp lần đầu, chậm nhất 14 ngày sau khi thanh toán.',
+    'Có Membership mới mua được các gói lớp theo môn.'
+  ];
   return { best, others: ranked.slice(1), reasons };
 }
 
@@ -231,27 +184,14 @@ export function matchSubjects(answers, subjects) {
   return hit.length ? hit : active;
 }
 
-export const inSlots = (answers, startTime) => {
-  const hour = new Date(startTime).getHours();
-  return (answers?.slots || []).some(id => {
-    const s = find(SLOTS, id);
-    return s && hour >= s.from && hour < s.to;
-  });
-};
-
-// Lớp sắp tới hợp cả bộ môn lẫn khung giờ; thiếu thì nới dần điều kiện để luôn có gợi ý
+// Lớp sắp tới: môn hợp mục tiêu xếp trước, rồi đến các lớp khác; trong mỗi nhóm lớp gần nhất trước
 export function recommendClasses(answers, classes, subjects, limit = 6) {
   const subjectIds = new Set(matchSubjects(answers, subjects).map(s => s.subjectId));
-  const future = (classes || []).filter(c => new Date(c.startTime) > new Date());
-  const bySubject = c => subjectIds.has(c.subjectId);
-  const bySlot = c => inSlots(answers, c.startTime);
-  const tiers = [future.filter(c => bySubject(c) && bySlot(c)), future.filter(bySlot), future.filter(bySubject)];
-  const picked = [];
-  for (const tier of tiers) {
-    for (const c of tier) if (picked.length < limit && !picked.includes(c)) picked.push(c);
-    if (picked.length >= limit) break;
-  }
-  return { list: picked, exact: tiers[0].length };
+  const future = (classes || []).filter(c => new Date(c.startTime) > new Date())
+    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+  const matched = future.filter(c => subjectIds.has(c.subjectId));
+  const list = [...matched, ...future.filter(c => !subjectIds.has(c.subjectId))].slice(0, limit);
+  return { list, exact: matched.length };
 }
 
 export function bmiAdvice(bmi, goal) {
@@ -287,8 +227,8 @@ const ROLE_TEXT = {
   mind: 'giãn cơ, phục hồi và giảm chấn thương',
   other: 'đổi gió, tạo hứng thú tập luyện'
 };
-const SESSIONS = { low: 2, mid: 4, high: 6 };
-const DAYS = { 2: ['Thứ 3', 'Thứ 6'], 4: ['Thứ 2', 'Thứ 4', 'Thứ 6', 'Chủ nhật'], 6: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'] };
+// lịch xen kẽ mẫu 4 buổi / tuần
+const PLAN_DAYS = ['Thứ 2', 'Thứ 4', 'Thứ 6', 'Chủ nhật'];
 const DAY_INDEX = { 'Chủ nhật': 0, 'Thứ 2': 1, 'Thứ 3': 2, 'Thứ 4': 3, 'Thứ 5': 4, 'Thứ 6': 5, 'Thứ 7': 6 };
 
 export function subjectCategory(subject) {
@@ -304,16 +244,13 @@ export function classPackageFor(subject, packages) {
   return list.sort((a, b) => Math.abs(a.durationDays - 30) - Math.abs(b.durationDays - 30) || a.price - b.price)[0] || null;
 }
 
-// Lịch tuần xen kẽ các môn; gắn lớp thật (nếu có) cùng môn, cùng thứ, trong khung giờ đã chọn
-function weeklyPlan(subjects, answers, classes) {
-  const n = SESSIONS[answers.frequency] || 4;
-  const slots = (answers.slots || []).map(id => find(SLOTS, id)).filter(Boolean);
-  return DAYS[n].map((day, i) => {
+// Lịch tuần xen kẽ các môn; gắn lớp thật (nếu có) cùng môn, cùng thứ
+function weeklyPlan(subjects, classes) {
+  return PLAN_DAYS.map((day, i) => {
     const subject = subjects[i % subjects.length];
-    const slot = slots.length ? slots[i % slots.length] : null;
     const cls = (classes || []).find(c => c.subjectId === subject.subjectId && new Date(c.startTime).getDay() === DAY_INDEX[day]
-      && new Date(c.startTime) > new Date() && (!slot || inSlots({ slots: [slot.id] }, c.startTime)));
-    return { day, subject, slot, cls };
+      && new Date(c.startTime) > new Date());
+    return { day, subject, cls };
   });
 }
 
@@ -331,9 +268,6 @@ export function buildCombos(answers, subjects, classes, packages) {
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) groups.push([list[i], list[j]]);
   }
-  if (answers.frequency === 'high' && list.length >= 3) {
-    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) for (let k = j + 1; k < list.length; k++) groups.push([list[i], list[j], list[k]]);
-  }
   const scored = groups.map(g => {
     const cats = new Set(g.map(subjectCategory));
     // ưu tiên môn hợp mục tiêu + các môn khác nhóm để tập xen kẽ (vd sức mạnh + dẻo dai)
@@ -343,7 +277,7 @@ export function buildCombos(answers, subjects, classes, packages) {
   return scored.slice(0, 3).map(({ g }, idx) => {
     const ordered = [...g].sort((a, b) => w(b) - w(a));
     const items = ordered.map(s => ({ subject: s, pkg: pkgOf.get(s.subjectId) }));
-    const plan = weeklyPlan(ordered, answers, classes);
+    const plan = weeklyPlan(ordered, classes);
     const reasons = ordered.map(s => `${s.subjectName}: ${ROLE_TEXT[subjectCategory(s)]}.`);
     reasons.push(`Tập xen kẽ ${plan.length} buổi/tuần để cơ thể kịp phục hồi giữa các buổi.`);
     return {

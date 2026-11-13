@@ -72,6 +72,7 @@ export function openPlanForm({
           { value: "INDIVIDUAL", label: "Một học viên" },
         ],
         st.targetType,
+        { required: true },
       ),
     );
     if (st.targetType === "CLASS") {
@@ -84,6 +85,7 @@ export function openPlanForm({
         ${field(
           "Lớp",
           select("targetId", opts, "", {
+            required: true,
             placeholder: opts.length ? "Chọn..." : "Chưa có dữ liệu",
           }),
         )}
@@ -124,6 +126,7 @@ export function openPlanForm({
       ${field(
         "Học viên",
         select("targetId", opts, "", {
+          required: true,
           placeholder: opts.length ? "Chọn..." : "Lớp này chưa có học viên",
         }),
       )}`;

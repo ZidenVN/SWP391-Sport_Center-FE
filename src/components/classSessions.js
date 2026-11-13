@@ -128,8 +128,8 @@ export function openClassSessions({ cls: c, rooms = [], onChange }) {
             <div class="rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm p-3">Gói lớp của học viên được tự gia hạn thêm cho buổi bù.</div>
             ${field('Ngày học bù', input('date', { type: 'date', value: tomorrow, required: true, attrs: `min="${isoDate(new Date())}"` }))}
             <div class="grid sm:grid-cols-2 gap-3">
-              ${field('Giờ bắt đầu', timeInput('startClock', clock(x.startTime)))}
-              ${field('Giờ kết thúc', timeInput('endClock', clock(x.endTime)))}
+              ${field('Giờ bắt đầu', timeInput('startClock', clock(x.startTime)), '', { required: true })}
+              ${field('Giờ kết thúc', timeInput('endClock', clock(x.endTime)), '', { required: true })}
             </div>
             <div class="grid sm:grid-cols-2 gap-3">
               ${field('Phòng', select('roomId', rooms.filter(r => r.status === 'AVAILABLE' || r.roomId === x.roomId).map(r => ({ value: r.roomId, label: r.roomName })), x.roomId, { required: true }))}

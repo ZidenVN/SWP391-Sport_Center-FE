@@ -45,7 +45,7 @@ export function goAfterLogin(navigate) {
 
 export default function LoginPage(el, { navigate }) {
   render(el, authLayout(html`
-    <form data-action="login" class="space-y-5" novalidate>
+    <form data-action="login" class="auth-form space-y-5" novalidate>
       ${iconInput('email', 'mail', { label: 'Email', type: 'email', placeholder: 'ban@example.com', autocomplete: 'username' })}
       ${iconInput('password', 'lock', { label: 'Mật khẩu', type: 'password', placeholder: '••••••••', autocomplete: 'current-password' })}
       <p id="login-error" class="hidden text-sm text-rose-100 bg-rose-500/20 border border-rose-300/30 rounded-xl px-3 py-2" role="alert"></p>

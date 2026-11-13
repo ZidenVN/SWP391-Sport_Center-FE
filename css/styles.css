@@ -957,6 +957,12 @@ html.theme-dark :is(.app-shell, body:has(.app-shell) #modal-root) .peer:checked 
 
 /* nhãn + gợi ý */
 .sc-modal .field-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #3d5a4f; margin-bottom: 0.4rem; }
+/* Dấu * cho ô bắt buộc: field(..., { required: true }) -> .is-required, ô có thuộc tính required, hoặc nhãn tự viết có .req-label */
+.is-required > .field-label::after,
+label:has(:is(input, select, textarea)[required]) > .field-label::after,
+.req-label::after { content: ' *'; color: #e11d48; font-weight: 800; }
+/* trang đăng nhập / đăng ký: không hiện dấu * */
+.auth-form .field-label::after { content: none !important; }
 .sc-modal .field-hint { color: #7c8f86; }
 
 /* ô nhập */

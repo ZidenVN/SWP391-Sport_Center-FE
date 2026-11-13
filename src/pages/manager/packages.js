@@ -31,7 +31,7 @@ function form(s, p = {}) {
               <span class="block text-xs text-slate-500 mt-0.5">${hint}</span>
             </span>
           </label>`)}
-      </div>`)}
+      </div>`, '', { required: true })}
     <div class="grid grid-cols-2 gap-3">
       ${field('Số ngày', input('durationDays', { type: 'number', value: p.durationDays, required: true, attrs: 'min="1"' }), html`<span data-duration-hint>${type === 'CLASS' ? 'Lớp của môn này chỉ mở đúng các thời hạn đang bán' : ''}</span>`)}
       ${field('Giá (₫)', input('price', { type: 'number', value: p.price, required: true, attrs: 'min="0" step="1000"' }))}
@@ -44,7 +44,7 @@ function form(s, p = {}) {
               <input type="radio" name="subjectId" value="${x.subjectId}" class="peer sr-only" ${chosen === String(x.subjectId) ? 'checked' : ''} />
               <span class="inline-flex items-center px-3 py-1.5 rounded-full border border-brand-line text-sm font-semibold text-slate-600 peer-checked:bg-brand-dark peer-checked:text-brand-lime peer-checked:border-brand-dark">${x.subjectName}</span>
             </label>`)}
-        </div>`, 'Chọn đúng 1 môn')}
+        </div>`, 'Chọn đúng 1 môn', { required: true })}
     </div>
     ${field('Mô tả', textarea('description', p.description, { rows: 2, placeholder: 'Quyền lợi của gói...' }))}
     ${p.packageId ? html`<div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3">Gói đã có người mua chỉ sửa được tên, mô tả và giá.</div>` : ''}`;

@@ -24,7 +24,7 @@ export function validateRegister(data) {
 
 export default function RegisterPage(el, { navigate }) {
   render(el, authLayout(html`
-    <form data-action="register" class="space-y-4" novalidate>
+    <form data-action="register" class="auth-form space-y-4" novalidate>
       <div class="grid grid-cols-2 gap-3">
         ${field('Họ', input('firstName', { required: true, placeholder: 'Nguyễn' }))}
         ${field('Tên', input('lastName', { required: true, placeholder: 'An' }))}

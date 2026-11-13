@@ -92,10 +92,10 @@ function classFields(s, c = {}) {
             <input type="checkbox" name="day${n}" value="1" class="peer sr-only" ${picked.includes(n) ? 'checked' : ''} />
             <span class="inline-flex w-11 h-9 items-center justify-center rounded-lg border border-brand-line text-sm font-bold text-slate-600 peer-checked:bg-brand-dark peer-checked:text-brand-lime peer-checked:border-brand-dark">${label}</span>
           </label>`)}
-      </div>`)}
+      </div>`, '', { required: true })}
     <div class="grid sm:grid-cols-2 gap-3">
-      ${field('Giờ bắt đầu', timeInput('startClock', hhmm(c.startClock) || '08:00'))}
-      ${field('Giờ kết thúc', timeInput('endClock', hhmm(c.endClock) || '09:30'))}
+      ${field('Giờ bắt đầu', timeInput('startClock', hhmm(c.startClock) || '08:00'), '', { required: true })}
+      ${field('Giờ kết thúc', timeInput('endClock', hhmm(c.endClock) || '09:30'), '', { required: true })}
     </div>
     ${field('Sĩ số tối đa', input('maxCapacity', { type: 'number', value: c.maxCapacity || 20, required: true, attrs: 'min="1"' }), 'Không vượt quá sức chứa của phòng')}
     ${classImageField(c, { required: !c.classId })}

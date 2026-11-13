@@ -231,9 +231,11 @@ export function table({ columns, rows, empty = 'Chưa có dữ liệu' }) {
 }
 
 // ---------- Form fields ----------
-export function field(label, input, hint = '') {
+// Ô bắt buộc tự có dấu * (CSS): ô bên trong có thuộc tính required, hoặc truyền { required: true }
+// cho ô chỉ kiểm tra bằng JS (select có giá trị mặc định, nhóm nút chọn, ô ngày tự viết...)
+export function field(label, input, hint = '', { required = false } = {}) {
   return html`
-    <label class="block">
+    <label class="block ${required ? 'is-required' : ''}">
       <span class="field-label block text-xs font-bold text-slate-600 mb-1">${label}</span>
       ${input}
       ${hint ? html`<span class="field-hint block text-[11px] text-slate-400 mt-1">${hint}</span>` : ''}

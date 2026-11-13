@@ -63,7 +63,7 @@ function quizBanner(current) {
     return html`
       <a href="#/member/onboarding" class="mb-5 flex items-center gap-3 rounded-2xl bg-brand-dark p-4 text-white hover:bg-brand-deep" data-testid="quiz-banner">
         <span class="w-10 h-10 rounded-xl bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('clipboard-list', 'w-5 h-5')}</span>
-        <span class="flex-1 text-sm"><b>Hoàn thành khảo sát để đặt lớp</b><br /><span class="text-white/70">Vài câu hỏi về chỉ số cơ thể, mục tiêu và khung giờ — nhận luôn gói tập, lớp học hợp với bạn.</span></span>
+        <span class="flex-1 text-sm"><b>Hoàn thành khảo sát để đặt lớp</b><br /><span class="text-white/70">Vài câu hỏi về chỉ số cơ thể và mục tiêu — nhận luôn gói tập, lớp học hợp với bạn.</span></span>
         ${icon('chevron-right', 'w-5 h-5')}
       </a>`;
   }
@@ -72,8 +72,8 @@ function quizBanner(current) {
     <a href="#/member/onboarding" class="mb-5 flex items-center gap-3 rounded-2xl bg-brand-dark p-4 text-white hover:bg-brand-deep" data-testid="quiz-banner">
       <span class="w-10 h-10 rounded-xl bg-brand-lime text-brand-dark flex items-center justify-center shrink-0">${icon('sparkles', 'w-5 h-5')}</span>
       <span class="flex-1 text-sm">${done
-        ? html`<b>Xem lại gói tập gợi ý cho bạn</b><br /><span class="text-white/70">Dựa trên chỉ số cơ thể, mục tiêu và khung giờ bạn đã chọn.</span>`
-        : html`<b>Chưa biết chọn gói nào?</b><br /><span class="text-white/70">Trả lời 4 câu hỏi nhanh để nhận gói tập và lớp học hợp với bạn.</span>`}</span>
+        ? html`<b>Xem lại gói tập gợi ý cho bạn</b><br /><span class="text-white/70">Dựa trên chỉ số cơ thể và mục tiêu bạn đã chọn.</span>`
+        : html`<b>Chưa biết chọn gói nào?</b><br /><span class="text-white/70">Trả lời vài câu hỏi nhanh để nhận gói tập và lớp học hợp với bạn.</span>`}</span>
       ${icon('chevron-right', 'w-5 h-5')}
     </a>`;
 }

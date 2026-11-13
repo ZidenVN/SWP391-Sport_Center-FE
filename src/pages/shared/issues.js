@@ -67,7 +67,7 @@ function openReportForm(role, onDone) {
                   <span class="min-w-0"><span class="block text-sm font-bold leading-tight">${label}</span><span class="block text-[11px] text-slate-500">${DESK[desk]} xử lý</span></span>
                 </span>
               </label>`)}
-          </div>`)}
+          </div>`, '', { required: true })}
         ${field('Tiêu đề', input('title', { required: true, placeholder: 'VD: Máy chạy số 3 bị kẹt băng', attrs: `maxlength="${TITLE_MAX}"` }), `Tối đa ${TITLE_MAX} ký tự`)}
         ${field('Mô tả chi tiết', textarea('content', '', { rows: 4, required: true, placeholder: 'Mô tả sự cố, vị trí, thời gian...' }))}
         ${field('Ảnh minh hoạ (tuỳ chọn)', html`<input type="file" name="image" accept="image/*" class="input !py-2 file:mr-3 file:rounded-full file:border-0 file:bg-brand-sand file:px-3 file:py-1 file:text-xs file:font-bold" data-testid="issue-image" />`, 'Ảnh JPG / PNG, tối đa 10MB')}

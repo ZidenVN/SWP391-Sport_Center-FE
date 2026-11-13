@@ -97,11 +97,11 @@ function view(s) {
           </div>
         </div>
         <label class="block">
-          <span class="flex items-center justify-between mb-1"><span class="field-label text-xs font-bold text-slate-600">Tiêu đề</span><span class="text-[11px] text-slate-400" data-count="title">${s.title.length}/${TITLE_MAX}</span></span>
+          <span class="flex items-center justify-between mb-1"><span class="field-label req-label text-xs font-bold text-slate-600">Tiêu đề</span><span class="text-[11px] text-slate-400" data-count="title">${s.title.length}/${TITLE_MAX}</span></span>
           <input class="input" name="title" maxlength="${TITLE_MAX}" value="${s.title}" data-action="draft" data-live placeholder="VD: Lịch nghỉ lễ 2/9" data-testid="notify-title" />
         </label>
         <label class="block">
-          <span class="flex items-center justify-between mb-1"><span class="field-label text-xs font-bold text-slate-600">Nội dung</span><span class="text-[11px] text-slate-400" data-count="content">${s.content.length}/${CONTENT_MAX}</span></span>
+          <span class="flex items-center justify-between mb-1"><span class="field-label req-label text-xs font-bold text-slate-600">Nội dung</span><span class="text-[11px] text-slate-400" data-count="content">${s.content.length}/${CONTENT_MAX}</span></span>
           <textarea class="input" name="content" rows="6" maxlength="${CONTENT_MAX}" data-action="draft" data-live placeholder="Nội dung hội viên sẽ đọc..." data-testid="notify-content">${s.content}</textarea>
         </label>
         <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">

@@ -31,7 +31,7 @@ function form(subjects, c = {}) {
             <input type="checkbox" name="subject_${x.subjectId}" value="1" class="peer sr-only" ${chosen.has(String(x.subjectId)) ? 'checked' : ''} />
             <span class="inline-flex items-center px-3 py-1.5 rounded-full border border-brand-line text-sm font-semibold text-slate-600 peer-checked:bg-brand-dark peer-checked:text-brand-lime peer-checked:border-brand-dark">${x.subjectName}</span>
           </label>`)}
-      </div>`, subjects.length ? 'Chọn ít nhất 1 môn. HLV chỉ được xếp vào lớp của các môn này' : 'Chưa có bộ môn nào, hãy tạo bộ môn trước')}
+      </div>`, subjects.length ? 'Chọn ít nhất 1 môn. HLV chỉ được xếp vào lớp của các môn này' : 'Chưa có bộ môn nào, hãy tạo bộ môn trước', { required: true })}
     ${edit ? '' : field('Mật khẩu', input('password', { type: 'password', required: true, attrs: 'autocomplete="new-password"' }),
       'Tối thiểu 6 ký tự, gửi cho HLV để đăng nhập lần đầu')}`;
 }

@@ -7,14 +7,14 @@ import { money, isoDate, timeRange } from '../../core/format.js';
 import { classCard } from '../../components/classCard.js';
 import { openCoachInfo, coachFromButton } from '../../components/coachInfo.js';
 import {
-  quizStore, GOALS, SLOTS, FREQUENCIES, COMMITMENTS, find, bmiInfo, bmiAdvice,
+  quizStore, GOALS, find, bmiInfo, bmiAdvice,
   recommendPackage, matchSubjects, recommendClasses, buildCombos, subjectCategory, SUBJECT_CATEGORIES,
   quizSteps, validateStep, quizPayload, byCode, QUIZ_CODES, goalIdOf,
   OTHER_GOAL, GOAL_TEXT_MAX, goalLabel, goalFromProfile
 } from '../../core/quiz.js';
 
 // Quiz làm quen sau khi đăng ký: câu hỏi lấy từ BE (Quản lý soạn được), nộp lên BE (bắt buộc để tự đặt lớp)
-// -> gợi ý gói tập + lớp hợp khung giờ. Khung giờ / số buổi / gắn bó chỉ dùng để gợi ý ở FE (xem core/quiz.js).
+// -> gợi ý gói tập + lớp theo chỉ số cơ thể và mục tiêu. Chỉ hỏi các câu BE trả về, không thêm câu nào ở FE.
 const TONE = { sky: 'bg-sky-100 text-sky-700', emerald: 'bg-emerald-100 text-emerald-700', amber: 'bg-amber-100 text-amber-700', rose: 'bg-rose-100 text-rose-700' };
 
 const err = (s, key) => (s.errors?.[key] ? html`<p class="text-xs text-rose-600 mt-1.5" data-error="${key}">${s.errors[key]}</p>` : '');
@@ -37,7 +37,7 @@ function bodyInput(s, key, q, placeholder) {
   if (!q) return '';
   return html`
     <label class="block">
-      <span class="text-sm font-semibold text-slate-700">${q.code === QUIZ_CODES.height ? 'Chiều cao' : 'Cân nặng'}</span>
+      <span class="text-sm font-semibold text-slate-700 req-label">${q.code === QUIZ_CODES.height ? 'Chiều cao' : 'Cân nặng'}</span>
       <div class="relative mt-1.5">
         <input class="input pr-12 text-lg font-bold" type="number" inputmode="decimal" ${q.minValue != null ? `min="${q.minValue}"` : ''} ${q.maxValue != null ? `max="${q.maxValue}"` : ''} step="0.1"
           name="${key}" data-action="field" data-live placeholder="${placeholder}" value="${s.answers[key] ?? ''}" data-testid="quiz-${key}" />
@@ -116,30 +116,7 @@ function stepBody(s) {
         </label>` : ''}
       ${err(s, 'goal')}`;
   }
-  if (step.kind === 'custom') return customBody(s, step.question);
-  if (step.kind === 'slots') {
-    return html`
-      <h2 class="font-display text-3xl font-extrabold text-brand-dark">Bạn thường rảnh khung giờ nào?</h2>
-      <p class="text-sm text-slate-500 mt-1">Có thể chọn nhiều khung giờ. Hệ thống sẽ ưu tiên lớp học trong các khung này.</p>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
-        ${SLOTS.map(x => optionCard({ action: 'toggle-slot', key: 'slots', value: x.id, active: (a.slots || []).includes(x.id), title: x.label, hint: x.range, iconName: x.icon, testid: `quiz-slot-${x.id}` }))}
-      </div>
-      ${err(s, 'slots')}
-      <div class="mt-7 text-sm font-semibold text-slate-700">Bạn muốn tập bao nhiêu buổi mỗi tuần?</div>
-      <div class="flex flex-wrap gap-2 mt-2">
-        ${FREQUENCIES.map(f => html`
-          <button type="button" data-action="pick" data-key="frequency" data-value="${f.id}" data-testid="quiz-freq-${f.id}" aria-pressed="${a.frequency === f.id}"
-            class="px-4 py-2 rounded-full border-2 text-sm font-bold ${a.frequency === f.id ? 'border-brand-dark bg-brand-dark text-brand-lime' : 'border-brand-line bg-white text-slate-700 hover:border-brand/60'}">${f.label}</button>`)}
-      </div>
-      ${err(s, 'frequency')}`;
-  }
-  return html`
-    <h2 class="font-display text-3xl font-extrabold text-brand-dark">Bạn muốn gắn bó bao lâu?</h2>
-    <p class="text-sm text-slate-500 mt-1">Giúp chọn thời hạn gói có lợi nhất cho bạn.</p>
-    <div class="grid gap-3 mt-6">
-      ${COMMITMENTS.map(c => optionCard({ action: 'pick', key: 'commitment', value: c.id, active: a.commitment === c.id, title: c.label, hint: c.hint, iconName: c.icon, testid: `quiz-commit-${c.id}` }))}
-    </div>
-    ${err(s, 'commitment')}`;
+  return customBody(s, step.question);
 }
 
 function quizView(s) {
@@ -219,7 +196,7 @@ function comboDetail(c, { hasMembership, membership }) {
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2" data-testid="combo-plan">
           ${c.plan.map(d => html`
             <div class="rounded-xl bg-white/10 p-3">
-              <div class="text-[11px] text-white/60">${d.day}${d.slot ? ` · ${d.slot.label}` : ''}</div>
+              <div class="text-[11px] text-white/60">${d.day}</div>
               <div class="text-sm font-bold leading-snug">${d.subject.subjectName}</div>
               ${d.cls ? html`<div class="text-[11px] text-brand-lime mt-0.5">Có lớp ${timeRange(d.cls.startTime, d.cls.endTime)}</div>` : ''}
             </div>`)}
@@ -262,7 +239,6 @@ function resultView(s) {
   const classes = recommendClasses(a, s.classes, s.subjects);
   const combos = buildCombos(a, s.subjects, s.classes, s.packages);
   const combo = combos[s.comboIdx] || combos[0];
-  const slotText = (a.slots || []).map(id => find(SLOTS, id)?.label).filter(Boolean).join(', ');
   return html`
     <div class="max-w-5xl mx-auto" data-testid="quiz-result">
       <div class="rounded-3xl p-6 sm:p-8 bg-brand-dark text-white relative overflow-hidden">
@@ -273,8 +249,6 @@ function resultView(s) {
           <div class="flex flex-wrap gap-2 mt-4 text-xs font-semibold">
             ${a.height && a.weight ? html`<span class="px-3 py-1 rounded-full bg-white/10">${a.height} cm · ${a.weight} kg</span>` : ''}
             ${bmi ? html`<span class="px-3 py-1 rounded-full bg-brand-lime text-brand-dark">BMI ${bmi.value} · ${bmi.label}</span>` : ''}
-            ${slotText ? html`<span class="px-3 py-1 rounded-full bg-white/10">${slotText}</span>` : ''}
-            ${find(FREQUENCIES, a.frequency) ? html`<span class="px-3 py-1 rounded-full bg-white/10">${find(FREQUENCIES, a.frequency).label}</span>` : ''}
             ${s.completedAt ? html`<span class="px-3 py-1 rounded-full bg-white/10 flex items-center gap-1">${icon('check', 'w-3.5 h-3.5')} Đã lưu khảo sát</span>` : ''}
           </div>
           <p class="text-white/75 text-sm mt-4 max-w-2xl">${bmiAdvice(bmi, a.goal)}</p>
@@ -347,8 +321,8 @@ function resultView(s) {
       <section class="mt-8">
         <div class="flex items-end justify-between mb-3 gap-3">
           <div>
-            <h2 class="font-display text-2xl font-extrabold text-brand-dark">Lớp hợp khung giờ của bạn</h2>
-            <p class="text-sm text-slate-500">${classes.exact && slotText ? `Trong 2 tuần tới, ${slotText.toLowerCase()}` : 'Chưa có lớp đúng khung giờ bạn chọn, đây là các lớp gần nhất'}</p>
+            <h2 class="font-display text-2xl font-extrabold text-brand-dark">Lớp sắp mở hợp mục tiêu</h2>
+            <p class="text-sm text-slate-500">${classes.exact ? 'Trong 2 tuần tới, lớp của các môn hợp mục tiêu xếp trước' : 'Chưa có lớp đúng môn hợp mục tiêu, đây là các lớp gần nhất'}</p>
           </div>
           <a href="#/member/classes" class="text-sm font-bold text-brand-deep hover:underline whitespace-nowrap">Xem tất cả lớp</a>
         </div>
@@ -372,7 +346,7 @@ export default function MemberOnboarding(el, { query } = {}) {
   const saved = quizStore.answers(email);
   return mountPage(el, {
     // ?redo=1 để làm lại; BE báo đã làm thì mở thẳng phần kết quả
-    state: { step: 1, answers: { slots: [], ...(saved || {}), extra: { ...(saved?.extra || {}) } }, errors: {}, done: undefined, comboIdx: 0 },
+    state: { step: 1, answers: { ...(saved || {}), extra: { ...(saved?.extra || {}) } }, errors: {}, done: undefined, comboIdx: 0 },
     load: async ctx => {
       const today = new Date();
       const res = await settle({
@@ -419,12 +393,6 @@ export default function MemberOnboarding(el, { query } = {}) {
         const id = t.dataset.value;
         ctx.state.answers.extra[q.questionId] = q.type === 'SINGLE' ? [id] : cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
         ctx.set({ errors: { ...ctx.state.errors, extra: undefined } });
-      },
-      'toggle-slot': (t, e, ctx) => {
-        const slots = new Set(ctx.state.answers.slots || []);
-        slots.has(t.dataset.value) ? slots.delete(t.dataset.value) : slots.add(t.dataset.value);
-        ctx.state.answers.slots = SLOTS.map(x => x.id).filter(id => slots.has(id));
-        ctx.set({ errors: { ...ctx.state.errors, slots: undefined } });
       },
       back: (t, e, ctx) => ctx.set({ step: Math.max(1, ctx.state.step - 1), errors: {} }),
       next: async (form, e, ctx) => {

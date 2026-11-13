@@ -25,14 +25,14 @@ function editForm(u) {
       ${field('Tên', input('lastName', { value: u.lastName, required: true, attrs: 'maxlength="50"' }))}
     </div>
     <div class="grid grid-cols-2 gap-3">
-      ${field('Giới tính', select('gender', GENDER_OPTIONS, (u.gender || '').toUpperCase(), { placeholder: 'Chọn' }))}
+      ${field('Giới tính', select('gender', GENDER_OPTIONS, (u.gender || '').toUpperCase(), { required: true, placeholder: 'Chọn' }))}
       ${field('Số điện thoại', input('phone', { type: 'tel', value: u.phone, required: true }))}
     </div>
     ${field('Email', input('email', { type: 'email', value: u.email, required: true }))}`;
 }
 
 function validateEdit(d) {
-  const e = requireFields(d, ['firstName', 'lastName', 'phone', 'email']);
+  const e = requireFields(d, ['firstName', 'lastName', 'gender', 'phone', 'email']);
   if (d.phone && !/^(0|\+84)[0-9]{9}$/.test(d.phone.trim())) e.phone = 'Số điện thoại không hợp lệ';
   if (d.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email.trim())) e.email = 'Email không hợp lệ';
   return e;

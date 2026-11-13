@@ -36,7 +36,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     const change = received - p.price;
     return html`
       <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 mt-4" data-testid="cash-block">
-        <label class="block text-xs font-bold text-slate-600 mb-1">Khách đưa</label>
+        <label class="block text-xs font-bold text-slate-600 mb-1 req-label">Khách đưa</label>
         <div class="flex gap-2">
           <input class="input text-right font-mono" name="cash" data-action="cash" data-live inputmode="numeric" placeholder="0" value="${st.cash}" />
           <span class="self-center text-sm font-bold text-slate-500">₫</span>
@@ -59,7 +59,7 @@ export function openSellPackage({ member, onDone, packageId: preselect }) {
     if (st.method !== 'BANK_TRANSFER') return '';
     return html`
       <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 mt-4" data-testid="ref-block">
-        <label class="block text-xs font-bold text-slate-600 mb-1">Mã giao dịch ngân hàng</label>
+        <label class="block text-xs font-bold text-slate-600 mb-1 req-label">Mã giao dịch ngân hàng</label>
         <input class="input font-mono" name="ref" data-action="ref" data-live maxlength="100" placeholder="VD: FT2610231234" value="${st.ref}" data-testid="sell-ref" />
       </div>`;
   }

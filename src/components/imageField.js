@@ -22,7 +22,7 @@ export function imageField({ label, required, currentUrl = '', currentText = '' 
         </span>
         <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif" class="sr-only" data-testid="image-input" />
       </label>
-    </div>`);
+    </div>`, '', { required });
 }
 
 // kiểm tra file ở FE trước khi gửi (BE vẫn kiểm tra lại)
