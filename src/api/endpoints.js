@@ -230,6 +230,8 @@ export const receptionApi = {
 };
 
 export const coachApi = {
+  // AI soạn nháp giáo án cho 1 học viên của HLV; Gemini có thể thử lại + đổi model nên chờ lâu như chat AI
+  aiSuggest: memberId => http.post(`/coaches/me/members/${memberId}/ai-suggestion`, {}, { timeoutMs: 150000 }),
   // không truyền range: BE trả từ hôm qua tới 30 ngày tới; { from, to } (yyyy-MM-dd) để xem lớp cũ
   schedules: range => http.get('/coaches/me/schedules', range),
   roster: classId => http.get(`/coaches/me/classes/${classId}/roster`),

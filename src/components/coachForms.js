@@ -1,4 +1,4 @@
-import { html, readForm } from '../core/dom.js';
+import { html, icon, readForm } from '../core/dom.js';
 import { openModal, field, input, select, textarea, withBusy, toast, showFormErrors, dateTimeInput } from '../core/ui.js';
 import { coachApi } from '../api/endpoints.js';
 import { isoDate, isoLocalMinute, fullName, date, isPlaceholderPhone, toDate } from '../core/format.js';
@@ -58,6 +58,11 @@ export function openPlanForm({ preset, classes = [], members = [], values = {}, 
       ${targetField()}
       ${field('Tên giáo án', input('planName', { value: values.planName || '', required: true, placeholder: 'VD: Giảm mỡ 30 ngày' }))}
       ${field('Nội dung bài tập', textarea('exerciseDetails', values.exerciseDetails || '', { rows: values.exerciseDetails ? 10 : 4, required: true, placeholder: 'VD: Squat 4x12, Plank 3x60s...' }))}
+      ${(preset?.targetType || st.targetType) === 'INDIVIDUAL' ? html`
+        <div class="flex flex-wrap items-center gap-2 -mt-2">
+          <button type="button" class="btn-secondary btn-sm" data-action="ai-suggest" data-testid="plan-ai-suggest">${icon('sparkles', 'w-3.5 h-3.5')} Gợi ý bằng AI</button>
+          <span class="text-[11px] text-slate-400">Soạn nháp từ mục tiêu, BMI và các buổi tập gần nhất của học viên — bạn sửa lại trước khi giao</span>
+        </div>` : ''}
       <div class="grid sm:grid-cols-2 gap-3">
         ${field('Thời lượng', input('duration', { value: values.duration || '', placeholder: 'VD: 4 tuần' }))}
         ${field('Hạn hoàn thành', input('dueDate', { type: 'date', value: isoDate(due), attrs: `min="${isoDate(new Date())}"` }))}
@@ -70,6 +75,17 @@ export function openPlanForm({ preset, classes = [], members = [], values = {}, 
     size: 'max-w-xl',
     body: body(),
     actions: {
+      // AI chỉ điền nháp vào ô nội dung (thay nội dung cũ), HLV sửa rồi bấm Giao như bình thường
+      'ai-suggest': async btn => {
+        const form = btn.closest('form');
+        const memberId = preset?.targetType === 'INDIVIDUAL' ? preset.targetId : form.elements.targetId?.value;
+        if (!memberId) { showFormErrors(form, { fields: { targetId: 'Chọn học viên để AI gợi ý' } }); return; }
+        const res = await withBusy(btn, () => coachApi.aiSuggest(memberId));
+        if (!res) return;
+        form.elements.exerciseDetails.value = res.suggestion;
+        form.elements.exerciseDetails.rows = 12;
+        toast('AI đã soạn nháp — hãy kiểm tra và sửa trước khi giao', 'info');
+      },
       save: async form => {
         const data = required(form, preset ? ['planName', 'exerciseDetails'] : ['planName', 'exerciseDetails', 'targetId']);
         if (!data) return;
