@@ -124,6 +124,8 @@ export const sessionApi = {
 export const memberApi = {
   me: () => http.get('/members/me'),
   updateMe: payload => http.put('/members/me', payload),
+  // chỉ đổi ảnh bìa (tên ảnh có sẵn ở /landing), không cần gửi cả hồ sơ
+  updateCover: coverImage => http.patch('/members/me/cover-image', { coverImage }),
   subscriptions: () => http.get('/members/me/subscriptions'),
   currentSubscription: () => http.get('/members/me/subscriptions/current').then(pickCurrent),
   // trước khi thanh toán: ngày bắt đầu / hết hạn dự kiến + cảnh báo gói trùng khu tập
