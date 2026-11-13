@@ -1,19 +1,47 @@
-import { html, icon } from '../../core/dom.js';
-import { pageHeader, statCard, tabs, emptyState, openModal } from '../../core/ui.js';
-import { mountPage } from '../../core/page.js';
-import { coachApi } from '../../api/endpoints.js';
-import { badge, date, weekday, timeRange, toDate, isToday, isoDate } from '../../core/format.js';
-import { subjectColor, classImage } from '../../components/classCard.js';
-import { courseOf, courseInline } from '../../components/courseSchedule.js';
-import { calendarGrid, calendarToolbar, viewModeTabs, scrollTimeGrid } from '../../components/classCalendar.js';
+import { html, icon } from "../../core/dom.js";
+import {
+  pageHeader,
+  statCard,
+  tabs,
+  emptyState,
+  openModal,
+} from "../../core/ui.js";
+import { mountPage } from "../../core/page.js";
+import { coachApi } from "../../api/endpoints.js";
+import {
+  badge,
+  date,
+  weekday,
+  timeRange,
+  toDate,
+  isToday,
+  isoDate,
+} from "../../core/format.js";
+import { subjectColor, classImage } from "../../components/classCard.js";
+import { courseOf, courseInline } from "../../components/courseSchedule.js";
+import {
+  calendarGrid,
+  calendarToolbar,
+  viewModeTabs,
+  scrollTimeGrid,
+} from "../../components/classCalendar.js";
 
 // Lịch dạy của HLV: xem dạng lịch Tuần (khung giờ) / Tháng như Hội viên & Quản lý, hoặc Danh sách theo tab.
 // GET /coaches/me/schedules trả TỪNG BUỔI HLV dạy (kể cả buổi dạy thay, buổi bù) -> lịch chỉ lọc theo ngày ở FE.
-const MODE_KEY = 'sc_coach_schedule_mode';
-const savedMode = () => { try { return localStorage.getItem(MODE_KEY); } catch { return null; } };
-const COACH_LEGEND = [['open', 'Sắp dạy'], ['done', 'Đã dạy']];
+const MODE_KEY = "sc_coach_schedule_mode";
+const savedMode = () => {
+  try {
+    return localStorage.getItem(MODE_KEY);
+  } catch {
+    return null;
+  }
+};
+const COACH_LEGEND = [
+  ["open", "Sắp dạy"],
+  ["done", "Đã dạy"],
+];
 // màu thẻ trên lịch: chưa kết thúc = sắp dạy, đã kết thúc = đã dạy
-const stateOf = c => (toDate(c.endTime) < new Date() ? 'done' : 'open');
+const stateOf = (c) => (toDate(c.endTime) < new Date() ? "done" : "open");
 
 const startOfWeek = () => {
   const d = new Date();
@@ -23,124 +51,243 @@ const startOfWeek = () => {
 };
 
 // buổi bị hủy / lớp bị hủy hoặc dừng
-const isCancelled = c => c.status === 'CANCELLED' || c.classStatus === 'CANCELLED' || c.classStatus === 'STOPPED';
-const sessionLink = c => `#/coach/classes/${c.classId}${c.sessionId ? `?session=${c.sessionId}` : ''}`;
+const isCancelled = (c) =>
+  c.status === "CANCELLED" ||
+  c.classStatus === "CANCELLED" ||
+  c.classStatus === "STOPPED";
+const sessionLink = (c) =>
+  `#/coach/classes/${c.classId}${c.sessionId ? `?session=${c.sessionId}` : ""}`;
 
 // các thứ lớp có buổi dạy (tính từ các buổi của lớp trong lịch đã tải)
-const daysOf = (all, c) => courseOf(null, all.filter(x => x.classId === c.classId && x.status !== 'CANCELLED').map(x => x.startTime));
+const daysOf = (all, c) =>
+  courseOf(
+    null,
+    all
+      .filter((x) => x.classId === c.classId && x.status !== "CANCELLED")
+      .map((x) => x.startTime),
+  );
 
 function classRow(c, all = []) {
   const cancelled = isCancelled(c);
   const ended = !cancelled && toDate(c.endTime) < new Date();
-  const pct = c.maxCapacity ? Math.round((c.currentEnrolled / c.maxCapacity) * 100) : 0;
-  return html`
-    <a href="${sessionLink(c)}" data-testid="coach-class" class="card p-4 sm:p-5 flex items-center gap-4 hover:shadow-md transition-shadow ${ended || cancelled ? 'opacity-70' : ''}">
-      <div class="w-16 shrink-0 text-center rounded-2xl bg-gradient-to-br ${subjectColor(c.subjectName)} text-white py-2">
-        <div class="text-[10px] font-bold uppercase opacity-90">${weekday(c.startTime)}</div>
-        <div class="text-lg font-black leading-tight">${date(c.startTime).slice(0, 5)}</div>
+  const pct = c.maxCapacity
+    ? Math.round((c.currentEnrolled / c.maxCapacity) * 100)
+    : 0;
+  return html` <a
+    href="${sessionLink(c)}"
+    data-testid="coach-class"
+    class="card p-4 sm:p-5 flex items-center gap-4 hover:shadow-md transition-shadow ${ended ||
+    cancelled
+      ? "opacity-70"
+      : ""}"
+  >
+    <div
+      class="w-16 shrink-0 text-center rounded-2xl bg-gradient-to-br ${subjectColor(
+        c.subjectName,
+      )} text-white py-2"
+    >
+      <div class="text-[10px] font-bold uppercase opacity-90">
+        ${weekday(c.startTime)}
       </div>
-      <div class="w-20 h-16 sm:w-28 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-slate-100">${classImage(c)}</div>
-      <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-bold text-slate-900">${c.subjectName}</span>
-          ${isToday(c.startTime) ? html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Hôm nay</span>` : ''}
-          ${c.classStatus === 'STOPPED' ? badge('STOPPED') : cancelled ? badge('CLASS_CANCELLED') : c.status === 'POSTPONED' ? badge('POSTPONED') : ended ? html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Đã kết thúc</span>` : badge(c.status)}
-          ${c.type === 'MAKEUP' ? badge('MAKEUP') : ''}
-          ${c.substitute ? html`<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Dạy thay ${c.mainCoachName || ''}</span>` : ''}
-        </div>
-        <div class="text-sm text-slate-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
-          <span class="flex items-center gap-1">${icon('clock', 'w-3.5 h-3.5')} ${timeRange(c.startTime, c.endTime)}</span>
-          <span class="flex items-center gap-1">${icon('map-pin', 'w-3.5 h-3.5')} ${c.roomName}</span>
-        </div>
-        ${all.length ? html`<div class="mt-1.5">${courseInline(c, { course: daysOf(all, c), dates: false })}</div>` : ''}
+      <div class="text-lg font-black leading-tight">
+        ${date(c.startTime).slice(0, 5)}
       </div>
-      <div class="hidden sm:block w-40">
-        <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Học viên</span><b class="text-slate-700">${c.currentEnrolled}/${c.maxCapacity}</b></div>
-        <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-[#1E9E64]" style="width:${pct}%"></div></div>
+    </div>
+    <div
+      class="w-20 h-16 sm:w-28 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-slate-100"
+    >
+      ${classImage(c)}
+    </div>
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-bold text-slate-900">
+          ${c.subjectName} #${c.classId}
+        </span>
+        ${isToday(c.startTime)
+          ? html`<span
+              class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"
+              >Hôm nay</span
+            >`
+          : ""}
+        ${c.classStatus === "STOPPED"
+          ? badge("STOPPED")
+          : cancelled
+            ? badge("CLASS_CANCELLED")
+            : c.status === "POSTPONED"
+              ? badge("POSTPONED")
+              : ended
+                ? html`<span
+                    class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500"
+                    >Đã kết thúc</span
+                  >`
+                : badge(c.status)}
+        ${c.type === "MAKEUP" ? badge("MAKEUP") : ""}
+        ${c.substitute
+          ? html`<span
+              class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"
+              >Dạy thay ${c.mainCoachName || ""}</span
+            >`
+          : ""}
       </div>
-      ${icon('chevron-right', 'w-5 h-5 text-slate-300 shrink-0')}
-    </a>`;
+      <div class="text-sm text-slate-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+        <span class="flex items-center gap-1"
+          >${icon("clock", "w-3.5 h-3.5")}
+          ${timeRange(c.startTime, c.endTime)}</span
+        >
+        <span class="flex items-center gap-1"
+          >${icon("map-pin", "w-3.5 h-3.5")} ${c.roomName}</span
+        >
+      </div>
+      ${all.length
+        ? html`<div class="mt-1.5">
+            ${courseInline(c, { course: daysOf(all, c), dates: false })}
+          </div>`
+        : ""}
+    </div>
+    <div class="hidden sm:block w-40">
+      <div class="flex justify-between text-xs text-slate-500 mb-1">
+        <span>Học viên</span
+        ><b class="text-slate-700">${c.currentEnrolled}/${c.maxCapacity}</b>
+      </div>
+      <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+        <div class="h-full bg-[#1E9E64]" style="width:${pct}%"></div>
+      </div>
+    </div>
+    ${icon("chevron-right", "w-5 h-5 text-slate-300 shrink-0")}
+  </a>`;
 }
 
 function listView(s, { upcoming, past, sorted }) {
-  const list = s.tab === 'UPCOMING' ? upcoming : s.tab === 'PAST' ? past : sorted;
-  return html`
-    ${tabs([
-      { id: 'UPCOMING', label: 'Sắp tới', count: upcoming.length },
-      { id: 'PAST', label: 'Đã dạy', count: past.length },
-      { id: 'ALL', label: 'Tất cả', count: sorted.length }
-    ], s.tab)}
-    ${list.length
-      ? html`<div class="space-y-3" data-testid="coach-schedule">${list.map(c => classRow(c, s.classes))}</div>`
-      : emptyState(s.tab === 'PAST' ? 'Chưa có lớp nào đã dạy' : 'Chưa có lớp sắp tới', 'calendar-x')}`;
+  const list =
+    s.tab === "UPCOMING" ? upcoming : s.tab === "PAST" ? past : sorted;
+  return html` ${tabs(
+    [
+      { id: "UPCOMING", label: "Sắp tới", count: upcoming.length },
+      { id: "PAST", label: "Đã dạy", count: past.length },
+      { id: "ALL", label: "Tất cả", count: sorted.length },
+    ],
+    s.tab,
+  )}
+  ${list.length
+    ? html`<div class="space-y-3" data-testid="coach-schedule">
+        ${list.map((c) => classRow(c, s.classes))}
+      </div>`
+    : emptyState(
+        s.tab === "PAST" ? "Chưa có lớp nào đã dạy" : "Chưa có lớp sắp tới",
+        "calendar-x",
+      )}`;
 }
 
 function calendarView(s, active) {
+  const classes = active.map((c) => ({
+    ...c,
+    calendarLabel: `${c.subjectName} #${c.classId}`,
+    calendarMeta: `Mã lớp #${c.classId}`,
+    calendarMetaIcon: "hash",
+  }));
+
   return html`
     ${calendarToolbar(s)}
-    ${calendarGrid(s, active, { stateOf, legend: COACH_LEGEND })}`;
+    ${calendarGrid(s, classes, {
+      stateOf,
+      legend: COACH_LEGEND,
+    })}
+  `;
 }
 
 function view(s) {
   const now = new Date();
   const weekStart = startOfWeek();
   const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
-  const sorted = [...s.classes].sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
+  const sorted = [...s.classes].sort(
+    (a, b) => toDate(a.startTime) - toDate(b.startTime),
+  );
   // lớp bị Quản lý hủy không tính là lớp sắp dạy / đã dạy, chỉ còn ở tab Tất cả
-  const active = sorted.filter(c => c.status !== 'CANCELLED');
-  const upcoming = active.filter(c => toDate(c.endTime) >= now);
-  const past = active.filter(c => toDate(c.endTime) < now).reverse();
-  const today = active.filter(c => isToday(c.startTime));
-  const thisWeek = active.filter(c => toDate(c.startTime) >= weekStart && toDate(c.startTime) < weekEnd);
+  const active = sorted.filter((c) => c.status !== "CANCELLED");
+  const upcoming = active.filter((c) => toDate(c.endTime) >= now);
+  const past = active.filter((c) => toDate(c.endTime) < now).reverse();
+  const today = active.filter((c) => isToday(c.startTime));
+  const thisWeek = active.filter(
+    (c) => toDate(c.startTime) >= weekStart && toDate(c.startTime) < weekEnd,
+  );
   const students = active.reduce((n, c) => n + (c.currentEnrolled || 0), 0);
 
-  return html`
-    ${pageHeader('Lịch dạy', 'Các lớp bạn phụ trách, bấm vào lớp để điểm danh và giao giáo án', viewModeTabs(s.mode))}
+  return html` ${pageHeader(
+      "Lịch dạy",
+      "Các lớp bạn phụ trách, bấm vào lớp để điểm danh và giao giáo án",
+      viewModeTabs(s.mode),
+    )}
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      ${statCard('Lớp hôm nay', today.length, 'sun', 'amber')}
-      ${statCard('Lớp tuần này', thisWeek.length, 'calendar-range', 'emerald')}
-      ${statCard('Lớp sắp tới', upcoming.length, 'calendar-clock', 'sky')}
-      ${statCard('Lượt học viên', students, 'users', 'violet')}
+      ${statCard("Lớp hôm nay", today.length, "sun", "amber")}
+      ${statCard("Lớp tuần này", thisWeek.length, "calendar-range", "emerald")}
+      ${statCard("Lớp sắp tới", upcoming.length, "calendar-clock", "sky")}
+      ${statCard("Lượt học viên", students, "users", "violet")}
     </div>
-    ${s.mode === 'list' ? listView(s, { upcoming, past, sorted }) : calendarView(s, active)}`;
+    ${s.mode === "list"
+      ? listView(s, { upcoming, past, sorted })
+      : calendarView(s, active)}`;
 }
 
 // danh sách các buổi trong 1 ngày (bấm "+N lớp" hoặc bấm ô ngày trên điện thoại); bấm buổi -> trang chi tiết lớp
 function openDay(list, all) {
   const modal = openModal({
     title: `Lớp ngày ${date(list[0].startTime)}`,
-    size: 'max-w-2xl',
-    body: html`<div class="space-y-3 max-h-[70vh] overflow-y-auto" data-testid="coach-day">${list.map(c => classRow(c, all))}</div>`
+    size: "max-w-2xl",
+    body: html`<div
+      class="space-y-3 max-h-[70vh] overflow-y-auto"
+      data-testid="coach-day"
+    >
+      ${list.map((c) => classRow(c, all))}
+    </div>`,
   });
-  modal.el.addEventListener('click', e => { if (e.target.closest('a[href^="#/coach/classes/"]')) modal.close(); });
+  modal.el.addEventListener("click", (e) => {
+    if (e.target.closest('a[href^="#/coach/classes/"]')) modal.close();
+  });
 }
 
 export default function CoachSchedule(el) {
   return mountPage(el, {
-    state: { tab: 'UPCOMING', mode: ['week', 'month', 'list'].includes(savedMode()) ? savedMode() : 'week', calOffset: 0, classes: [] },
+    state: {
+      tab: "UPCOMING",
+      mode: ["week", "month", "list"].includes(savedMode())
+        ? savedMode()
+        : "week",
+      calOffset: 0,
+      classes: [],
+    },
     load: async () => ({ classes: await coachApi.schedules() }),
     view,
     afterRender: (st, ctx) => scrollTimeGrid(ctx.el),
     actions: {
       tab: (t, e, ctx) => ctx.set({ tab: t.dataset.tab }),
-      'view-mode': (t, e, ctx) => {
+      "view-mode": (t, e, ctx) => {
         const mode = t.dataset.mode;
         if (mode === ctx.state.mode) return;
-        try { localStorage.setItem(MODE_KEY, mode); } catch { /* bỏ qua */ }
+        try {
+          localStorage.setItem(MODE_KEY, mode);
+        } catch {
+          /* bỏ qua */
+        }
         ctx.set({ mode, calOffset: 0 });
       },
-      'cal-nav': (t, e, ctx) => {
+      "cal-nav": (t, e, ctx) => {
         const d = Number(t.dataset.delta);
         ctx.set({ calOffset: d === 0 ? 0 : ctx.state.calOffset + d });
       },
       // bấm thẻ lớp trên lịch: vào thẳng trang điểm danh / giáo án của lớp
-      'cal-class': t => { location.hash = `#/coach/classes/${t.dataset.id}${t.dataset.session ? `?session=${t.dataset.session}` : ''}`; },
-      'cal-day': (t, e, ctx) => {
+      "cal-class": (t) => {
+        location.hash = `#/coach/classes/${t.dataset.id}${t.dataset.session ? `?session=${t.dataset.session}` : ""}`;
+      },
+      "cal-day": (t, e, ctx) => {
         const list = ctx.state.classes
-          .filter(c => c.status !== 'CANCELLED' && isoDate(toDate(c.startTime)) === t.dataset.date)
+          .filter(
+            (c) =>
+              c.status !== "CANCELLED" &&
+              isoDate(toDate(c.startTime)) === t.dataset.date,
+          )
           .sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
         if (list.length) openDay(list, ctx.state.classes);
-      }
-    }
+      },
+    },
   });
 }
