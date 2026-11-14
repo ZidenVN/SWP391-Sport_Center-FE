@@ -143,6 +143,10 @@ const STATUS = {
   SESSION_POSTPONED: ["Hoãn buổi", "amber"],
   MAKEUP_SESSION_SCHEDULED: ["Buổi bù", "violet"],
   COACH_SUBSTITUTE: ["HLV dạy thay", "sky"],
+  COACH_ASSIGNED: ["Phân công HLV", "indigo"],
+  // duyệt bài tập theo giáo án: hội viên nộp -> HLV duyệt (PLAN_REVIEW), HLV xác nhận / yêu cầu làm lại (PLAN_RESULT)
+  PLAN_REVIEW: ["Chờ duyệt bài", "amber"],
+  PLAN_RESULT: ["Kết quả giáo án", "emerald"],
   SUBSCRIPTION_REFUNDED: ["Hoàn tiền", "violet"],
   ISSUE_REPORT_CREATED: ["Sự cố mới", "amber"],
   ISSUE_REPORT_UPDATED: ["Phản hồi sự cố", "sky"],
