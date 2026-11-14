@@ -17,7 +17,7 @@ function view(s) {
       <div class="relative">
         <span class="absolute left-3 top-3 text-slate-400">${icon('search', 'w-5 h-5')}</span>
         <input class="input pl-11 !py-3 !text-base" name="keyword" data-action="search" data-live value="${s.keyword}"
-          placeholder="Tìm theo tên, số điện thoại hoặc email..." autocomplete="off" data-testid="member-search" />
+          placeholder="Tìm theo tên, số điện thoại, email hoặc mã SC-..." autocomplete="off" data-testid="member-search" />
       </div>
       <div class="text-xs text-slate-500 mt-2">
         ${searching ? (s.searching ? 'Đang tìm...' : `Tìm thấy ${list.length} hội viên`) : s.all.length ? `Tổng ${s.all.length} hội viên · gõ ít nhất 2 ký tự để tìm` : 'Gõ ít nhất 2 ký tự để tìm hội viên'}
@@ -39,7 +39,7 @@ function view(s) {
             <a href="#/reception/members/${m.memberId}" class="btn-ghost btn-sm">Chi tiết ${icon('chevron-right', 'w-3.5 h-3.5')}</a>
           </div>`
         ])
-      }) : emptyState(searching ? `Không tìm thấy hội viên "${s.keyword}"` : 'Nhập tên, số điện thoại hoặc email để tìm hội viên', 'search')}
+      }) : emptyState(searching ? `Không tìm thấy hội viên "${s.keyword}"` : 'Nhập tên, số điện thoại, email hoặc mã hội viên (SC-...) để tìm', 'search')}
     </div>`;
 }
 

@@ -193,8 +193,17 @@ export const vnpayApi = {
   callback: query => http.get(`/payments/vnpay/callback${query.startsWith('?') ? query : `?${query}`}`, undefined, { auth: false })
 };
 
+// Mã trên thẻ hội viên "SC-000010" = memberId; BE chỉ tìm theo tên / SĐT / email nên tra thẳng theo ID
+const MEMBER_CODE = /^sc-?0*(\d+)$/i;
+
 export const receptionApi = {
-  search: keyword => http.get('/receptionist/members', { keyword }),
+  search: keyword => {
+    const code = MEMBER_CODE.exec(String(keyword ?? '').trim());
+    if (!code) return http.get('/receptionist/members', { keyword });
+    return http.get(`/receptionist/members/${code[1]}`)
+      .then(m => [m])
+      .catch(err => { if (err.status === 404) return []; throw err; });
+  },
   // keyword trống: BE trả mọi hội viên (keyword để thẳng trong đường dẫn vì client bỏ tham số rỗng)
   allMembers: async () => (await http.get('/receptionist/members?keyword=')).sort((a, b) => b.memberId - a.memberId),
   updateMember: (memberId, payload) => http.put(`/receptionist/members/${memberId}`, payload),

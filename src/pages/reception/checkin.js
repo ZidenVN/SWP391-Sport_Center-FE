@@ -73,7 +73,7 @@ function searchPanel(s) {
       <div class="relative">
         <span class="absolute left-3 top-3 text-slate-400">${icon('search', 'w-5 h-5')}</span>
         <input class="input pl-11 !py-3 !text-base" name="keyword" data-action="search" data-live value="${s.keyword}" autofocus
-          placeholder="Tên, số điện thoại hoặc email..." autocomplete="off" data-testid="checkin-search" />
+          placeholder="Tên, số điện thoại, email hoặc mã SC-..." autocomplete="off" data-testid="checkin-search" />
       </div>
       ${searching ? html`
         <div class="mt-3 divide-y divide-brand-line/60" data-testid="checkin-results">
