@@ -12,7 +12,9 @@ import {
   genderLabel,
   toDate,
   phoneText,
-  date, classCode } from "../../core/format.js";
+  date,
+  classCode,
+} from "../../core/format.js";
 import { memberAvatar } from "../../components/memberPicker.js";
 import { loadMyStudents } from "../../components/coachForms.js";
 
@@ -55,26 +57,12 @@ function view(s) {
         "sky",
       )}
     </div>
-    <div class="card p-4 mb-5">
-      <label class="block mb-3">
-        Lọc theo lớp
-        ${select(
-          "classId",
-          [
-            { value: "", label: "Tất cả lớp" },
-            ...s.classes.map((c) => ({
-              value: String(c.classId),
-              label: `${c.subjectName} ${classCode(c)}`,
-            })),
-          ],
-          s.classId,
-        )}
-      </label>
-
+    <div class="card p-4 mb-5 space-y-4">
       <div class="relative">
-        <span class="absolute left-3 top-2.5 text-slate-400"
-          >${icon("search", "w-4 h-4")}</span
-        >
+        <span class="absolute left-3 top-2.5 text-slate-400">
+          ${icon("search", "w-4 h-4")}
+        </span>
+
         <input
           class="input pl-9"
           name="keyword"
@@ -84,7 +72,28 @@ function view(s) {
           value="${s.keyword}"
         />
       </div>
+
+      <div class="coach-student-filter">
+        <div class="text-xs font-semibold text-slate-500 mb-2">
+          Lọc theo lớp
+        </div>
+
+        <div class="w-full sm:max-w-sm">
+          ${select(
+            "classId",
+            [
+              { value: "", label: "Tất cả lớp" },
+              ...s.classes.map((c) => ({
+                value: String(c.classId),
+                label: `${c.subjectName} ${classCode(c)}`,
+              })),
+            ],
+            s.classId,
+          )}
+        </div>
+      </div>
     </div>
+
     <div class="card" data-testid="student-table">
       ${list.length
         ? table({
