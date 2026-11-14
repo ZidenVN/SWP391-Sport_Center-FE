@@ -17,7 +17,8 @@ const savedMode = () => { try { return localStorage.getItem(MODE_KEY); } catch {
 const SCHEDULE_LEGEND = [['registered', 'Sắp học'], ['postponed', 'Đã hoãn'], ['done', 'Đã học']];
 // các buổi lên lịch: mọi buổi trừ buổi đã hủy
 const calendarItems = s => s.schedule.filter(r => r.status !== 'CANCELLED');
-const stateOf = r => (r.status === 'POSTPONED' ? 'postponed' : r.status === 'DONE' || toDate(r.endTime) < new Date() ? 'done' : 'registered');
+// HLV đã điểm danh (att) thì buổi coi như đã học, kể cả khi chưa tới giờ kết thúc
+const stateOf = (r, att) => (r.status === 'POSTPONED' ? 'postponed' : att || r.status === 'DONE' || toDate(r.endTime) < new Date() ? 'done' : 'registered');
 
 // nhãn của 1 buổi: hoãn / buổi bù / HLV dạy thay
 function sessionTags(r) {
@@ -175,12 +176,13 @@ function calendarView(s, upcoming) {
   return html`
     ${calendarToolbar(s)}
     <div class="text-sm text-slate-500 mb-4" data-testid="cal-summary">${upcoming.length} buổi sắp học · ${items.length - upcoming.length} buổi đã học</div>
-    ${calendarGrid(s, items, { stateOf, legend: SCHEDULE_LEGEND })}`;
+    ${calendarGrid(s, items, { stateOf: r => stateOf(r, s.attendances.some(a => a.sessionId === r.sessionId)), legend: SCHEDULE_LEGEND })}`;
 }
 
 function view(s) {
+  const attended = new Set(s.attendances.map(a => a.sessionId));
   const upcoming = s.schedule
-    .filter(r => (r.status === 'SCHEDULED' || r.status === 'POSTPONED') && toDate(r.endTime) >= new Date())
+    .filter(r => (r.status === 'SCHEDULED' || r.status === 'POSTPONED') && toDate(r.endTime) >= new Date() && !attended.has(r.sessionId))
     .sort((a, b) => toDate(a.startTime) - toDate(b.startTime));
   const history = [...s.registrations].sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)));
   return html`
@@ -200,7 +202,7 @@ function courseOfSession(s, r) {
 
 // Chi tiết buổi học khi bấm trên lịch: ảnh, giờ, HLV (dạy thay), phòng, kết quả điểm danh, lịch cả khóa
 function sessionDetail(r, att, course) {
-  const st = stateOf(r);
+  const st = stateOf(r, att);
   return html`
     <div class="rounded-2xl border border-brand-line overflow-hidden" data-testid="cal-detail" data-class-id="${r.classId}">
       <div class="h-36 sm:h-44 bg-slate-100">${classImage(r)}</div>
@@ -215,7 +217,7 @@ function sessionDetail(r, att, course) {
         <div class="grid sm:grid-cols-2 gap-3 mt-4 text-sm text-slate-600">
           <div class="flex items-center gap-2">${icon('user-round', 'w-4 h-4 text-slate-400')} ${coachLink(r)}${r.substitute ? html`<span class="text-[11px] text-amber-700">(dạy thay ${r.mainCoachName || ''})</span>` : ''}</div>
           <div class="flex items-center gap-2">${icon('map-pin', 'w-4 h-4 text-slate-400')} ${r.roomName}</div>
-          <div class="flex items-center gap-2">${icon('clipboard-check', 'w-4 h-4 text-slate-400')} Điểm danh: ${attendanceCell(r, att)}</div>
+          <div class="flex items-center gap-2 sm:col-span-2 min-w-0">${icon('clipboard-check', 'w-4 h-4 text-slate-400 shrink-0')} <span class="whitespace-nowrap">Điểm danh:</span> <span class="flex items-center gap-2 min-w-0 whitespace-nowrap [&>div]:mt-0">${attendanceCell(r, att)}</span></div>
           <div class="flex items-center gap-2 text-xs">${sessionTags(r)}</div>
         </div>
         <div class="mt-4">${courseBlock(course)}</div>

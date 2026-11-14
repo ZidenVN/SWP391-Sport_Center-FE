@@ -83,8 +83,8 @@ function classFields(s, c = {}) {
     </div>
     <div class="grid sm:grid-cols-2 gap-3">
       ${field('Ngày bắt đầu', input('startDate', { type: 'date', value: c.startDate || isoDate(tomorrow), required: true,
-        // BE chỉ nhận ngày sau hôm nay; lớp đã bắt đầu thì giữ ngày cũ, không đặt min để vẫn hiện đúng
-        attrs: c.startDate && c.startDate < isoDate(tomorrow) ? '' : `min="${isoDate(tomorrow)}"` }))}
+        // BE nhận từ hôm nay trở đi; lớp đã bắt đầu thì giữ ngày cũ, không đặt min để vẫn hiện đúng
+        attrs: c.startDate && c.startDate < isoDate(new Date()) ? '' : `min="${isoDate(new Date())}"` }))}
       ${field('Thời hạn khoá', select('durationDays', durations, c.durationDays, { required: true, placeholder: 'Chọn bộ môn trước' }), 'Chỉ có các thời hạn đang bán gói lớp của môn này')}
     </div>
     ${field('Học vào các thứ', html`
