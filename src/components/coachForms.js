@@ -17,7 +17,9 @@ import {
   fullName,
   date,
   isPlaceholderPhone,
-  toDate, classCode } from "../core/format.js";
+  toDate,
+  classCode,
+} from "../core/format.js";
 
 const submitRow = (text) =>
   html` <div class="flex justify-end gap-2 pt-2">
@@ -48,7 +50,18 @@ export function openPlanForm({
   onDone,
 }) {
   // mặc định 4 tuần, giống BE khi không gửi hạn
-  const due = new Date(Date.now() + 28 * 86400000);
+  const todayVN = () => {
+    const parts = new Intl.DateTimeFormat("en", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+
+    const part = (type) => parts.find((p) => p.type === type).value;
+
+    return `${part("year")}-${part("month")}-${part("day")}`;
+  };
   const st = {
     targetType: preset?.targetType || (classes.length ? "CLASS" : "INDIVIDUAL"),
     classFilter: "",
@@ -171,23 +184,16 @@ export function openPlanForm({
             >
           </div>`
         : ""}
-      <div class="grid sm:grid-cols-2 gap-3">
-        ${field(
-          "Thời lượng",
-          input("duration", {
-            value: values.duration || "",
-            placeholder: "VD: 4 tuần",
-          }),
-        )}
-        ${field(
-          "Hạn hoàn thành",
-          input("dueDate", {
-            type: "date",
-            value: isoDate(due),
-            attrs: `min="${isoDate(new Date())}"`,
-          }),
-        )}
-      </div>
+      ${field(
+        "Hạn hoàn thành",
+        input("dueDate", {
+          type: "date",
+          value: todayVN(),
+          required: true,
+          attrs: html`min="${todayVN()}"`,
+        }),
+        "Hạn tính đến hết ngày đã chọn, theo giờ Việt Nam.",
+      )}
       ${submitRow("Giao giáo án")}
     </form>`;
 
@@ -221,22 +227,23 @@ export function openPlanForm({
         const data = required(
           form,
           preset
-            ? ["planName", "exerciseDetails"]
-            : ["planName", "exerciseDetails", "targetId"],
+            ? ["planName", "exerciseDetails", "dueDate"]
+            : ["planName", "exerciseDetails", "targetId", "dueDate"],
         );
         if (!data) return;
         // không cho đặt hạn trong quá khứ (BE cũng chặn, ERR_PLAN_003)
-        if (data.dueDate && data.dueDate < isoDate(new Date())) {
+        if (data.dueDate && data.dueDate < todayVN()) {
           showFormErrors(form, {
-            fields: { dueDate: "Hạn hoàn thành không được ở trong quá khứ" },
+            fields: {
+              dueDate: "Hạn hoàn thành không được ở trong quá khứ",
+            },
           });
           return;
         }
         const payload = {
           planName: data.planName,
           exerciseDetails: data.exerciseDetails,
-          duration: data.duration || null,
-          dueDate: data.dueDate || null,
+          dueDate: data.dueDate,
           targetType: preset?.targetType || st.targetType,
           targetId: Number(preset?.targetId || data.targetId),
         };
