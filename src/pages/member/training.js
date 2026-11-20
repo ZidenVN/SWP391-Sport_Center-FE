@@ -510,31 +510,49 @@ function progressTab(s) {
 
 // ---------- Giáo án ----------
 
+// Giáo án giao theo cách cũ (không có memberPlanId / hạn): BE không cho báo hoàn thành -> chỉ để xem, mới nhất trước
+function legacyTarget(s, p) {
+  if (p.targetType !== "CLASS") return "Giáo án cá nhân";
+  const code = s.wfClassCodes?.[p.targetId];
+  return code ? `${String(p.targetName || "").replace(/\s*#\d+$/, "")} · ${code}` : p.targetName || "Lớp học";
+}
+
+function legacyCard(s, p) {
+  return html`
+    <article class="rounded-2xl border border-brand-line bg-white/70 p-4 min-w-0" data-testid="legacy-plan">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-bold truncate">${p.planName}</div>
+          <div class="text-xs text-slate-500 mt-0.5">
+            ${legacyTarget(s, p)}${p.coachName ? ` · HLV ${p.coachName}` : ""}
+          </div>
+        </div>
+        ${p.duration ? html`<span class="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-sand text-slate-700">${p.duration}</span>` : ""}
+      </div>
+      <p class="mt-3 text-sm text-slate-700 whitespace-pre-line line-clamp-4">${p.exerciseDetails}</p>
+      <div class="mt-3 text-[11px] text-slate-400">Giao ngày ${date(p.assignedDate || p.createdAt)}</div>
+    </article>`;
+}
+
 function plansTab(s) {
-  const legacy = s.plans.filter((p) => !p.memberPlanId);
+  const legacy = s.plans
+    .filter((p) => !p.memberPlanId)
+    .sort((a, b) => String(b.assignedDate || b.createdAt || "").localeCompare(String(a.assignedDate || a.createdAt || "")));
 
   return html`
     ${workflowView(s)}
     ${legacy.length
       ? html`
-          <details class="card p-5 mt-4">
-            <summary>Giáo án lớp cũ (${legacy.length}) — chỉ xem</summary>
-
+          <details class="card rounded-3xl p-5 mt-4" data-testid="legacy-plans">
+            <summary class="cursor-pointer font-bold">
+              Giáo án tham khảo (${legacy.length})
+            </summary>
             <p class="text-sm text-slate-500 mt-2">
-              Coach cần giao lại theo luồng mới để theo dõi hoàn thành.
+              HLV giao các giáo án này trước khi có hạn hoàn thành, nên chỉ để bạn xem và tự tập, không cần báo hoàn thành.
             </p>
-
-            ${legacy.map(
-              (p) => html`
-                <article class="mt-4">
-                  <b>${p.planName}</b>
-                  <p class="text-sm">${p.targetName}</p>
-                  <p class="text-sm whitespace-pre-line">
-                    ${p.exerciseDetails}
-                  </p>
-                </article>
-              `,
-            )}
+            <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 mt-4">
+              ${legacy.map((p) => legacyCard(s, p))}
+            </div>
           </details>
         `
       : ""}
@@ -691,6 +709,13 @@ export default function MemberTraining(el, { query }) {
         (d.schedule || [])
           .filter((x) => x.status !== "POSTPONED" && toDate(x.startTime) > now)
           .sort((a, b) => toDate(a.startTime) - toDate(b.startTime))[0] || null;
+
+      // mã lớp (vd PB-0004) theo classId, lấy từ lịch học / điểm danh để hiện thay cho "#4"
+      d.wfClassCodes = Object.fromEntries(
+        [...(d.schedule || []), ...(d.attendances || [])]
+          .filter((x) => x.classId != null && x.classCode)
+          .map((x) => [x.classId, x.classCode]),
+      );
 
       Object.assign(d, workflowLoaded(d.wfItems, ctx.state));
 

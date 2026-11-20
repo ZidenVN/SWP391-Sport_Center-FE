@@ -15,6 +15,14 @@ const names = {
 
 const text = (value) => names[value] || value || "Chưa cập nhật";
 
+// BE ghi tên lớp dạng "Lớp #4 · Pickleball"; trang nào có bảng mã lớp (s.wfClassCodes: classId -> "PB-0004") thì hiện mã lớp
+const classText = (s, p) => {
+  const code = p?.classId != null ? s.wfClassCodes?.[p.classId] : null;
+  return code
+    ? String(p.className || "").replace(/^Lớp #\d+/, `Lớp ${code}`)
+    : p?.className || "";
+};
+
 const day = (value) =>
   value ? value.split("-").reverse().join("/") : "Chưa có hạn";
 
@@ -251,7 +259,7 @@ function detail(s, p, coach) {
       <div class="pw-panel-body">
         ${coach ? html`<h3>${p.planName}</h3>` : ""}
 
-        <p>${p.className} · HLV ${p.coachName}</p>
+        <p>${classText(s, p)} · HLV ${p.coachName}</p>
 
         ${badge(p)}
 
@@ -264,7 +272,13 @@ function detail(s, p, coach) {
         <p class="pw-muted">Hạn tính đến hết ngày, theo giờ Việt Nam.</p>
 
         ${p.overdue
-          ? html` <p class="pw-late">Quá hạn, chưa báo hoàn thành.</p> `
+          ? html`
+              <p class="pw-late">
+                Quá hạn, chưa báo hoàn thành.${coach
+                  ? ""
+                  : " Bạn vẫn báo hoàn thành được, hệ thống ghi nhận là nộp trễ."}
+              </p>
+            `
           : ""}
         ${d.error
           ? html`
@@ -399,7 +413,7 @@ ${d.note}</textarea
                 <button type="submit" class="btn-primary">
                   ${p.status === "NEEDS_REVISION"
                     ? "Báo hoàn thành lại"
-                    : "Báo hoàn thành"}
+                    : "Báo hoàn thành"}${p.overdue ? " (trễ hạn)" : ""}
                 </button>
               </form>
             `
@@ -429,7 +443,7 @@ export function workflowView(s, coach = false) {
   const filtered = rows.filter(
     (p) =>
       (s.wfStatus === "ALL" || p.status === s.wfStatus) &&
-      norm(`${p.memberName} ${p.planName} ${p.className}`).includes(
+      norm(`${p.memberName} ${p.planName} ${classText(s, p)}`).includes(
         norm(s.wfKeyword.trim()),
       ),
   );
@@ -448,7 +462,7 @@ export function workflowView(s, coach = false) {
         ? "Xem và duyệt"
         : "Xem lịch sử"
       : {
-          IN_PROGRESS: "Báo hoàn thành",
+          IN_PROGRESS: p.overdue ? "Báo hoàn thành (trễ)" : "Báo hoàn thành",
           PENDING_REVIEW: "Xem lần đã báo",
           NEEDS_REVISION: "Xem yêu cầu",
           COMPLETED: "Xem kết quả",
@@ -474,7 +488,7 @@ export function workflowView(s, coach = false) {
             ${!coach
               ? classes.map((p) =>
                   pill(
-                    p.className,
+                    classText(s, p),
                     "wf-class",
                     p.classId,
                     s.wfMode === "CLASS" && same(s.wfClass, p.classId),
@@ -557,7 +571,7 @@ export function workflowView(s, coach = false) {
             ? html`
                 <p class="pw-muted">
                   ${s.wfMode === "CLASS"
-                    ? classes.find((p) => same(p.classId, s.wfClass))?.className
+                    ? classText(s, classes.find((p) => same(p.classId, s.wfClass)))
                     : "Giáo án của tôi"}
                   · Chỉ hiển thị giáo án và trạng thái của bạn.
                 </p>
@@ -627,7 +641,7 @@ export function workflowView(s, coach = false) {
                               ${!classView
                                 ? html`
                                     <small>
-                                      ${p.className} · HLV ${p.coachName}
+                                      ${classText(s, p)} · HLV ${p.coachName}
                                     </small>
                                   `
                                 : ""}
